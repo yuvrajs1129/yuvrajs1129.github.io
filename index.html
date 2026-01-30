@@ -93,8 +93,8 @@
   <!-- FPS SWITCH MENU -->
   <div id="fpsMenu">
     FPS:
-    <button class="fps-btn active" data-fps="60">60 FPS (Recommended)</button>
-    <button class="fps-btn" data-fps="120">120 FPS</button>
+    <button class="fps-btn" data-fps="30">30 FPS</button>
+    <button class="fps-btn active" data-fps="60">60 FPS (Default)</button>
   </div>
 
   <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -270,7 +270,7 @@
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);  // yahan score wali sound
+          playSound(scoreSound);  // point milne pe sound
           if (score > bestScore) bestScore = score;
         }
       });
@@ -420,7 +420,7 @@
 
       accumulator += delta;
 
-      // Fixed timestep: targetFPS (60 ya 120) par update chalega
+      // Fixed timestep: targetFPS (30 ya 60) par update chalega
       while (accumulator >= frameDuration) {
         update();
         accumulator -= frameDuration;
