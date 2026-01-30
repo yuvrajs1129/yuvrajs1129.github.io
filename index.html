@@ -2,109 +2,448 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Games made by Yuvraj</title>
+  <title>Games made by Yuvraj – Premium Arcade</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="description" content="Play free browser games made by Yuvraj. Eagle Flight, Neon Space Runner and more HTML5 games, no download needed.">
+  <meta name="description" content="Play premium browser games made by Yuvraj – Eagle Flight, Neon Space Runner and more. Free HTML5 games for phone and PC.">
 
   <style>
     * {
       box-sizing: border-box;
     }
 
+    :root {
+      --bg-dark: #020617;
+      --bg-deep: #020617;
+      --accent-orange: #f97316;
+      --accent-blue: #38bdf8;
+      --accent-purple: #a855f7;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-subtle: #1f2937;
+    }
+
     body {
       margin: 0;
-      padding: 16px;
-      background: radial-gradient(circle at top, #0b1120 0, #020617 55%, #000 100%);
+      padding: 0;
+      min-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #e5e7eb;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at top, #0f172a 0, #020617 50%, #000 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
     }
 
-    h1 {
-      margin: 8px 0 4px;
-      font-size: 26px;
-      text-align: center;
-      color: #f97316;
-      text-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+    /* Background glow layers */
+    .bg-orb {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
     }
 
-    #subtitle {
-      font-size: 14px;
-      color: #9ca3af;
-      text-align: center;
-      margin-bottom: 18px;
+    .bg-orb::before,
+    .bg-orb::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(80px);
+      opacity: 0.6;
     }
 
-    #gamesGrid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px;
+    .bg-orb::before {
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(56,189,248,0.6), transparent 60%);
+      top: -40px;
+      left: 10%;
+    }
+
+    .bg-orb::after {
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(248,113,113,0.65), transparent 65%);
+      bottom: -60px;
+      right: 5%;
+    }
+
+    /* Layout container */
+    .page {
       width: 100%;
-      max-width: 600px;
+      max-width: 1080px;
+      padding: 16px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
-    .game-card {
-      background: linear-gradient(145deg, #020617, #020617);
-      border-radius: 14px;
-      border: 1px solid #1f2937;
-      padding: 14px 10px;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    /* NAV / TOP BAR */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(15,23,42,0.9);
+      background: radial-gradient(circle at top left, rgba(148,163,184,0.15), rgba(15,23,42,0.9));
+      box-shadow: 0 18px 40px rgba(0,0,0,0.7);
+      backdrop-filter: blur(14px);
     }
 
-    .game-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 32px rgba(0,0,0,0.7);
-      border-color: #38bdf8;
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .game-icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      margin: 0 auto 8px;
+    .nav-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: conic-gradient(from 220deg, #f97316, #facc15, #22c55e, #38bdf8, #a855f7, #f97316);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at 30% 20%, #fefce8, #facc15 40%, #b45309 100%);
-      box-shadow: 0 0 18px rgba(250, 204, 21, 0.7);
-      font-size: 32px;
+      color: #020617;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: 0 0 16px rgba(248, 250, 252, 0.7);
     }
 
-    .game-title {
+    .nav-title-main {
       font-size: 16px;
       font-weight: 600;
+    }
+
+    .nav-title-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .nav-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: rgba(15,23,42,0.6);
+      color: #cbd5f5;
+    }
+
+    /* HERO SECTION */
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr);
+      gap: 18px;
+      align-items: center;
+      margin-top: 8px;
       margin-bottom: 4px;
+    }
+
+    @media (max-width: 800px) {
+      .hero {
+        grid-template-columns: minmax(0, 1fr);
+        margin-top: 12px;
+      }
+    }
+
+    .hero-left {
+      padding: 12px 6px;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(56,189,248,0.6);
+      font-size: 11px;
+      color: #bae6fd;
+      margin-bottom: 8px;
+    }
+
+    .hero-kicker-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #22c55e, #14532d);
+      box-shadow: 0 0 8px rgba(34,197,94,0.9);
+    }
+
+    .hero-title {
+      font-size: clamp(26px, 5vw, 32px);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      color: #f9fafb;
+      text-shadow: 0 0 18px rgba(0,0,0,0.8);
+    }
+
+    .hero-title span.highlight {
+      color: var(--accent-orange);
+      text-shadow: 0 0 18px rgba(249,115,22,0.85);
+    }
+
+    .hero-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 420px;
+      margin-bottom: 14px;
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 11px;
+    }
+
+    .hero-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(31,41,55,0.9);
+      background: rgba(15,23,42,0.9);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #cbd5f5;
+    }
+
+    .hero-badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #22c55e, #16a34a);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .btn-primary,
+    .btn-ghost {
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f97316, #facc15);
+      color: #02131b;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(248, 250, 252, 0.15);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 12px 30px rgba(248, 250, 252, 0.22);
+    }
+
+    .btn-ghost {
+      background: rgba(15,23,42,0.9);
+      border-color: rgba(148,163,184,0.4);
       color: #e5e7eb;
     }
 
-    .game-meta {
-      font-size: 12px;
+    .btn-ghost:hover {
+      border-color: rgba(248, 250, 252, 0.55);
+      background: rgba(15,23,42,1);
+    }
+
+    .hero-note {
+      font-size: 11px;
       color: #9ca3af;
     }
 
-    #footerName {
-      margin-top: auto;
-      padding-top: 16px;
-      font-size: 13px;
-      color: #64748b;
-      text-align: center;
+    .hero-right {
+      position: relative;
+      padding: 10px 4px;
+      display: flex;
+      justify-content: center;
     }
 
-    /* ===== RATING POPUP ===== */
+    .hero-card {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      border-radius: 22px;
+      padding: 14px 14px 12px;
+      background: radial-gradient(circle at top left, rgba(96,165,250,0.18), rgba(15,23,42,0.96));
+      border: 1px solid rgba(31,41,55,0.95);
+      box-shadow: 0 22px 40px rgba(0,0,0,0.9);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
 
+    .hero-card-glow {
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,0.28), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(249,115,22,0.26), transparent 55%);
+      opacity: 0.9;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .hero-card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 11px;
+      color: #e5e7eb;
+    }
+
+    .hero-card-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .hero-card-chip {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.45);
+      color: #cbd5f5;
+    }
+
+    .hero-card-games {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 11px;
+    }
+
+    .mini-game {
+      border-radius: 14px;
+      padding: 8px 8px 7px;
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(31,41,55,0.9);
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mini-game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .mini-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #020617;
+      box-shadow: 0 0 10px rgba(248, 250, 252, 0.75);
+    }
+
+    .mini-avatar.eagle {
+      background: radial-gradient(circle, #fed7aa, #f97316);
+    }
+
+    .mini-avatar.space {
+      background: radial-gradient(circle, #e0f2fe, #38bdf8);
+    }
+
+    .mini-game-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .mini-tag {
+      font-size: 9px;
+      color: #9ca3af;
+    }
+
+    .mini-pill {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.4);
+      color: #cbd5f5;
+    }
+
+    .hero-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .hero-stat-label {
+      font-size: 10px;
+      color: #6b7280;
+    }
+
+    .hero-stat-value {
+      font-size: 12px;
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .hero-card-cta {
+      font-size: 11px;
+      color: #bae6fd;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* GAMES SECTION */
+    .section-title {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .section-sub {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+
+    /* Rating overlay (popup) */
     .rating-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.88);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -116,37 +455,38 @@
     }
 
     .rating-modal {
-      background: #020617;
-      border-radius: 16px;
+      background: radial-gradient(circle at top, rgba(30,64,175,0.45), rgba(15,23,42,0.98));
+      border-radius: 18px;
       padding: 18px 18px 14px;
-      border: 1px solid #1f2937;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(37,99,235,0.7);
+      box-shadow: 0 22px 40px rgba(0, 0, 0, 0.9);
       width: 100%;
       max-width: 320px;
       text-align: center;
+      backdrop-filter: blur(18px);
     }
 
     .rating-title {
-      font-size: 18px;
-      margin-bottom: 6px;
+      font-size: 17px;
+      margin-bottom: 4px;
       color: #e5e7eb;
     }
 
     .rating-subtitle {
-      font-size: 13px;
-      color: #9ca3af;
-      margin-bottom: 12px;
+      font-size: 12px;
+      color: #cbd5f5;
+      margin-bottom: 10px;
     }
 
     .rating-stars {
       display: flex;
       justify-content: center;
       gap: 6px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .rating-star {
-      font-size: 26px;
+      font-size: 24px;
       cursor: pointer;
       color: #4b5563;
       transition: color 0.12s ease, transform 0.12s ease;
@@ -155,14 +495,14 @@
     .rating-star.active {
       color: #facc15;
       text-shadow: 0 0 10px rgba(250, 204, 21, 0.9);
-      transform: scale(1.05);
+      transform: scale(1.1);
     }
 
     .rating-buttons {
       display: flex;
       justify-content: space-between;
       gap: 8px;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     .btn {
@@ -170,7 +510,7 @@
       padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid #1f2937;
-      background: #020617;
+      background: rgba(15,23,42,0.9);
       color: #e5e7eb;
       font-size: 13px;
       cursor: pointer;
@@ -182,7 +522,7 @@
     }
 
     .btn-cancel {
-      background: #020617;
+      background: rgba(15,23,42,0.9);
       color: #9ca3af;
     }
 
@@ -191,14 +531,14 @@
     }
 
     .btn-submit {
-      background: #22c55e;
+      background: linear-gradient(135deg, #22c55e, #a3e635);
       border-color: #16a34a;
       color: #020617;
       font-weight: 600;
     }
 
     .btn-submit:hover {
-      background: #16a34a;
+      filter: brightness(1.05);
     }
 
     .rating-message {
@@ -207,51 +547,194 @@
       color: #a5b4fc;
       min-height: 16px;
     }
+
+    @media (max-width: 640px) {
+      .nav {
+        padding-inline: 10px;
+      }
+      .nav-title-sub {
+        display: none;
+      }
+      .hero-actions {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .hero-card {
+        max-width: 100%;
+      }
+      .page {
+        padding-inline: 12px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Games made by Yuvraj</h1>
-  <div id="subtitle">
-    Niche diye gaye icons par click karke apne favourite games khelo.
+  <div class="bg-orb"></div>
+
+  <div class="page">
+    <!-- NAVBAR -->
+    <header class="nav">
+      <div class="nav-brand">
+        <div class="nav-logo">Y</div>
+        <div>
+          <div class="nav-title-main">Yuvraj Games</div>
+          <div class="nav-title-sub">Premium browser arcade</div>
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="nav-pill">No download · Play in browser</div>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-kicker">
+          <span class="hero-kicker-dot"></span>
+          Curated by Yuvraj
+        </div>
+        <h1 class="hero-title">
+          Play <span class="highlight">premium browser games</span> built by Yuvraj.
+        </h1>
+        <p class="hero-subtitle">
+          High-quality HTML5 arcade games that run smoothly on both phone and PC.
+          Just open the link and start playing – no install, no signup.
+        </p>
+
+        <div class="hero-badges">
+          <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            Optimized for mobile & desktop
+          </div>
+          <div class="hero-badge">
+            🎮 Eagle Flight · Neon Space Runner
+          </div>
+          <div class="hero-badge">
+            ⭐ Community-rated experiences
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a href="#games" class="btn-primary">
+            <span>Play games now</span>
+            <span>→</span>
+          </a>
+          <a href="https://yuvrajs1129.github.io/" class="btn-ghost">
+            <span>Open main site</span>
+          </a>
+        </div>
+
+        <div class="hero-note">
+          Tip: Add this site to your home screen to make it feel like a real app.
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-card">
+          <div class="hero-card-glow"></div>
+          <div class="hero-card-inner">
+            <div class="hero-card-header">
+              <div>
+                <div class="hero-card-title">Featured games</div>
+                <div class="hero-stat-label">By Yuvraj</div>
+              </div>
+              <div class="hero-card-chip">Live · HTML5</div>
+            </div>
+
+            <div class="hero-card-games">
+              <div class="mini-game">
+                <div class="mini-game-header">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <div class="mini-avatar eagle">🦅</div>
+                    <div>
+                      <div class="mini-game-name">Eagle Flight</div>
+                      <div class="mini-tag">Flappy-style arcade</div>
+                    </div>
+                  </div>
+                  <div class="mini-pill">Tap to fly</div>
+                </div>
+                <div class="hero-stat-label" style="margin-top:4px;">
+                  Smooth on 60hz + 120hz displays
+                </div>
+              </div>
+
+              <div class="mini-game">
+                <div class="mini-game-header">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <div class="mini-avatar space">🚀</div>
+                    <div>
+                      <div class="mini-game-name">Space Runner</div>
+                      <div class="mini-tag">High-graphics dodge</div>
+                    </div>
+                  </div>
+                  <div class="mini-pill">Swipe / Keys</div>
+                </div>
+                <div class="hero-stat-label" style="margin-top:4px;">
+                  Neon visuals & dynamic difficulty
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-card-footer">
+              <div>
+                <div class="hero-stat-label">Best played on:</div>
+                <div class="hero-stat-value">Chrome · Safari · Edge</div>
+              </div>
+              <div class="hero-card-cta" onclick="location.href='#games'">
+                Browse games →
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAMES SECTION -->
+    <section id="games">
+      <div class="section-title">Available games</div>
+      <div class="section-sub">
+        Select a game card below to start playing instantly in your browser.
+      </div>
+
+      <div id="gamesGrid">
+        <!-- Eagle Flight game card -->
+        <a class="game-card" href="eagle.html">
+          <div class="game-icon">
+            🦅
+          </div>
+          <div class="game-title">Eagle Flight</div>
+          <div class="game-meta">
+            Neon flappy-style arcade game. Tap / Click / Space se eagle ko pillars ke beech se udao.
+          </div>
+        </a>
+
+        <!-- Neon Space Runner game card -->
+        <a class="game-card" href="space.html">
+          <div class="game-icon" style="
+            background: radial-gradient(circle at 30% 20%, #e0f2fe, #38bdf8 40%, #0f172a 100%);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
+          ">
+            🚀
+          </div>
+          <div class="game-title">Neon Space Runner</div>
+          <div class="game-meta">
+            High-graphics space dodge game. Asteroids se bach ke ship ko control karo – difficulty dhire dhire increase hoti hai.
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <footer id="footerName">
+      Website & games created with passion by <strong>Yuvraj</strong>
+    </footer>
   </div>
 
-  <div id="gamesGrid">
-    <!-- Eagle Flight game card -->
-    <a class="game-card" href="eagle.html">
-      <div class="game-icon">
-        🦅
-      </div>
-      <div class="game-title">Eagle Flight</div>
-      <div class="game-meta">
-        Flappy-style arcade game · Tap to fly
-      </div>
-    </a>
-
-    <!-- Neon Space Runner game card -->
-    <a class="game-card" href="space.html">
-      <div class="game-icon" style="
-        background: radial-gradient(circle at 30% 20%, #e0f2fe, #38bdf8 40%, #0f172a 100%);
-        box-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
-      ">
-        <span style="font-size: 24px;">SP</span>
-      </div>
-      <div class="game-title">Neon Space Runner</div>
-      <div class="game-meta">
-        High-graphics space dodge game
-      </div>
-    </a>
-  </div>
-
-  <div id="footerName">
-    Website & games created by <strong>Yuvraj</strong>
-  </div>
-
-  <!-- ===== RATING POPUP HTML ===== -->
+  <!-- ===== RATING POPUP ===== -->
   <div id="ratingOverlay" class="rating-overlay hidden">
     <div class="rating-modal">
       <div class="rating-title">Rate my website</div>
       <div class="rating-subtitle">
-        Bataye aapko Yuvraj ke games kitne pasand aaye 🙂
+        Bataye aapko Yuvraj ke games kitne pasand aaye ⭐
       </div>
       <div class="rating-stars">
         <span class="rating-star" data-value="1">★</span>
@@ -277,7 +760,7 @@
       const btnSubmit = document.getElementById("ratingSubmit");
       const msg = document.getElementById("ratingMessage");
 
-      const STORAGE_KEY = "yuvraj_site_rating_done"; // is browser pe ek baar hi popup
+      const STORAGE_KEY = "yuvraj_site_rating_done_v2"; // v2 to reset old key
 
       let currentRating = 0;
 
@@ -319,7 +802,6 @@
       });
 
       btnCancel.addEventListener("click", () => {
-        // jisko rate nahi karna, wo cancel kare -> popup band ho jaye, dubara bother nahi karega
         markDone("canceled");
         hideOverlay();
       });
@@ -336,9 +818,9 @@
         }, 600);
       });
 
-      // Sirf ek baar per browser popup dikhana
       if (loadShouldShow()) {
-        showOverlay();
+        // Thoda delay se show karo taaki first impression hero dikhe
+        setTimeout(showOverlay, 1500);
       }
     });
   </script>
