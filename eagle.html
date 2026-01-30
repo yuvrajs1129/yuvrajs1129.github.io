@@ -223,9 +223,10 @@
         // Remove off-screen
         pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
+        // ===== COLLISION =====
         // Eagle hitbox (smaller rectangle for more accurate feel)
-        const hitW = eagle.radius * 1.0; // horizontal half size
-        const hitH = eagle.radius * 0.7; // vertical half size
+        const hitW = eagle.radius * 0.7; // was 1.0
+        const hitH = eagle.radius * 0.5; // was 0.7
 
         const birdLeft   = eagle.x - hitW;
         const birdRight  = eagle.x + hitW;
@@ -239,8 +240,8 @@
         }
 
         // Pipes collision + scoring
-        const pipeInnerMargin = 6; // shrink pillars horizontally
-        const gapMargin       = 4; // little gap margin inside
+        const pipeInnerMargin = 12; // was 6 – shrink pillars horizontally more
+        const gapMargin       = 10; // was 4 – extra safe gap
 
         pipes.forEach(pipe => {
           const pipeInnerLeft  = pipe.x + pipeInnerMargin;
@@ -389,7 +390,6 @@
         ctx.fillStyle = "#e5e7eb";
         ctx.font = "22px system-ui, sans-serif";
         ctx.fillText("Tap / Space to start", canvas.width / 2, canvas.height / 2 - 10);
-        // No extra text below as requested
       }
 
       if (gameState === "over") {
