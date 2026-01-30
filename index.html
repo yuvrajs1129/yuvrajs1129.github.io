@@ -329,4 +329,71 @@
 
       if (gameState === "ready") {
         ctx.fillStyle = "#e5e7eb";
-        ctx.font 
+        ctx.font = "22px system-ui, sans-serif";
+        ctx.fillText("Tap / Space to start", canvas.width / 2, canvas.height / 2 - 10);
+
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillStyle = "#cbd5f5";
+        ctx.fillText(
+          "Eagle ko pillars ke beech se udao.",
+          canvas.width / 2,
+          canvas.height / 2 + 16
+        );
+      }
+
+      if (gameState === "over") {
+        ctx.fillStyle = "#fecaca";
+        ctx.font = "28px system-ui, sans-serif";
+        ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.font = "18px system-ui, sans-serif";
+        ctx.fillStyle = "#e5e7eb";
+        ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
+        ctx.fillText(`Best: ${bestScore}`, canvas.width / 2, canvas.height / 2 + 36);
+
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillStyle = "#cbd5f5";
+        ctx.fillText(
+          "Press Space / Tap to restart",
+          canvas.width / 2,
+          canvas.height / 2 + 64
+        );
+      }
+    }
+
+    function draw() {
+      drawBackground();
+      drawPipes();
+      drawEagle();
+      drawUI();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // ===== INPUT HANDLERS =====
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
+        flap();
+      }
+    });
+
+    canvas.addEventListener("mousedown", () => {
+      flap();
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      flap();
+    }, { passive: false });
+
+    // ===== START GAME =====
+    resetGame();
+    loop();
+  </script>
+</body>
+</html>
