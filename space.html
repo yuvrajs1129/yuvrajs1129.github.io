@@ -77,20 +77,15 @@
 
     const OWNER_NAME = "Yuvraj";
 
-    // ===== SOUNDS =====
-    let engineSound = null;
-    let explosionSound = null;
-    try {
-      engineSound = new Audio("engine.mp3");
-      explosionSound = new Audio("explosion.mp3");
-      engineSound.loop = true;
-      engineSound.volume = 0.5;
-      explosionSound.volume = 0.9;
-    } catch (e) {
-      // agar browser allow na kare ya file na ho to game phir bhi chalega
-    }
+    // ===== SOUNDS (simple, eagle game jaisa pattern) =====
+    const engineSound    = new Audio("engine.mp3");
+    const explosionSound = new Audio("explosion.mp3");
 
-    function playOneShot(sound) {
+    engineSound.loop    = true;
+    engineSound.volume  = 0.5;
+    explosionSound.volume = 0.9;
+
+    function playSound(sound) {
       if (!sound) return;
       try {
         sound.currentTime = 0;
@@ -99,7 +94,6 @@
     }
 
     function startEngine() {
-      if (!engineSound) return;
       try {
         engineSound.currentTime = 0;
         engineSound.play();
@@ -107,7 +101,6 @@
     }
 
     function stopEngine() {
-      if (!engineSound) return;
       try {
         engineSound.pause();
       } catch (e) {}
@@ -316,7 +309,7 @@
         radius: 0,
         alpha: 1
       };
-      playOneShot(explosionSound);
+      playSound(explosionSound);
     }
 
     function updateExplosion(dt) {
