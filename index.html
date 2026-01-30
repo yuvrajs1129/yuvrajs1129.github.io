@@ -98,6 +98,115 @@
       color: #64748b;
       text-align: center;
     }
+
+    /* ===== RATING POPUP ===== */
+
+    .rating-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .rating-overlay.hidden {
+      display: none;
+    }
+
+    .rating-modal {
+      background: #020617;
+      border-radius: 16px;
+      padding: 18px 18px 14px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+    }
+
+    .rating-title {
+      font-size: 18px;
+      margin-bottom: 6px;
+      color: #e5e7eb;
+    }
+
+    .rating-subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 12px;
+    }
+
+    .rating-stars {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .rating-star {
+      font-size: 26px;
+      cursor: pointer;
+      color: #4b5563;
+      transition: color 0.12s ease, transform 0.12s ease;
+    }
+
+    .rating-star.active {
+      color: #facc15;
+      text-shadow: 0 0 10px rgba(250, 204, 21, 0.9);
+      transform: scale(1.05);
+    }
+
+    .rating-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-cancel {
+      background: #020617;
+      color: #9ca3af;
+    }
+
+    .btn-cancel:hover {
+      border-color: #6b7280;
+    }
+
+    .btn-submit {
+      background: #22c55e;
+      border-color: #16a34a;
+      color: #020617;
+      font-weight: 600;
+    }
+
+    .btn-submit:hover {
+      background: #16a34a;
+    }
+
+    .rating-message {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #a5b4fc;
+      min-height: 16px;
+    }
   </style>
 </head>
 <body>
@@ -136,5 +245,102 @@
   <div id="footerName">
     Website & games created by <strong>Yuvraj</strong>
   </div>
+
+  <!-- ===== RATING POPUP HTML ===== -->
+  <div id="ratingOverlay" class="rating-overlay hidden">
+    <div class="rating-modal">
+      <div class="rating-title">Rate my website</div>
+      <div class="rating-subtitle">
+        Bataye aapko Yuvraj ke games kitne pasand aaye 🙂
+      </div>
+      <div class="rating-stars">
+        <span class="rating-star" data-value="1">★</span>
+        <span class="rating-star" data-value="2">★</span>
+        <span class="rating-star" data-value="3">★</span>
+        <span class="rating-star" data-value="4">★</span>
+        <span class="rating-star" data-value="5">★</span>
+      </div>
+      <div class="rating-buttons">
+        <button id="ratingCancel" class="btn btn-cancel">Cancel</button>
+        <button id="ratingSubmit" class="btn btn-submit">Submit</button>
+      </div>
+      <div id="ratingMessage" class="rating-message"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===== RATING POPUP LOGIC =====
+    document.addEventListener("DOMContentLoaded", () => {
+      const overlay = document.getElementById("ratingOverlay");
+      const stars = document.querySelectorAll(".rating-star");
+      const btnCancel = document.getElementById("ratingCancel");
+      const btnSubmit = document.getElementById("ratingSubmit");
+      const msg = document.getElementById("ratingMessage");
+
+      const STORAGE_KEY = "yuvraj_site_rating_done"; // is browser pe ek baar hi popup
+
+      let currentRating = 0;
+
+      function showOverlay() {
+        overlay.classList.remove("hidden");
+      }
+
+      function hideOverlay() {
+        overlay.classList.add("hidden");
+      }
+
+      function loadShouldShow() {
+        try {
+          return !localStorage.getItem(STORAGE_KEY);
+        } catch {
+          return true;
+        }
+      }
+
+      function markDone(value) {
+        try {
+          localStorage.setItem(STORAGE_KEY, String(value));
+        } catch {}
+      }
+
+      function updateStars() {
+        stars.forEach(star => {
+          const value = Number(star.dataset.value);
+          star.classList.toggle("active", value <= currentRating);
+        });
+      }
+
+      stars.forEach(star => {
+        star.addEventListener("click", () => {
+          currentRating = Number(star.dataset.value);
+          updateStars();
+          msg.textContent = "";
+        });
+      });
+
+      btnCancel.addEventListener("click", () => {
+        // jisko rate nahi karna, wo cancel kare -> popup band ho jaye, dubara bother nahi karega
+        markDone("canceled");
+        hideOverlay();
+      });
+
+      btnSubmit.addEventListener("click", () => {
+        if (!currentRating) {
+          msg.textContent = "Please select star rating pehle 🙂";
+          return;
+        }
+        markDone(currentRating);
+        msg.textContent = "Thanks for rating " + currentRating + "★!";
+        setTimeout(() => {
+          hideOverlay();
+        }, 600);
+      });
+
+      // Sirf ek baar per browser popup dikhana
+      if (loadShouldShow()) {
+        showOverlay();
+      }
+    });
+  </script>
 </body>
 </html>
