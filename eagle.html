@@ -106,7 +106,7 @@
     const GRAVITY = 0.35;
     const FLAP_STRENGTH = -7;
     const PIPE_GAP = 160;
-    const PIPE_WIDTH = 90;   // THICKER PILLARS
+    const PIPE_WIDTH = 140;   // DOUBLE THICK PILLARS
     const PIPE_SPEED = 2.4;
     const PIPE_INTERVAL = 95;  // frames
 
@@ -119,7 +119,7 @@
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
-      radius: 22,  // BIGGER EAGLE
+      radius: 22,  // bigger eagle
       velocity: 0
     };
 
@@ -359,7 +359,7 @@
         ctx.font = "14px system-ui, sans-serif";
         ctx.fillStyle = "#cbd5f5";
         ctx.fillText(
-          "Realistic eagle & thicker pillars – fly carefully!",
+          "Realistic eagle & much thicker pillars – fly carefully!",
           canvas.width / 2,
           canvas.height / 2 + 16
         );
@@ -379,8 +379,7 @@
         ctx.fillStyle = "#cbd5f5";
         ctx.fillText(
           "Press Space / Tap to restart",
-          canvas.width / 2,
-          canvas.height / 2 + 64
+          canvas.width / 2, canvas.height / 2 + 64
         );
       }
     }
