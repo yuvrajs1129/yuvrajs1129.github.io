@@ -74,16 +74,17 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    const OWNER_NAME = "Yuvraj"; // yahi naam game ke top corner me dikhega
+    const OWNER_NAME = "Yuvraj";
 
     // ===== SOUNDS =====
-    // in fileon ko tumne repo ke root me upload kiya hai:
-    // flap.mp3, score.mp3, hit.mp3
+    // Ye files repo ke root me honi chahiye:
+    // flap.mp3  --> flap ke time
+    // score.mp3 --> point milne par
+    // hit.mp3   --> crash / game over
     const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
     const hitSound   = new Audio("hit.mp3");
 
-    // Volume adjust (0.0 se 1.0 tak)
     flapSound.volume  = 0.7;
     scoreSound.volume = 0.7;
     hitSound.volume   = 0.8;
@@ -94,35 +95,43 @@
         sound.currentTime = 0;
         sound.play();
       } catch (e) {
-        // kabhi kabhar browser block kare to error ignore kar do
+        // iOS agar block kare to error ignore
       }
     }
 
-    // ===== GAME CONSTANTS =====
-    const GRAVITY = 0.35;
+    // ===== GAME CONSTANTS (per-frame baseline at 60 FPS) =====
+    const GRAVITY       = 0.35;  // pehle bhi itna hi tha
     const FLAP_STRENGTH = -7;
-    const PIPE_GAP = 160;
-    const PIPE_WIDTH = 70;
-    const PIPE_SPEED = 2.4;
-    const PIPE_INTERVAL = 95;  // kitne frames baad naya pillar
+    const PIPE_GAP      = 160;
+    const PIPE_WIDTH    = 70;
+    const PIPE_SPEED    = 2.4;
+    const PIPE_INTERVAL = 95;    // ~95 frames at 60 FPS (~1.58s)
 
     // ===== GAME STATE =====
     let gameState = "ready";   // "ready", "running", "over"
     let score = 0;
     let bestScore = 0;
-    let frameCount = 0;
 
-    // Eagle object
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
       radius: 18,
-      velocity: 0,
+      velocity: 0,    // px per "frame" baseline
       wingTime: 0
     };
 
-    // Pillars (pipes)
-    let pipes = []; // har item: { x, topHeight, bottomY, color, scored }
+    let pipes = [];      // { x, topHeight, bottomY, color, scored }
+    let pipeTimer = 0;   // "frames" equivalent (time-based)
+    let frameCounter = 0; // sirf internal counting (optional)
+
+    // Background gradient ek hi baar banayenge
+    let backgroundGradient = null;
+    function initBackgroundGradient() {
+      backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      backgroundGradient.addColorStop(0, "#0f172a");
+      backgroundGradient.addColorStop(0.5, "#0b3b5c");
+      backgroundGradient.addColorStop(1, "#020617");
+    }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -131,7 +140,8 @@
       eagle.velocity = 0;
       eagle.wingTime = 0;
       pipes = [];
-      frameCount = 0;
+      pipeTimer = 0;
+      frameCounter = 0;
       gameState = "ready";
     }
 
@@ -141,19 +151,19 @@
       eagle.velocity = 0;
       eagle.wingTime = 0;
       pipes = [];
-      frameCount = 0;
+      pipeTimer = 0;
+      frameCounter = 0;
       gameState = "running";
     }
 
     function flap() {
       if (gameState === "ready") {
-        // pehli baar: game start karo + turant flap karao
         startGame();
-        eagle.velocity = FLAP_STRENGTH;
+        eagle.velocity = FLAP_STRENGTH * 1; // dt factor 1
         eagle.wingTime = 0;
         playSound(flapSound);
       } else if (gameState === "running") {
-        eagle.velocity = FLAP_STRENGTH;
+        eagle.velocity = FLAP_STRENGTH * 1;
         eagle.wingTime = 0;
         playSound(flapSound);
       } else if (gameState === "over") {
@@ -167,7 +177,6 @@
       const topHeight = Math.random() * (maxTop - minTop) + minTop;
       const bottomY = topHeight + PIPE_GAP;
 
-      // Different new colors from Flappy Bird – teal / purple / cyan
       const hue = 180 + Math.random() * 120; // 180–300
       const color = `hsl(${hue}, 75%, 55%)`;
 
@@ -180,35 +189,41 @@
       });
     }
 
-    function update() {
+    // dtFrames = kitne "60 FPS frames" ke barabar time hua
+    //  - 60 FPS pe dt ≈ 1
+    //  - 120 FPS pe dt ≈ 0.5
+    //  - 30 FPS pe dt ≈ 2
+    function update(dt) {
       if (gameState !== "running") return;
 
-      frameCount++;
+      frameCounter += dt;
 
-      // Eagle physics
-      eagle.velocity += GRAVITY;
-      eagle.y += eagle.velocity;
-      eagle.wingTime += 0.15;
+      // Eagle physics (frame-based constants ko dt se scale)
+      eagle.velocity += GRAVITY * dt;
+      eagle.y        += eagle.velocity * dt;
+      eagle.wingTime += 0.15 * dt;
 
-      // Create new pipes
-      if (frameCount % PIPE_INTERVAL === 0) {
+      // Pipes spawn timer: frame interval ke hisaab se
+      pipeTimer += dt;
+      if (pipeTimer >= PIPE_INTERVAL) {
         createPipe();
+        pipeTimer -= PIPE_INTERVAL;
       }
 
-      // Move pipes
+      // Pipes move
       pipes.forEach(pipe => {
-        pipe.x -= PIPE_SPEED;
+        pipe.x -= PIPE_SPEED * dt;
       });
 
       // Remove off-screen pipes
       pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-      // Collision: top/bottom
+      // Top/bottom collision
       if (eagle.y - eagle.radius <= 0 || eagle.y + eagle.radius >= canvas.height) {
         gameOver();
       }
 
-      // Collision with pipes + scoring
+      // Pipes collision + scoring
       pipes.forEach(pipe => {
         // Horizontal overlap
         if (
@@ -222,31 +237,29 @@
           }
         }
 
-        // ===== YAHAN SCORE POINT MILTA HAI =====
+        // Score point milne par
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);  // point milne pe sound
+          playSound(scoreSound);
           if (score > bestScore) bestScore = score;
         }
       });
     }
 
     function gameOver() {
-      if (gameState !== "over") {        // taaki sound sirf ek baar bajey
+      if (gameState !== "over") {
         gameState = "over";
-        playSound(hitSound);            // crash pe hit sound
+        playSound(hitSound);
       }
     }
 
     // ===== DRAW =====
     function drawBackground() {
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#0f172a");
-      gradient.addColorStop(0.5, "#0b3b5c");
-      gradient.addColorStop(1, "#020617");
-
-      ctx.fillStyle = gradient;
+      if (!backgroundGradient) {
+        initBackgroundGradient();
+      }
+      ctx.fillStyle = backgroundGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#020617";
@@ -259,9 +272,7 @@
         ctx.shadowColor = pipe.color;
         ctx.shadowBlur = 12;
 
-        // Top pillar
         ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-        // Bottom pillar
         ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
 
         ctx.shadowBlur = 0;
@@ -373,8 +384,21 @@
       drawUI();
     }
 
-    function loop() {
-      update();
+    // ===== MAIN LOOP – time-based, 60Hz/120Hz dono ke liye =====
+    let lastTime = null;
+
+    function loop(timestamp) {
+      if (lastTime === null) lastTime = timestamp;
+      const deltaMs = timestamp - lastTime;
+      lastTime = timestamp;
+
+      // 60 FPS baseline -> ek frame ~16.67 ms
+      let dt = deltaMs / (1000 / 60); // kitne "frames" ke barabar time hua
+
+      // Agar tab background me gaya / lag spike aaya to dt ko clamp kar do
+      if (dt > 2) dt = 2;
+
+      update(dt);
       draw();
       requestAnimationFrame(loop);
     }
@@ -398,7 +422,8 @@
 
     // ===== START GAME =====
     resetGame();
-    loop();
+    initBackgroundGradient();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
