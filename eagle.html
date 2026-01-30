@@ -62,7 +62,7 @@
 <body>
   <h1>Eagle Flight – by Yuvraj Soni</h1>
   <div id="subtitle">
-    Tap / Click / Space / ↑ se realistic eagle ko pillars ke beech se udao. Sounds on rakho for best experience.
+    Tap / Click / Space / ↑ se realistic eagle ko pillars ke beech se udao. Eagle pillar ko visually touch kare tabhi blast hoga – space game wale jaisa.
   </div>
 
   <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -81,11 +81,13 @@
     // ===== SOUNDS =====
     const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
-    const hitSound   = new Audio("hit.mp3");
+    const hitSound   = new Audio("hit.mp3");         // optional
+    const explosionSound = new Audio("explosion.mp3"); // same as space game
 
-    flapSound.volume  = 0.7;
-    scoreSound.volume = 0.7;
-    hitSound.volume   = 0.8;
+    flapSound.volume      = 0.7;
+    scoreSound.volume     = 0.7;
+    hitSound.volume       = 0.8;
+    explosionSound.volume = 0.9;
 
     function playSound(sound) {
       if (!sound) return;
@@ -99,14 +101,14 @@
     const eagleImg = new Image();
     const pillarImg = new Image();
 
-    eagleImg.src = "eagle-bird.png";    // realistic eagle sprite
-    pillarImg.src = "eagle-pillar.png"; // realistic pillar texture
+    eagleImg.src  = "eagle-bird.png";     // realistic eagle sprite
+    pillarImg.src = "eagle-pillar.png";   // realistic pillar texture
 
     // ===== GAME CONSTANTS =====
     const GRAVITY = 0.35;
     const FLAP_STRENGTH = -7;
     const PIPE_GAP = 160;
-    const PIPE_WIDTH = 140;   // DOUBLE THICK PILLARS
+    const PIPE_WIDTH = 140;   // thick pillars
     const PIPE_SPEED = 2.4;
     const PIPE_INTERVAL = 95;  // frames
 
@@ -119,11 +121,12 @@
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
-      radius: 22,  // bigger eagle
+      radius: 22,
       velocity: 0
     };
 
     let pipes = []; // { x, topHeight, bottomY, color, scored }
+    let explosion = null; // explosion effect state
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -132,6 +135,7 @@
       eagle.velocity = 0;
       pipes = [];
       frameCount = 0;
+      explosion = null;
       gameState = "ready";
     }
 
@@ -141,6 +145,7 @@
       eagle.velocity = 0;
       pipes = [];
       frameCount = 0;
+      explosion = null;
       gameState = "running";
     }
 
@@ -163,7 +168,7 @@
       const topHeight = Math.random() * (maxTop - minTop) + minTop;
       const bottomY = topHeight + PIPE_GAP;
 
-      const hue = 180 + Math.random() * 120; // sirf fallback color ke liye
+      const hue = 180 + Math.random() * 120; // fallback color only
       const color = `hsl(${hue}, 75%, 55%)`;
 
       pipes.push({
@@ -175,14 +180,39 @@
       });
     }
 
+    function triggerExplosionAt(x, y) {
+      explosion = {
+        x,
+        y,
+        radius: 0,
+        alpha: 1
+      };
+      playSound(explosionSound); // blast sound same as space game
+    }
+
+    function updateExplosion(dt) {
+      if (!explosion) return;
+      explosion.radius += 260 * dt;
+      explosion.alpha  -= 1.6 * dt;
+      if (explosion.alpha <= 0) {
+        explosion = null;
+      }
+    }
+
     function update() {
       if (gameState !== "running") return;
 
       frameCount++;
 
+      // Time delta for explosion animation
+      const dt = 1 / 60; // approx, since we use frame-based physics for eagle
+
       // Eagle physics
       eagle.velocity += GRAVITY;
       eagle.y += eagle.velocity;
+
+      // Explosion update (even during running)
+      updateExplosion(dt);
 
       // New pipes
       if (frameCount % PIPE_INTERVAL === 0) {
@@ -197,21 +227,35 @@
       // Remove off-screen
       pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-      // Top/bottom collision
-      if (eagle.y - eagle.radius <= 0 || eagle.y + eagle.radius >= canvas.height) {
+      // Hitbox for eagle (smaller than full image – more accurate)
+      const hitWidth  = eagle.radius * 1.2; // left-right half width
+      const hitHeight = eagle.radius * 0.8; // up-down half height
+
+      const birdLeft   = eagle.x - hitWidth;
+      const birdRight  = eagle.x + hitWidth;
+      const birdTop    = eagle.y - hitHeight;
+      const birdBottom = eagle.y + hitHeight;
+
+      // Top/bottom collision – thoda margin ke sath
+      if (birdTop <= 0 || birdBottom >= canvas.height) {
         gameOver();
       }
 
       // Pipes collision + scoring
       pipes.forEach(pipe => {
-        // Horizontal overlap
-        if (
-          eagle.x + eagle.radius > pipe.x &&
-          eagle.x - eagle.radius < pipe.x + PIPE_WIDTH
-        ) {
-          // Vertical check
-          if (eagle.y - eagle.radius < pipe.topHeight ||
-              eagle.y + eagle.radius > pipe.bottomY) {
+        const pipeLeft  = pipe.x;
+        const pipeRight = pipe.x + PIPE_WIDTH;
+        const topPipeBottom = pipe.topHeight;
+        const bottomPipeTop = pipe.bottomY;
+
+        const horizontalOverlap = birdRight > pipeLeft && birdLeft < pipeRight;
+
+        if (horizontalOverlap) {
+          // Check if eagle is outside the gap area
+          const hitTopPipe    = birdTop    < topPipeBottom;
+          const hitBottomPipe = birdBottom > bottomPipeTop;
+
+          if (hitTopPipe || hitBottomPipe) {
             gameOver();
           }
         }
@@ -229,7 +273,9 @@
     function gameOver() {
       if (gameState !== "over") {
         gameState = "over";
-        playSound(hitSound);
+        triggerExplosionAt(eagle.x, eagle.y);
+        // Optional: also play small hit sound
+        // playSound(hitSound);
       }
     }
 
@@ -281,6 +327,11 @@
     }
 
     function drawEagle() {
+      if (gameState === "over" && explosion) {
+        // explosion already drawn separately; do not draw eagle body again
+        return;
+      }
+
       const x = eagle.x;
       const y = eagle.y;
       const r = eagle.radius;
@@ -331,6 +382,24 @@
       }
     }
 
+    function drawExplosion() {
+      if (!explosion) return;
+
+      ctx.save();
+      ctx.translate(explosion.x, explosion.y);
+      const r = explosion.radius;
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      g.addColorStop(0, `rgba(248, 250, 252, ${explosion.alpha})`);
+      g.addColorStop(0.3, `rgba(252, 211, 77, ${explosion.alpha})`);
+      g.addColorStop(0.7, `rgba(248, 113, 113, ${explosion.alpha * 0.9})`);
+      g.addColorStop(1, `rgba(15, 23, 42, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     function drawUI() {
       // Score
       ctx.fillStyle = "#e5e7eb";
@@ -359,7 +428,7 @@
         ctx.font = "14px system-ui, sans-serif";
         ctx.fillStyle = "#cbd5f5";
         ctx.fillText(
-          "Realistic eagle & much thicker pillars – fly carefully!",
+          "Realistic eagle & thick pillars – eagle ke actual touch pe hi blast.",
           canvas.width / 2,
           canvas.height / 2 + 16
         );
@@ -388,10 +457,11 @@
       drawBackground();
       drawPipes();
       drawEagle();
+      drawExplosion();
       drawUI();
     }
 
-    function loop() {
+    function loop(timestamp) {
       update();
       draw();
       requestAnimationFrame(loop);
@@ -416,7 +486,7 @@
 
     // ===== START =====
     resetGame();
-    loop();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
