@@ -197,6 +197,9 @@
     let pointerActive = false;
     let pointerOffsetY = 0;
 
+    // Queue flag for firing (to avoid heavy work inside touch handlers)
+    let pendingFire = false;
+
     // ===== STARS (BACKGROUND) =====
     function initStars() {
       stars.length = 0;
@@ -528,6 +531,12 @@
           if (bulletCooldown < 0) bulletCooldown = 0;
         }
 
+        // Queue se fire handle karo (main loop ke andar)
+        if (pendingFire) {
+          pendingFire = false;
+          fireBullet();
+        }
+
         updateShip(dt);
         updateBullets(dt);
 
@@ -631,10 +640,10 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== FIRE HANDLER =====
-    function handleFire() {
-      unlockAudio();
-      fireBullet();
+    // ===== FIRE REQUEST (event handlers se sirf flag set) =====
+    function requestFire() {
+      if (gameState !== "running") return;
+      pendingFire = true;
     }
 
     // ===== INPUT HANDLERS =====
@@ -652,7 +661,8 @@
         else if (gameState === "over") resetGame();
       }
       if (e.key === "e" || e.key === "E") {
-        handleFire();
+        unlockAudio();
+        requestFire();
       }
     });
 
@@ -718,13 +728,15 @@
     // Mobile FIRE button – support touch + click
     fireButton.addEventListener("click", (e) => {
       e.stopPropagation();
-      handleFire();
+      unlockAudio();
+      requestFire();
     });
 
     fireButton.addEventListener("touchstart", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      handleFire();
+      unlockAudio();
+      requestFire();
     }, { passive: false });
 
     // ===== START =====
