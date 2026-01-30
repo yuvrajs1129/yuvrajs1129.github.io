@@ -24,7 +24,7 @@
     }
 
     h1 {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       font-size: 24px;
       text-align: center;
       color: #f97316;
@@ -35,7 +35,7 @@
       font-size: 14px;
       color: #9ca3af;
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     canvas {
@@ -77,9 +77,9 @@
     const OWNER_NAME = "Yuvraj";
 
     // ===== SOUNDS =====
-    // Ye dono file tumhare repo ke root me honi chahiye:
+    // Ye files repo ke root me honi chahiye:
     // flap.mp3  --> flap ke time
-    // score.mp3 --> point milne pe
+    // score.mp3 --> point milne par
     const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
 
@@ -92,35 +92,49 @@
         sound.currentTime = 0;
         sound.play();
       } catch (e) {
-        // ignore error agar browser block kare
+        // iOS agar kabhi block kare to error ignore
       }
     }
 
-    // ===== GAME CONSTANTS =====
-    const GRAVITY = 0.35;
-    const FLAP_STRENGTH = -7;
-    const PIPE_GAP = 160;
-    const PIPE_WIDTH = 70;
-    const PIPE_SPEED = 2.4;
-    const PIPE_INTERVAL = 95;
+    // ===== GAME CONSTANTS (time-based, per second) =====
+    const TARGET_FPS = 60;
+
+    // Pehle per-frame values the, ab unko per-second me convert kiya:
+    // old GRAVITY ~0.35 per frame -> 0.35 * 60 ≈ 21 px/s²
+    // old FLAP_STRENGTH ~-7 per frame -> -7 * 60 ≈ -420 px/s
+    // old PIPE_SPEED ~2.4 per frame -> 2.4 * 60 ≈ 144 px/s
+    // old PIPE_INTERVAL ~95 frames -> 95 / 60 ≈ 1.58 s
+    const GRAVITY      = 0.35 * TARGET_FPS; // px/s²
+    const FLAP_STRENGTH= -7   * TARGET_FPS; // px/s initial velocity
+    const PIPE_SPEED   = 2.4  * TARGET_FPS; // px/s
+    const PIPE_GAP     = 160;               // px (same)
+    const PIPE_WIDTH   = 70;                // px (same)
+    const PIPE_INTERVAL= 95 / TARGET_FPS;   // seconds between pipes (~1.58s)
 
     // ===== GAME STATE =====
     let gameState = "ready";   // "ready", "running", "over"
     let score = 0;
     let bestScore = 0;
-    let frameCount = 0;
 
-    // Eagle object
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
       radius: 18,
-      velocity: 0,
-      wingTime: 0
+      velocity: 0,    // px/s
+      wingTime: 0     // animation timer
     };
 
-    // Pillars (pipes)
-    let pipes = []; // { x, topHeight, bottomY, color, scored }
+    let pipes = [];   // { x, topHeight, bottomY, color, scored }
+    let pipeTimer = 0; // seconds se track karenge
+
+    // Background gradient ek baar hi banayenge
+    let backgroundGradient = null;
+    function initBackgroundGradient() {
+      backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      backgroundGradient.addColorStop(0, "#0f172a");
+      backgroundGradient.addColorStop(0.5, "#0b3b5c");
+      backgroundGradient.addColorStop(1, "#020617");
+    }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -129,7 +143,7 @@
       eagle.velocity = 0;
       eagle.wingTime = 0;
       pipes = [];
-      frameCount = 0;
+      pipeTimer = 0;
       gameState = "ready";
     }
 
@@ -139,7 +153,7 @@
       eagle.velocity = 0;
       eagle.wingTime = 0;
       pipes = [];
-      frameCount = 0;
+      pipeTimer = 0;
       gameState = "running";
     }
 
@@ -176,27 +190,28 @@
       });
     }
 
-    function update() {
+    // dt = seconds since last frame
+    function update(dt) {
       if (gameState !== "running") return;
 
-      frameCount++;
+      // Eagle physics (time-based)
+      eagle.velocity += GRAVITY * dt;    // v = v + a * dt
+      eagle.y        += eagle.velocity * dt; // y = y + v * dt
+      eagle.wingTime += 9 * dt;          // ~9 rad/sec (same feel as pehle)
 
-      // Eagle physics
-      eagle.velocity += GRAVITY;
-      eagle.y += eagle.velocity;
-      eagle.wingTime += 0.15;
-
-      // New pipes
-      if (frameCount % PIPE_INTERVAL === 0) {
+      // Pipes spawn timer (time-based, frames pe depend nahi)
+      pipeTimer += dt;
+      if (pipeTimer >= PIPE_INTERVAL) {
         createPipe();
+        pipeTimer -= PIPE_INTERVAL;
       }
 
-      // Move pipes
+      // Move pipes (time-based)
       pipes.forEach(pipe => {
-        pipe.x -= PIPE_SPEED;
+        pipe.x -= PIPE_SPEED * dt;
       });
 
-      // Remove off-screen
+      // Remove off-screen pipes
       pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
       // Top/bottom collision
@@ -218,11 +233,11 @@
           }
         }
 
-        // ===== YAHAN SCORE POINT MILTA HAI =====
+        // Score point milne par
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);  // <-- point milne pe sound
+          playSound(scoreSound);
           if (score > bestScore) bestScore = score;
         }
       });
@@ -234,12 +249,10 @@
 
     // ===== DRAW =====
     function drawBackground() {
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#0f172a");
-      gradient.addColorStop(0.5, "#0b3b5c");
-      gradient.addColorStop(1, "#020617");
-
-      ctx.fillStyle = gradient;
+      if (!backgroundGradient) {
+        initBackgroundGradient();
+      }
+      ctx.fillStyle = backgroundGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#020617";
@@ -250,7 +263,7 @@
       pipes.forEach(pipe => {
         ctx.fillStyle = pipe.color;
         ctx.shadowColor = pipe.color;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 12;  // glow
 
         ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
         ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
@@ -357,15 +370,19 @@
       }
     }
 
-    function draw() {
-      drawBackground();
-      drawPipes();
-      drawEagle();
-      drawUI();
-    }
+    // ===== MAIN LOOP – time-based, suitable for 60Hz & 120Hz =====
+    let lastTime = null;
 
-    function loop() {
-      update();
+    function loop(timestamp) {
+      if (lastTime === null) lastTime = timestamp;
+      let dt = (timestamp - lastTime) / 1000; // seconds
+      lastTime = timestamp;
+
+      // Kabhi-kabhi tab switch se dt bohot bada ho jata hai,
+      // isliye clamp kar dete hain (max 50ms)
+      if (dt > 0.05) dt = 0.05;
+
+      update(dt);
       draw();
       requestAnimationFrame(loop);
     }
@@ -389,7 +406,8 @@
 
     // ===== START =====
     resetGame();
-    loop();
+    initBackgroundGradient();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
