@@ -62,7 +62,7 @@
 <body>
   <h1>Eagle Flight – by Yuvraj Soni</h1>
   <div id="subtitle">
-    Tap / Click / Space / ↑ se realistic eagle ko pillars ke beech se udao. Eagle pillar ko visually touch kare tabhi blast hoga – space game wale jaisa.
+    Tap / Click / Space / ↑ se realistic eagle ko pillars ke beech se udao. Eagle pillar ko actual touch kare tabhi blast hoga – bilkul visually accurate.
   </div>
 
   <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -79,10 +79,10 @@
     const OWNER_NAME = "Yuvraj Soni";
 
     // ===== SOUNDS =====
-    const flapSound  = new Audio("flap.mp3");
-    const scoreSound = new Audio("score.mp3");
-    const hitSound   = new Audio("hit.mp3");         // optional
-    const explosionSound = new Audio("explosion.mp3"); // same as space game
+    const flapSound      = new Audio("flap.mp3");
+    const scoreSound     = new Audio("score.mp3");
+    const hitSound       = new Audio("hit.mp3");         // optional
+    const explosionSound = new Audio("explosion.mp3");   // same as space game
 
     flapSound.volume      = 0.7;
     scoreSound.volume     = 0.7;
@@ -98,24 +98,24 @@
     }
 
     // ===== IMAGE ASSETS (realistic eagle + pillars) =====
-    const eagleImg = new Image();
+    const eagleImg  = new Image();
     const pillarImg = new Image();
 
     eagleImg.src  = "eagle-bird.png";     // realistic eagle sprite
     pillarImg.src = "eagle-pillar.png";   // realistic pillar texture
 
     // ===== GAME CONSTANTS =====
-    const GRAVITY = 0.35;
+    const GRAVITY       = 0.35;
     const FLAP_STRENGTH = -7;
-    const PIPE_GAP = 160;
-    const PIPE_WIDTH = 140;   // thick pillars
-    const PIPE_SPEED = 2.4;
-    const PIPE_INTERVAL = 95;  // frames
+    const PIPE_GAP      = 190;    // bigger gap between pillars
+    const PIPE_WIDTH    = 140;    // thick pillars
+    const PIPE_SPEED    = 2.4;
+    const PIPE_INTERVAL = 95;     // frames
 
     // ===== GAME STATE =====
-    let gameState = "ready";   // "ready", "running", "over"
-    let score = 0;
-    let bestScore = 0;
+    let gameState  = "ready";   // "ready", "running", "over"
+    let score      = 0;
+    let bestScore  = 0;
     let frameCount = 0;
 
     const eagle = {
@@ -125,8 +125,8 @@
       velocity: 0
     };
 
-    let pipes = []; // { x, topHeight, bottomY, color, scored }
-    let explosion = null; // explosion effect state
+    let pipes = [];      // { x, topHeight, bottomY, color, scored }
+    let explosion = null; // { x, y, radius, alpha }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -187,101 +187,104 @@
         radius: 0,
         alpha: 1
       };
-      playSound(explosionSound); // blast sound same as space game
+      playSound(explosionSound); // blast sound
     }
 
-    function updateExplosion(dt) {
+    function updateExplosion() {
       if (!explosion) return;
-      explosion.radius += 260 * dt;
-      explosion.alpha  -= 1.6 * dt;
+      explosion.radius += 6;      // per frame
+      explosion.alpha  -= 0.04;   // fade
       if (explosion.alpha <= 0) {
         explosion = null;
       }
     }
 
     function update() {
-      if (gameState !== "running") return;
+      if (gameState === "running") {
+        frameCount++;
 
-      frameCount++;
+        // Eagle physics (frame-based)
+        eagle.velocity += GRAVITY;
+        eagle.y += eagle.velocity;
 
-      // Time delta for explosion animation
-      const dt = 1 / 60; // approx, since we use frame-based physics for eagle
+        // New pipes
+        if (frameCount % PIPE_INTERVAL === 0) {
+          createPipe();
+        }
 
-      // Eagle physics
-      eagle.velocity += GRAVITY;
-      eagle.y += eagle.velocity;
+        // Move pipes
+        pipes.forEach(pipe => {
+          pipe.x -= PIPE_SPEED;
+        });
 
-      // Explosion update (even during running)
-      updateExplosion(dt);
+        // Remove off-screen
+        pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-      // New pipes
-      if (frameCount % PIPE_INTERVAL === 0) {
-        createPipe();
-      }
+        // Eagle hitbox (smaller rectangle for more accurate feel)
+        const hitW = eagle.radius * 1.0; // horizontal half size
+        const hitH = eagle.radius * 0.7; // vertical half size
 
-      // Move pipes
-      pipes.forEach(pipe => {
-        pipe.x -= PIPE_SPEED;
-      });
+        const birdLeft   = eagle.x - hitW;
+        const birdRight  = eagle.x + hitW;
+        const birdTop    = eagle.y - hitH;
+        const birdBottom = eagle.y + hitH;
 
-      // Remove off-screen
-      pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
+        // Top/bottom collision with small margin
+        const marginY = 4;
+        if (birdTop <= 0 + marginY || birdBottom >= canvas.height - marginY) {
+          gameOver();
+        }
 
-      // Hitbox for eagle (smaller than full image – more accurate)
-      const hitWidth  = eagle.radius * 1.2; // left-right half width
-      const hitHeight = eagle.radius * 0.8; // up-down half height
+        // Pipes collision + scoring
+        const pipeInnerMargin = 6; // shrink pillars horizontally
+        const gapMargin       = 4; // little gap margin inside
 
-      const birdLeft   = eagle.x - hitWidth;
-      const birdRight  = eagle.x + hitWidth;
-      const birdTop    = eagle.y - hitHeight;
-      const birdBottom = eagle.y + hitHeight;
+        pipes.forEach(pipe => {
+          const pipeInnerLeft  = pipe.x + pipeInnerMargin;
+          const pipeInnerRight = pipe.x + PIPE_WIDTH - pipeInnerMargin;
+          const topPipeBottom  = pipe.topHeight;
+          const bottomPipeTop  = pipe.bottomY;
 
-      // Top/bottom collision – thoda margin ke sath
-      if (birdTop <= 0 || birdBottom >= canvas.height) {
-        gameOver();
-      }
+          const horizontalOverlap =
+            birdRight > pipeInnerLeft && birdLeft < pipeInnerRight;
 
-      // Pipes collision + scoring
-      pipes.forEach(pipe => {
-        const pipeLeft  = pipe.x;
-        const pipeRight = pipe.x + PIPE_WIDTH;
-        const topPipeBottom = pipe.topHeight;
-        const bottomPipeTop = pipe.bottomY;
+          if (horizontalOverlap) {
+            const insideGap =
+              birdTop    >= topPipeBottom + gapMargin &&
+              birdBottom <= bottomPipeTop - gapMargin;
 
-        const horizontalOverlap = birdRight > pipeLeft && birdLeft < pipeRight;
-
-        if (horizontalOverlap) {
-          // Check if eagle is outside the gap area
-          const hitTopPipe    = birdTop    < topPipeBottom;
-          const hitBottomPipe = birdBottom > bottomPipeTop;
-
-          if (hitTopPipe || hitBottomPipe) {
-            gameOver();
+            if (!insideGap) {
+              // Only now we trigger game over – eagle visually touches pillar
+              gameOver();
+            }
           }
-        }
 
-        // Score when crossing
-        if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
-          pipe.scored = true;
-          score++;
-          playSound(scoreSound);
-          if (score > bestScore) bestScore = score;
-        }
-      });
+          // Score when crossing
+          if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
+            pipe.scored = true;
+            score++;
+            playSound(scoreSound);
+            if (score > bestScore) bestScore = score;
+          }
+        });
+      }
+
+      // Explosion animation always update (even when game over)
+      updateExplosion();
     }
 
     function gameOver() {
       if (gameState !== "over") {
         gameState = "over";
+        // Explosion at eagle position
         triggerExplosionAt(eagle.x, eagle.y);
-        // Optional: also play small hit sound
+        // optional extra hit sound:
         // playSound(hitSound);
       }
     }
 
     // ===== DRAW FUNCTIONS =====
     function drawBackground() {
-      // Gradient sky-like background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, "#0f172a");
       gradient.addColorStop(0.4, "#1e293b");
@@ -290,7 +293,6 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Ground strip
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, canvas.height - 6, canvas.width, 6);
     }
@@ -299,7 +301,6 @@
       pipes.forEach(pipe => {
         const x = pipe.x;
 
-        // If realistic pillar image loaded, use it
         if (pillarImg.complete && pillarImg.naturalWidth) {
           // Top pillar
           ctx.drawImage(
@@ -318,7 +319,7 @@
             canvas.height - pipe.bottomY
           );
         } else {
-          // Fallback: colored rectangles
+          // fallback
           ctx.fillStyle = pipe.color;
           ctx.fillRect(x, 0, PIPE_WIDTH, pipe.topHeight);
           ctx.fillRect(x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
@@ -327,19 +328,16 @@
     }
 
     function drawEagle() {
-      if (gameState === "over" && explosion) {
-        // explosion already drawn separately; do not draw eagle body again
-        return;
-      }
+      // During explosion after game over, hide eagle body
+      if (gameState === "over" && explosion) return;
 
       const x = eagle.x;
       const y = eagle.y;
       const r = eagle.radius;
 
-      // Rotation based on velocity for more realistic feel
       const angle = Math.max(Math.min(eagle.velocity / 8, 0.5), -0.8);
-      const w = r * 2.8; // bigger width
-      const h = r * 2.4; // bigger height
+      const w = r * 2.8;
+      const h = r * 2.4;
 
       if (eagleImg.complete && eagleImg.naturalWidth) {
         ctx.save();
@@ -348,28 +346,24 @@
         ctx.drawImage(eagleImg, -w / 2, -h / 2, w, h);
         ctx.restore();
       } else {
-        // Fallback: simple drawn eagle (old style)
+        // Fallback simple eagle
         ctx.save();
 
-        // Body
         ctx.fillStyle = "#78350f";
         ctx.beginPath();
         ctx.ellipse(x, y, r * 1.1, r * 0.9, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Head
         ctx.fillStyle = "#f9fafb";
         ctx.beginPath();
         ctx.arc(x + r * 0.6, y - r * 0.3, r * 0.7, 0, Math.PI * 2);
         ctx.fill();
 
-        // Eye
         ctx.fillStyle = "#0f172a";
         ctx.beginPath();
         ctx.arc(x + r * 0.9, y - r * 0.45, r * 0.15, 0, Math.PI * 2);
         ctx.fill();
 
-        // Beak
         ctx.fillStyle = "#facc15";
         ctx.beginPath();
         ctx.moveTo(x + r * 1.1, y - r * 0.1);
@@ -401,18 +395,15 @@
     }
 
     function drawUI() {
-      // Score
       ctx.fillStyle = "#e5e7eb";
       ctx.font = "26px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(String(score), canvas.width / 2, 52);
 
-      // Best score
       ctx.font = "14px system-ui, sans-serif";
       ctx.fillStyle = "#9ca3af";
       ctx.fillText(`Best: ${bestScore}`, canvas.width / 2, 74);
 
-      // Owner name
       ctx.textAlign = "right";
       ctx.font = "14px system-ui, sans-serif";
       ctx.fillStyle = "#e5e7eb";
@@ -428,7 +419,7 @@
         ctx.font = "14px system-ui, sans-serif";
         ctx.fillStyle = "#cbd5f5";
         ctx.fillText(
-          "Realistic eagle & thick pillars – eagle ke actual touch pe hi blast.",
+          "Realistic eagle & thicker pillars – eagle ke actual touch pe hi blast.",
           canvas.width / 2,
           canvas.height / 2 + 16
         );
@@ -461,7 +452,7 @@
       drawUI();
     }
 
-    function loop(timestamp) {
+    function loop() {
       update();
       draw();
       requestAnimationFrame(loop);
