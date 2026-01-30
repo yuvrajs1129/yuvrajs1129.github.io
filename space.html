@@ -82,10 +82,6 @@
       box-shadow: 0 6px 18px rgba(0,0,0,0.8);
     }
 
-    @media (min-width: 900px) {
-      /* Desktop pe bhi button rahega (PC user ignore kar sakte hain) */
-    }
-
     #footerName {
       margin-top: 10px;
       font-size: 13px;
@@ -121,7 +117,7 @@
     // ===== SOUNDS =====
     const engineSound    = new Audio("engine.mp3");
     const explosionSound = new Audio("explosion.mp3");
-    const laserSound     = new Audio("laser.mp3"); // NEW
+    const laserSound     = new Audio("laser.mp3"); // laser fire sound
 
     engineSound.loop      = true;
     engineSound.volume    = 0.5;
@@ -456,7 +452,6 @@
     }
 
     function checkBulletCollisions() {
-      // bullets vs enemies
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         for (let j = enemies.length - 1; j >= 0; j--) {
@@ -465,13 +460,12 @@
           const dy = e.y - b.y;
           const dist = Math.hypot(dx, dy);
           if (dist < e.radius) {
-            // enemy destroyed by laser
             enemies.splice(j, 1);
             bullets.splice(i, 1);
-            triggerExplosionAt(e.x, e.y); // rock blast sound + effect
+            triggerExplosionAt(e.x, e.y); // rock blast
             score += 8;
             if (score > bestScore) bestScore = score;
-            return; // ek frame me ek hi handle kar lete hain
+            return;
           }
         }
       }
@@ -480,7 +474,7 @@
     // ===== SCORE =====
     function updateScore(dt) {
       if (gameState === "running") {
-        score += dt * 10; // 10 points per second
+        score += dt * 10;
         if (score > bestScore) bestScore = score;
       }
     }
@@ -524,8 +518,7 @@
 
     // ===== MAIN UPDATE (TIME + HIGHER DIFFICULTY) =====
     function update(dt) {
-      // Difficulty: badhte score ke sath badhegi
-      let difficulty = 1 + score / 150; // pehle 200 tha
+      let difficulty = 1 + score / 150;
       if (difficulty > 4) difficulty = 4;
 
       updateStars(dt);
@@ -680,6 +673,33 @@
       return clientY - rect.top;
     }
 
+    // Touch controls for ship (canvas only)
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.target !== canvas) return; // ignore touches that start on FIRE button
+      e.preventDefault();
+      unlockAudio();
+      const y = canvasYFromEvent(e);
+      pointerActive = true;
+      pointerOffsetY = y - ship.y;
+
+      if (gameState === "ready") startGame();
+      else if (gameState === "over") resetGame();
+    }, { passive: false });
+
+    canvas.addEventListener("touchmove", (e) => {
+      if (e.target !== canvas) return;
+      e.preventDefault();
+      if (!pointerActive) return;
+      const y = canvasYFromEvent(e);
+      ship.y = y - pointerOffsetY;
+    }, { passive: false });
+
+    canvas.addEventListener("touchend", (e) => {
+      if (e.target !== canvas) return;
+      pointerActive = false;
+    });
+
+    // Mouse drag (optional, PC)
     canvas.addEventListener("mousedown", (e) => {
       unlockAudio();
       pointerActive = true;
@@ -697,33 +717,17 @@
       pointerActive = false;
     });
 
-    canvas.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      unlockAudio();
-      const y = canvasYFromEvent(e);
-      pointerActive = true;
-      pointerOffsetY = y - ship.y;
-
-      if (gameState === "ready") startGame();
-      else if (gameState === "over") resetGame();
-    }, { passive: false });
-
-    canvas.addEventListener("touchmove", (e) => {
-      e.preventDefault();
-      if (!pointerActive) return;
-      const y = canvasYFromEvent(e);
-      ship.y = y - pointerOffsetY;
-    }, { passive: false });
-
-    canvas.addEventListener("touchend", () => {
-      pointerActive = false;
-    });
-
-    // Mobile FIRE button
+    // Mobile FIRE button – support touch + click
     fireButton.addEventListener("click", (e) => {
       e.stopPropagation();
       handleFire();
     });
+
+    fireButton.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      handleFire();
+    }, { passive: false });
 
     // ===== START =====
     initStars();
