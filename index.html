@@ -5,6 +5,10 @@
   <title>Games made by Yuvraj – Premium Arcade</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- PWA manifest + theme color -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#020617">
+
   <meta name="description" content="Play premium browser games made by Yuvraj – Eagle Flight, Neon Space Runner and more. Free HTML5 games for phone and PC.">
 
   <style>
@@ -704,8 +708,17 @@
 
       if (btnOpenMain) {
         btnOpenMain.addEventListener("click", () => {
-          // Simple refresh of homepage
           window.location.href = "/";
+        });
+      }
+
+      // ===== SERVICE WORKER REGISTRATION (PWA) =====
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/service-worker.js")
+            .catch((err) => {
+              console.log("Service worker registration failed:", err);
+            });
         });
       }
     });
