@@ -106,7 +106,7 @@
     const GRAVITY = 0.35;
     const FLAP_STRENGTH = -7;
     const PIPE_GAP = 160;
-    const PIPE_WIDTH = 70;
+    const PIPE_WIDTH = 90;   // THICKER PILLARS
     const PIPE_SPEED = 2.4;
     const PIPE_INTERVAL = 95;  // frames
 
@@ -119,7 +119,7 @@
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
-      radius: 18,
+      radius: 22,  // BIGGER EAGLE
       velocity: 0
     };
 
@@ -287,8 +287,8 @@
 
       // Rotation based on velocity for more realistic feel
       const angle = Math.max(Math.min(eagle.velocity / 8, 0.5), -0.8);
-      const w = r * 2.4;
-      const h = r * 2.0;
+      const w = r * 2.8; // bigger width
+      const h = r * 2.4; // bigger height
 
       if (eagleImg.complete && eagleImg.naturalWidth) {
         ctx.save();
@@ -359,7 +359,7 @@
         ctx.font = "14px system-ui, sans-serif";
         ctx.fillStyle = "#cbd5f5";
         ctx.fillText(
-          "Realistic eagle & pillars – try to fly through the gaps!",
+          "Realistic eagle & thicker pillars – fly carefully!",
           canvas.width / 2,
           canvas.height / 2 + 16
         );
