@@ -77,6 +77,37 @@
 
     const OWNER_NAME = "Yuvraj";
 
+    // ===== SOUNDS =====
+    const engineSound    = new Audio("engine.mp3");
+    const explosionSound = new Audio("explosion.mp3");
+
+    engineSound.loop   = true;
+    engineSound.volume = 0.5;
+    explosionSound.volume = 0.9;
+
+    function playOneShot(sound) {
+      if (!sound) return;
+      try {
+        sound.currentTime = 0;
+        sound.play();
+      } catch (e) {}
+    }
+
+    function startEngine() {
+      if (!engineSound) return;
+      try {
+        engineSound.currentTime = 0;
+        engineSound.play();
+      } catch (e) {}
+    }
+
+    function stopEngine() {
+      if (!engineSound) return;
+      try {
+        engineSound.pause();
+      } catch (e) {}
+    }
+
     // ===== GAME STATE =====
     let gameState = "ready"; // "ready", "running", "over"
     let score = 0;
@@ -86,7 +117,8 @@
       x: canvas.width * 0.2,
       y: canvas.height / 2,
       radius: 18,
-      speed: 280 // pixels per second
+      speed: 280, // px/s
+      alive: true
     };
 
     const stars = [];
@@ -96,6 +128,9 @@
     const ENEMY_INTERVAL_MIN = 0.8; // seconds
     const ENEMY_INTERVAL_MAX = 1.5;
     let lastTime = null;
+
+    // Explosion state
+    let explosion = null;
 
     // Input flags
     let moveUp = false;
@@ -137,11 +172,12 @@
     }
 
     // ===== ENEMIES (ASTEROIDS) =====
-    function spawnEnemy() {
+    function spawnEnemy(difficulty = 1) {
       const margin = 40;
       const y = margin + Math.random() * (canvas.height - margin * 2);
       const radius = 16 + Math.random() * 18;
-      const speed = 140 + Math.random() * 100;
+      const baseSpeed = 140 + Math.random() * 100;
+      const speed = baseSpeed * difficulty; // difficulty se speed badao
       const wobbleSpeed = 1 + Math.random() * 1.5;
       const wobbleAmount = 8 + Math.random() * 8;
 
@@ -207,6 +243,8 @@
 
     // ===== PLAYER SHIP =====
     function updateShip(dt) {
+      if (!ship.alive) return;
+
       if (moveUp) {
         ship.y -= ship.speed * dt;
       }
@@ -221,6 +259,8 @@
     }
 
     function drawShip() {
+      if (!ship.alive) return;
+
       ctx.save();
       ctx.translate(ship.x, ship.y);
 
@@ -265,8 +305,48 @@
       ctx.restore();
     }
 
+    // ===== EXPLOSION =====
+    function triggerExplosion() {
+      explosion = {
+        x: ship.x,
+        y: ship.y,
+        radius: 0,
+        maxRadius: 70,
+        alpha: 1
+      };
+      playOneShot(explosionSound);
+    }
+
+    function updateExplosion(dt) {
+      if (!explosion) return;
+      explosion.radius += 260 * dt;
+      explosion.alpha -= 1.6 * dt;
+      if (explosion.alpha <= 0) {
+        explosion = null;
+      }
+    }
+
+    function drawExplosion() {
+      if (!explosion) return;
+
+      ctx.save();
+      ctx.translate(explosion.x, explosion.y);
+      const r = explosion.radius;
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      g.addColorStop(0, `rgba(248, 250, 252, ${explosion.alpha})`);
+      g.addColorStop(0.3, `rgba(252, 211, 77, ${explosion.alpha})`);
+      g.addColorStop(0.7, `rgba(248, 113, 113, ${explosion.alpha * 0.9})`);
+      g.addColorStop(1, `rgba(15, 23, 42, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     // ===== COLLISION =====
     function checkCollisions() {
+      if (!ship.alive) return;
       for (const e of enemies) {
         const dx = e.x - ship.x;
         const dy = e.y - ship.y;
@@ -280,7 +360,6 @@
 
     // ===== SCORE =====
     function updateScore(dt) {
-      // Score based on time survived
       if (gameState === "running") {
         score += dt * 10; // 10 points per second
         if (score > bestScore) bestScore = score;
@@ -292,52 +371,63 @@
       gameState = "ready";
       score = 0;
       ship.y = canvas.height / 2;
+      ship.alive = true;
       enemies.length = 0;
       enemyTimer = 0;
+      explosion = null;
+      stopEngine();
       lastTime = null;
     }
 
     function startGame() {
       gameState = "running";
       score = 0;
+      ship.alive = true;
       enemies.length = 0;
       enemyTimer = 0;
+      explosion = null;
+      startEngine();
       lastTime = null;
     }
 
     function gameOver() {
       if (gameState !== "over") {
         gameState = "over";
-        // yahan chahe to future me hit sound add kar sakte hain
+        ship.alive = false;
+        stopEngine();
+        triggerExplosion();
       }
     }
 
-    // ===== MAIN UPDATE (TIME-BASED) =====
+    // ===== MAIN UPDATE (TIME + DIFFICULTY) =====
     function update(dt) {
+      // Difficulty based on score: dheere-dheere badhta hai
+      let difficulty = 1 + score / 200; // har 20 sec (approx) par +1
+      if (difficulty > 3) difficulty = 3; // max 3x
+
+      updateStars(dt);
+      updateExplosion(dt);
+
       if (gameState === "running") {
-        updateStars(dt);
         updateShip(dt);
 
+        // Enemy spawn – interval bhi difficulty se kam hota jayega
         enemyTimer -= dt;
         if (enemyTimer <= 0) {
-          spawnEnemy();
-          enemyTimer =
-            ENEMY_INTERVAL_MIN +
-            Math.random() * (ENEMY_INTERVAL_MAX - ENEMY_INTERVAL_MIN);
+          spawnEnemy(difficulty);
+          const min = ENEMY_INTERVAL_MIN / difficulty;
+          const max = ENEMY_INTERVAL_MAX / difficulty;
+          enemyTimer = min + Math.random() * (max - min);
         }
 
         updateEnemies(dt);
         checkCollisions();
         updateScore(dt);
-      } else {
-        // Even in ready/over, stars animate for nice background
-        updateStars(dt);
       }
     }
 
     // ===== DRAW =====
     function drawBackground() {
-      // subtle extra glow trail
       const g = ctx.createLinearGradient(0, 0, canvas.width, 0);
       g.addColorStop(0, "rgba(15,23,42,0.0)");
       g.addColorStop(0.4, "rgba(30,64,175,0.35)");
@@ -399,23 +489,23 @@
     }
 
     function draw() {
-      // Clear base
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       drawBackground();
       drawStars();
       drawEnemies();
       drawShip();
+      drawExplosion();
       drawUI();
     }
 
-    // ===== MAIN LOOP (time-based) =====
+    // ===== MAIN LOOP =====
     function loop(timestamp) {
       if (!lastTime) lastTime = timestamp;
       let dt = (timestamp - lastTime) / 1000; // seconds
       lastTime = timestamp;
 
-      // Kabhi-kabhi tab change se dt bohot bada ho jata hai, usko limit kar dete hain
+      // Kabhi-kabhi tab switch se dt bohot bada ho jata hai, limit:
       if (dt > 0.05) dt = 0.05;
 
       update(dt);
