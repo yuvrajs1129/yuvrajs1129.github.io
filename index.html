@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Eagle Flight – Game by Yuvraj</title>
+  <title>Games made by Yuvraj</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="description" content="Play Eagle Flight, a flappy-style browser game created by Yuvraj. Control a flying eagle, avoid glowing pillars, and get the highest score.">
+  <meta name="description" content="Play free browser games made by Yuvraj. Eagle Flight and more HTML5 games, no download needed.">
 
   <style>
     * {
@@ -15,42 +15,85 @@
     body {
       margin: 0;
       padding: 16px;
-      background: #020617;
+      background: radial-gradient(circle at top, #0b1120 0, #020617 55%, #000 100%);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #e5e7eb;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 24px;
+      margin: 8px 0 4px;
+      font-size: 26px;
       text-align: center;
       color: #f97316;
-      text-shadow: 0 0 10px rgba(249, 115, 22, 0.6);
+      text-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
     }
 
     #subtitle {
       font-size: 14px;
       color: #9ca3af;
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 18px;
     }
 
-    canvas {
-      background: linear-gradient(180deg, #0f172a, #1e293b);
-      border-radius: 12px;
-      border: 2px solid #0f172a;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-      max-width: 480px;
+    #gamesGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
       width: 100%;
-      height: auto;
-      display: block;
+      max-width: 600px;
+    }
+
+    .game-card {
+      background: linear-gradient(145deg, #020617, #020617);
+      border-radius: 14px;
+      border: 1px solid #1f2937;
+      padding: 14px 10px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.7);
+      border-color: #38bdf8;
+    }
+
+    .game-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 30% 20%, #fefce8, #facc15 40%, #b45309 100%);
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.7);
+      font-size: 32px;
+    }
+
+    .game-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #e5e7eb;
+    }
+
+    .game-meta {
+      font-size: 12px;
+      color: #9ca3af;
     }
 
     #footerName {
-      margin-top: 10px;
+      margin-top: auto;
+      padding-top: 16px;
       font-size: 13px;
       color: #64748b;
       text-align: center;
@@ -58,372 +101,34 @@
   </style>
 </head>
 <body>
-  <h1>Eagle Flight – by Yuvraj</h1>
+  <h1>Games made by Yuvraj</h1>
   <div id="subtitle">
-    Tap / Click / Space / ↑ dabao aur eagle ko pillars ke beech se udao.
+    Niche diye gaye icons par click karke apne favourite games khelo.
   </div>
 
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="gamesGrid">
+    <!-- Eagle Flight game card -->
+    <a class="game-card" href="eagle.html">
+      <div class="game-icon">
+        🦅
+      </div>
+      <div class="game-title">Eagle Flight</div>
+      <div class="game-meta">
+        Flappy-style arcade game · Tap to fly
+      </div>
+    </a>
+
+    <!-- Future games yahan add kar sakte ho:
+    <a class="game-card" href="game2.html">
+      <div class="game-icon">🍬</div>
+      <div class="game-title">Candy Match</div>
+      <div class="game-meta">Match-3 puzzle game</div>
+    </a>
+    -->
+  </div>
 
   <div id="footerName">
-    Game owner: <strong>Yuvraj</strong>
+    Website & games created by <strong>Yuvraj</strong>
   </div>
-
-  <script>
-    // ===== BASIC SETUP =====
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-
-    const OWNER_NAME = "Yuvraj";
-
-    // ===== SOUNDS =====
-    // Ye files repo ke root me honi chahiye:
-    // flap.mp3  --> flap ke time
-    // score.mp3 --> point milne par
-    // hit.mp3   --> crash / game over
-    const flapSound  = new Audio("flap.mp3");
-    const scoreSound = new Audio("score.mp3");
-    const hitSound   = new Audio("hit.mp3");
-
-    flapSound.volume  = 0.7;
-    scoreSound.volume = 0.7;
-    hitSound.volume   = 0.8;
-
-    function playSound(sound) {
-      if (!sound) return;
-      try {
-        sound.currentTime = 0;
-        sound.play();
-      } catch (e) {
-        // iOS agar block kare to error ignore
-      }
-    }
-
-    // ===== GAME CONSTANTS (per-frame baseline at 60 FPS) =====
-    const GRAVITY       = 0.35;  // pehle bhi itna hi tha
-    const FLAP_STRENGTH = -7;
-    const PIPE_GAP      = 160;
-    const PIPE_WIDTH    = 70;
-    const PIPE_SPEED    = 2.4;
-    const PIPE_INTERVAL = 95;    // ~95 frames at 60 FPS (~1.58s)
-
-    // ===== GAME STATE =====
-    let gameState = "ready";   // "ready", "running", "over"
-    let score = 0;
-    let bestScore = 0;
-
-    const eagle = {
-      x: canvas.width * 0.28,
-      y: canvas.height / 2,
-      radius: 18,
-      velocity: 0,    // px per "frame" baseline
-      wingTime: 0
-    };
-
-    let pipes = [];      // { x, topHeight, bottomY, color, scored }
-    let pipeTimer = 0;   // "frames" equivalent (time-based)
-    let frameCounter = 0; // sirf internal counting (optional)
-
-    // Background gradient ek hi baar banayenge
-    let backgroundGradient = null;
-    function initBackgroundGradient() {
-      backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      backgroundGradient.addColorStop(0, "#0f172a");
-      backgroundGradient.addColorStop(0.5, "#0b3b5c");
-      backgroundGradient.addColorStop(1, "#020617");
-    }
-
-    // ===== GAME FUNCTIONS =====
-    function resetGame() {
-      score = 0;
-      eagle.y = canvas.height / 2;
-      eagle.velocity = 0;
-      eagle.wingTime = 0;
-      pipes = [];
-      pipeTimer = 0;
-      frameCounter = 0;
-      gameState = "ready";
-    }
-
-    function startGame() {
-      score = 0;
-      eagle.y = canvas.height / 2;
-      eagle.velocity = 0;
-      eagle.wingTime = 0;
-      pipes = [];
-      pipeTimer = 0;
-      frameCounter = 0;
-      gameState = "running";
-    }
-
-    function flap() {
-      if (gameState === "ready") {
-        startGame();
-        eagle.velocity = FLAP_STRENGTH * 1; // dt factor 1
-        eagle.wingTime = 0;
-        playSound(flapSound);
-      } else if (gameState === "running") {
-        eagle.velocity = FLAP_STRENGTH * 1;
-        eagle.wingTime = 0;
-        playSound(flapSound);
-      } else if (gameState === "over") {
-        resetGame();
-      }
-    }
-
-    function createPipe() {
-      const minTop = 40;
-      const maxTop = canvas.height - PIPE_GAP - 80;
-      const topHeight = Math.random() * (maxTop - minTop) + minTop;
-      const bottomY = topHeight + PIPE_GAP;
-
-      const hue = 180 + Math.random() * 120; // 180–300
-      const color = `hsl(${hue}, 75%, 55%)`;
-
-      pipes.push({
-        x: canvas.width,
-        topHeight,
-        bottomY,
-        color,
-        scored: false
-      });
-    }
-
-    // dtFrames = kitne "60 FPS frames" ke barabar time hua
-    //  - 60 FPS pe dt ≈ 1
-    //  - 120 FPS pe dt ≈ 0.5
-    //  - 30 FPS pe dt ≈ 2
-    function update(dt) {
-      if (gameState !== "running") return;
-
-      frameCounter += dt;
-
-      // Eagle physics (frame-based constants ko dt se scale)
-      eagle.velocity += GRAVITY * dt;
-      eagle.y        += eagle.velocity * dt;
-      eagle.wingTime += 0.15 * dt;
-
-      // Pipes spawn timer: frame interval ke hisaab se
-      pipeTimer += dt;
-      if (pipeTimer >= PIPE_INTERVAL) {
-        createPipe();
-        pipeTimer -= PIPE_INTERVAL;
-      }
-
-      // Pipes move
-      pipes.forEach(pipe => {
-        pipe.x -= PIPE_SPEED * dt;
-      });
-
-      // Remove off-screen pipes
-      pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
-
-      // Top/bottom collision
-      if (eagle.y - eagle.radius <= 0 || eagle.y + eagle.radius >= canvas.height) {
-        gameOver();
-      }
-
-      // Pipes collision + scoring
-      pipes.forEach(pipe => {
-        // Horizontal overlap
-        if (
-          eagle.x + eagle.radius > pipe.x &&
-          eagle.x - eagle.radius < pipe.x + PIPE_WIDTH
-        ) {
-          // Vertical check
-          if (eagle.y - eagle.radius < pipe.topHeight ||
-              eagle.y + eagle.radius > pipe.bottomY) {
-            gameOver();
-          }
-        }
-
-        // Score point milne par
-        if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
-          pipe.scored = true;
-          score++;
-          playSound(scoreSound);
-          if (score > bestScore) bestScore = score;
-        }
-      });
-    }
-
-    function gameOver() {
-      if (gameState !== "over") {
-        gameState = "over";
-        playSound(hitSound);
-      }
-    }
-
-    // ===== DRAW =====
-    function drawBackground() {
-      if (!backgroundGradient) {
-        initBackgroundGradient();
-      }
-      ctx.fillStyle = backgroundGradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0, canvas.height - 6, canvas.width, 6);
-    }
-
-    function drawPipes() {
-      pipes.forEach(pipe => {
-        ctx.fillStyle = pipe.color;
-        ctx.shadowColor = pipe.color;
-        ctx.shadowBlur = 12;
-
-        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-        ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
-
-        ctx.shadowBlur = 0;
-      });
-    }
-
-    function drawEagle() {
-      const x = eagle.x;
-      const y = eagle.y;
-      const r = eagle.radius;
-
-      ctx.save();
-
-      // Body (brown oval)
-      ctx.fillStyle = "#78350f";
-      ctx.beginPath();
-      ctx.ellipse(x, y, r * 1.1, r * 0.9, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Wing (flapping)
-      const wingOffset = Math.sin(eagle.wingTime) * 6;
-      ctx.fillStyle = "#451a03";
-      ctx.beginPath();
-      ctx.ellipse(x - 6, y + wingOffset, r * 1.1, r * 0.6, -0.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Head (white)
-      ctx.fillStyle = "#f9fafb";
-      ctx.beginPath();
-      ctx.arc(x + r * 0.6, y - r * 0.3, r * 0.7, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eye (dark)
-      ctx.fillStyle = "#0f172a";
-      ctx.beginPath();
-      ctx.arc(x + r * 0.9, y - r * 0.45, r * 0.15, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Beak (yellow)
-      ctx.fillStyle = "#facc15";
-      ctx.beginPath();
-      ctx.moveTo(x + r * 1.1, y - r * 0.1);
-      ctx.lineTo(x + r * 1.7, y - r * 0.2);
-      ctx.lineTo(x + r * 1.7, y + r * 0.1);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    function drawUI() {
-      // Score
-      ctx.fillStyle = "#e5e7eb";
-      ctx.font = "26px system-ui, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(String(score), canvas.width / 2, 52);
-
-      // Best score
-      ctx.font = "14px system-ui, sans-serif";
-      ctx.fillStyle = "#9ca3af";
-      ctx.fillText(`Best: ${bestScore}`, canvas.width / 2, 74);
-
-      // Top‑right: owner name
-      ctx.textAlign = "right";
-      ctx.font = "14px system-ui, sans-serif";
-      ctx.fillStyle = "#e5e7eb";
-      ctx.fillText(`Game by ${OWNER_NAME}`, canvas.width - 10, 24);
-
-      ctx.textAlign = "center";
-
-      if (gameState === "ready") {
-        ctx.fillStyle = "#e5e7eb";
-        ctx.font = "22px system-ui, sans-serif";
-        ctx.fillText("Tap / Space to start", canvas.width / 2, canvas.height / 2 - 10);
-
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillStyle = "#cbd5f5";
-        ctx.fillText(
-          "Eagle ko pillars ke beech se udao.",
-          canvas.width / 2,
-          canvas.height / 2 + 16
-        );
-      }
-
-      if (gameState === "over") {
-        ctx.fillStyle = "#fecaca";
-        ctx.font = "28px system-ui, sans-serif";
-        ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 20);
-
-        ctx.font = "18px system-ui, sans-serif";
-        ctx.fillStyle = "#e5e7eb";
-        ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
-        ctx.fillText(`Best: ${bestScore}`, canvas.width / 2, canvas.height / 2 + 36);
-
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillStyle = "#cbd5f5";
-        ctx.fillText(
-          "Press Space / Tap to restart",
-          canvas.width / 2,
-          canvas.height / 2 + 64
-        );
-      }
-    }
-
-    function draw() {
-      drawBackground();
-      drawPipes();
-      drawEagle();
-      drawUI();
-    }
-
-    // ===== MAIN LOOP – time-based, 60Hz/120Hz dono ke liye =====
-    let lastTime = null;
-
-    function loop(timestamp) {
-      if (lastTime === null) lastTime = timestamp;
-      const deltaMs = timestamp - lastTime;
-      lastTime = timestamp;
-
-      // 60 FPS baseline -> ek frame ~16.67 ms
-      let dt = deltaMs / (1000 / 60); // kitne "frames" ke barabar time hua
-
-      // Agar tab background me gaya / lag spike aaya to dt ko clamp kar do
-      if (dt > 2) dt = 2;
-
-      update(dt);
-      draw();
-      requestAnimationFrame(loop);
-    }
-
-    // ===== INPUT HANDLERS =====
-    document.addEventListener("keydown", (e) => {
-      if (e.code === "Space" || e.code === "ArrowUp") {
-        e.preventDefault();
-        flap();
-      }
-    });
-
-    canvas.addEventListener("mousedown", () => {
-      flap();
-    });
-
-    canvas.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      flap();
-    }, { passive: false });
-
-    // ===== START GAME =====
-    resetGame();
-    initBackgroundGradient();
-    requestAnimationFrame(loop);
-  </script>
 </body>
 </html>
