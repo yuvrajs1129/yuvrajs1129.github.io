@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Candy Match – by Yuvraj</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="Neon Candy Match, an advanced match-3 puzzle game made by Yuvraj. Special candies, combos, glowing effects and satisfying cascades.">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000 100%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+      text-align: center;
+      color: #f97316;
+      text-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+    }
+
+    #subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    #topBar {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #cbd5f5;
+      margin-bottom: 6px;
+    }
+
+    #scorePanel span {
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    canvas {
+      background: radial-gradient(circle at top, #0b1120 0, #020617 60%, #020617 100%);
+      border-radius: 16px;
+      border: 2px solid #0f172a;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.85);
+      max-width: 480px;
+      width: 100%;
+      height: auto;
+      display: block;
+      touch-action: none;
+    }
+
+    #footerName {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Neon Candy Match – by Yuvraj</h1>
+  <div id="subtitle">
+    Swap 2 candies, make lines of 3+ to clear. 4+ matches give special candies with powerful effects.
+  </div>
+
+  <div id="topBar">
+    <div id="scorePanel">
+      Score: <span id="scoreValue">0</span> · Best: <span id="bestValue">0</span>
+    </div>
+    <div id="ownerText">
+      Game by <strong>Yuvraj</strong>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas" width="480" height="640"></canvas>
+
+  <div id="footerName">
+    Match-3 puzzle game created by <strong>Yuvraj</strong>
+  </div>
+
+  <script>
+    // ===== BASIC SETUP =====
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreSpan = document.getElementById("scoreValue");
+    const bestSpan = document.getElementById("bestValue");
+
+    const ROWS = 8;
+    const COLS = 8;
+    const TILE_SIZE = 56;
+    const BOARD_WIDTH = COLS * TILE_SIZE;
+    const BOARD_HEIGHT = ROWS * TILE_SIZE;
+    const BOARD_OFFSET_X = (canvas.width - BOARD_WIDTH) / 2;
+    const BOARD_OFFSET_Y = 80;
+
+    // Candy types & styles
+    const candyStyles = [
+      { base: "#f97316", glow: "#fed7aa", shape: "circle" },   // orange
+      { base: "#22c55e", glow: "#bbf7d0", shape: "square" },   // green
+      { base: "#38bdf8", glow: "#e0f2fe", shape: "diamond" },  // blue
+      { base: "#a855f7", glow: "#e9d5ff", shape: "pill"   },   // purple
+      { base: "#e11d48", glow: "#fee2e2", shape: "hex"    },   // red
+      { base: "#facc15", glow: "#fef9c3", shape: "triangle" }  // yellow
+    ];
+    const CANDY_TYPES = candyStyles.length;
+
+    // Special types: null, 'row', 'col', 'bomb'
+    const SPECIAL_NONE = null;
+    const SPECIAL_ROW  = "row";
+    const SPECIAL_COL  = "col";
+    const SPECIAL_BOMB = "bomb";
+
+    // Sounds (optional – game works even if files missing)
+    let swapSound = null, matchSound = null, specialSound = null;
+    try {
+      swapSound   = new Audio("c_swap.mp3");
+      matchSound  = new Audio("c_match.mp3");
+      specialSound= new Audio("c_special.mp3");
+      [swapSound, matchSound, specialSound].forEach(s => { if (s) s.volume = 0.7; });
+    } catch (e) {}
+
+    function playSoundSafe(snd) {
+      if (!snd) return;
+      try {
+        snd.currentTime = 0;
+        snd.play();
+      } catch (e) {}
+    }
+
+    // Board: [row][col] => { type: 0..CANDY_TYPES-1, special: null|'row'|'col'|'bomb' }
+    let board = [];
+    let score = 0;
+    let bestScore = 0;
+
+    // Selection & state
+    let selectedCell = null; // { row, col } or null
+    let isProcessing = false;
+
+    // ===== UTILS =====
+    function randomType() {
+      return Math.floor(Math.random() * CANDY_TYPES);
+    }
+
+    function createCandy(type = null, special = SPECIAL_NONE) {
+      return {
+        type: type == null ? randomType() : type,
+        special
+      };
+    }
+
+    function inBounds(row, col) {
+      return row >= 0 && row < ROWS && col >= 0 && col < COLS;
+    }
+
+    function initBoard() {
+      board = new Array(ROWS);
+      for (let r = 0; r < ROWS; r++) {
+        board[r] = new Array(COLS).fill(null);
+      }
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          let cell;
+          let tries = 0;
+          do {
+            cell = createCandy();
+            board[r][c] = cell;
+            tries++;
+          } while (createsInitialMatch(r, c) && tries < 20);
+        }
+      }
+    }
+
+    function createsInitialMatch(row, col) {
+      const cell = board[row][col];
+      if (!cell) return false;
+      const type = cell.type;
+
+      // Check left
+      if (
+        col >= 2 &&
+        board[row][col - 1] &&
+        board[row][col - 2] &&
+        board[row][col - 1].type === type &&
+        board[row][col - 2].type === type
+      ) return true;
+
+      // Check up
+      if (
+        row >= 2 &&
+        board[row - 1][col] &&
+        board[row - 2][col] &&
+        board[row - 1][col].type === type &&
+        board[row - 2][col].type === type
+      ) return true;
+
+      return false;
+    }
+
+    // ===== MATCH FINDING & SPECIALS =====
+    // Returns:
+    //  {
+    //    matched: bool[][],
+    //    horiz: bool[][],
+    //    vert: bool[][],
+    //    specialMap: { "r,c": { row, col, kind: 'row'|'col'|'bomb' } },
+    //    found: bool,
+    //    count: total matched cells
+    //  }
+    function findMatches() {
+      const matched = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      const horiz = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      const vert  = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+
+      const specialMap = {}; // key "r,c" -> { row, col, kind }
+
+      let found = false;
+      let count = 0;
+
+      // Horizontal
+      for (let r = 0; r < ROWS; r++) {
+        let c = 0;
+        while (c < COLS) {
+          const cell = board[r][c];
+          if (!cell) { c++; continue; }
+          const type = cell.type;
+          let run = 1;
+          while (
+            c + run < COLS &&
+            board[r][c + run] &&
+            board[r][c + run].type === type
+          ) {
+            run++;
+          }
+          if (run >= 3) {
+            found = true;
+            for (let k = 0; k < run; k++) {
+              matched[r][c + k] = true;
+              horiz[r][c + k] = true;
+            }
+            count += run;
+            if (run >= 4) {
+              const specialCol = c + Math.floor(run / 2);
+              const key = r + "," + specialCol;
+              if (!specialMap[key]) {
+                specialMap[key] = { row: r, col: specialCol, kind: SPECIAL_ROW };
+              }
+            }
+          }
+          c += run;
+        }
+      }
+
+      // Vertical
+      for (let c = 0; c < COLS; c++) {
+        let r = 0;
+        while (r < ROWS) {
+          const cell = board[r][c];
+          if (!cell) { r++; continue; }
+          const type = cell.type;
+          let run = 1;
+          while (
+            r + run < ROWS &&
+            board[r + run][c] &&
+            board[r + run][c].type === type
+          ) {
+            run++;
+          }
+          if (run >= 3) {
+            found = true;
+            for (let k = 0; k < run; k++) {
+              matched[r + k][c] = true;
+              vert[r + k][c] = true;
+            }
+            count += run;
+            if (run >= 4) {
+              const specialRow = r + Math.floor(run / 2);
+              const key = specialRow + "," + c;
+              if (!specialMap[key]) {
+                specialMap[key] = { row: specialRow, col: c, kind: SPECIAL_COL };
+              }
+            }
+          }
+          r += run;
+        }
+      }
+
+      // L/T shape -> bomb (intersection of horiz & vert)
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (horiz[r][c] && vert[r][c]) {
+            const key = r + "," + c;
+            specialMap[key] = { row: r, col: c, kind: SPECIAL_BOMB };
+          }
+        }
+      }
+
+      return { matched, horiz, vert, specialMap, found, count };
+    }
+
+    function applySpecialEffects(matched, specialMap) {
+      const extraClear = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      let anySpecialTriggered = false;
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (matched[r][c]) {
+            const cell = board[r][c];
+            if (!cell || !cell.special) continue;
+            anySpecialTriggered = true;
+
+            if (cell.special === SPECIAL_ROW) {
+              for (let cc = 0; cc < COLS; cc++) {
+                extraClear[r][cc] = true;
+              }
+            } else if (cell.special === SPECIAL_COL) {
+              for (let rr = 0; rr < ROWS; rr++) {
+                extraClear[rr][c] = true;
+              }
+            } else if (cell.special === SPECIAL_BOMB) {
+              for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                  const rr = r + dr;
+                  const cc = c + dc;
+                  if (inBounds(rr, cc)) {
+                    extraClear[rr][cc] = true;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // OR extraClear into matched
+      let clearedExtra = 0;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (extraClear[r][c] && !matched[r][c]) {
+            matched[r][c] = true;
+            clearedExtra++;
+          }
+        }
+      }
+
+      return { matched, anySpecialTriggered, clearedExtra };
+    }
+
+    function removeMatchesAndDrop(matched, specialMap) {
+      // specialMap: positions where we should create specials instead of clearing
+      let cleared = 0;
+      let specialsCreated = 0;
+      const keepSpecialHere = {}; // key -> kind
+
+      // Prepare which cells become specials
+      for (const key in specialMap) {
+        const { row, col, kind } = specialMap[key];
+        if (matched[row][col]) {
+          keepSpecialHere[key] = kind;
+        }
+      }
+
+      // Clear matched cells, but keep special ones
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (!matched[r][c]) continue;
+          const key = r + "," + c;
+          if (keepSpecialHere[key]) {
+            // Convert this cell into a special candy (keep type)
+            const kind = keepSpecialHere[key];
+            const baseType = board[r][c] ? board[r][c].type : randomType();
+            board[r][c] = createCandy(baseType, kind);
+            specialsCreated++;
+          } else {
+            // Normal clear
+            board[r][c] = null;
+            cleared++;
+          }
+        }
+      }
+
+      // Gravity: drop candies down, fill from top
+      for (let c = 0; c < COLS; c++) {
+        let writeRow = ROWS - 1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r][c] != null) {
+            board[writeRow][c] = board[r][c];
+            if (writeRow !== r) {
+              board[r][c] = null;
+            }
+            writeRow--;
+          }
+        }
+        for (let r = writeRow; r >= 0; r--) {
+          board[r][c] = createCandy();
+        }
+      }
+
+      return { cleared, specialsCreated };
+    }
+
+    function resolveMatchesAndCascades() {
+      let totalCleared = 0;
+      let totalSpecials = 0;
+      let anyMatched = false;
+
+      while (true) {
+        const info = findMatches();
+        if (!info.found) break;
+
+        let { matched, specialMap } = info;
+        anyMatched = true;
+
+        // Apply extra effects for existing specials
+        const { matched: updatedMatched, anySpecialTriggered, clearedExtra } =
+          applySpecialEffects(matched, specialMap);
+        matched = updatedMatched;
+
+        const { cleared, specialsCreated } = removeMatchesAndDrop(matched, specialMap);
+        totalCleared += cleared + clearedExtra;
+        totalSpecials += specialsCreated;
+
+        // Scoring
+        let points = (cleared + clearedExtra) * 10;
+        points += specialsCreated * 30;
+        if (anySpecialTriggered) points += 20;
+        score += points;
+      }
+
+      scoreSpan.textContent = score;
+      if (score > bestScore) {
+        bestScore = score;
+        bestSpan.textContent = bestScore;
+      }
+
+      if (totalCleared > 0) {
+        if (totalSpecials > 0) {
+          playSoundSafe(specialSound);
+        } else {
+          playSoundSafe(matchSound);
+        }
+      }
+
+      isProcessing = false;
+      selectedCell = null;
+      draw();
+    }
+
+    // ===== INPUT =====
+    function getCellFromEvent(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      const bx = x - BOARD_OFFSET_X;
+      const by = y - BOARD_OFFSET_Y;
+      if (bx < 0 || by < 0 || bx >= BOARD_WIDTH || by >= BOARD_HEIGHT) {
+        return null;
+      }
+
+      const col = Math.floor(bx / TILE_SIZE);
+      const row = Math.floor(by / TILE_SIZE);
+      return { row, col };
+    }
+
+    function areAdjacent(a, b) {
+      const dr = Math.abs(a.row - b.row);
+      const dc = Math.abs(a.col - b.col);
+      return dr + dc === 1;
+    }
+
+    function swapCells(a, b) {
+      const tmp = board[a.row][a.col];
+      board[a.row][a.col] = board[b.row][b.col];
+      board[b.row][b.col] = tmp;
+    }
+
+    function handleCellClick(evt) {
+      if (isProcessing) return;
+      const cell = getCellFromEvent(evt);
+      if (!cell) return;
+
+      if (!selectedCell) {
+        selectedCell = cell;
+        draw();
+      } else {
+        if (cell.row === selectedCell.row && cell.col === selectedCell.col) {
+          selectedCell = null;
+          draw();
+          return;
+        }
+        if (!areAdjacent(selectedCell, cell)) {
+          selectedCell = cell;
+          draw();
+          return;
+        }
+
+        // Try swap
+        swapCells(selectedCell, cell);
+        const { found } = findMatches();
+        if (found) {
+          playSoundSafe(swapSound);
+          isProcessing = true;
+          draw();
+          // resolve
+          resolveMatchesAndCascades();
+        } else {
+          // invalid swap, revert
+          swapCells(selectedCell, cell);
+          selectedCell = null;
+          draw();
+        }
+      }
+    }
+
+    canvas.addEventListener("mousedown", handleCellClick);
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      handleCellClick(e);
+    }, { passive: false });
+
+    // ===== DRAWING =====
+    function drawRoundedRect(x, y, w, h, radius) {
+      const r = Math.min(radius, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawCandy(row, col, cell) {
+      if (!cell) return;
+      const style = candyStyles[cell.type];
+      const xCenter = BOARD_OFFSET_X + col * TILE_SIZE + TILE_SIZE / 2;
+      const yCenter = BOARD_OFFSET_Y + row * TILE_SIZE + TILE_SIZE / 2;
+      const size = TILE_SIZE * 0.35;
+
+      // Tile base
+      ctx.fillStyle = "rgba(15,23,42,0.9)";
+      drawRoundedRect(
+        xCenter - TILE_SIZE * 0.45,
+        yCenter - TILE_SIZE * 0.45,
+        TILE_SIZE * 0.9,
+        TILE_SIZE * 0.9,
+        10
+      );
+      ctx.fill();
+
+      ctx.save();
+      ctx.shadowColor = style.glow;
+      ctx.shadowBlur = 14;
+
+      // Candy shape
+      ctx.fillStyle = style.base;
+      ctx.strokeStyle = "rgba(15,23,42,0.5)";
+      ctx.lineWidth = 2;
+
+      switch (style.shape) {
+        case "circle":
+          ctx.beginPath();
+          ctx.arc(xCenter, yCenter, size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          break;
+        case "square":
+          drawRoundedRect(
+            xCenter - size,
+            yCenter - size,
+            size * 2,
+            size * 2,
+            10
+          );
+          ctx.fill();
+          ctx.stroke();
+          break;
+        case "diamond":
+          ctx.beginPath();
+          ctx.moveTo(xCenter, yCenter - size);
+          ctx.lineTo(xCenter + size, yCenter);
+          ctx.lineTo(xCenter, yCenter + size);
+          ctx.lineTo(xCenter - size, yCenter);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        case "triangle":
+          ctx.beginPath();
+          ctx.moveTo(xCenter, yCenter - size);
+          ctx.lineTo(xCenter + size, yCenter + size);
+          ctx.lineTo(xCenter - size, yCenter + size);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+        case "pill":
+          const w = size * 2.4;
+          const h = size * 1.3;
+          drawRoundedRect(
+            xCenter - w / 2,
+            yCenter - h / 2,
+            w,
+            h,
+            h / 2
+          );
+          ctx.fill();
+          ctx.stroke();
+          break;
+        case "hex":
+          const r = size;
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i - Math.PI / 6;
+            const xx = xCenter + r * Math.cos(angle);
+            const yy = yCenter + r * Math.sin(angle);
+            if (i === 0) ctx.moveTo(xx, yy);
+            else ctx.lineTo(xx, yy);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          break;
+      }
+
+      // Gloss highlight
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(xCenter - size / 3, yCenter - size / 3, size / 2.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      // Special overlays
+      if (cell.special === SPECIAL_ROW) {
+        ctx.strokeStyle = "rgba(248, 250, 252, 0.9)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(xCenter - size, yCenter);
+        ctx.lineTo(xCenter + size, yCenter);
+        ctx.stroke();
+      } else if (cell.special === SPECIAL_COL) {
+        ctx.strokeStyle = "rgba(248, 250, 252, 0.9)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(xCenter, yCenter - size);
+        ctx.lineTo(xCenter, yCenter + size);
+        ctx.stroke();
+      } else if (cell.special === SPECIAL_BOMB) {
+        ctx.fillStyle = "rgba(248, 250, 252, 0.95)";
+        ctx.beginPath();
+        ctx.arc(xCenter, yCenter, size * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = style.base;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xCenter - size * 0.3, yCenter);
+        ctx.lineTo(xCenter + size * 0.3, yCenter);
+        ctx.moveTo(xCenter, yCenter - size * 0.3);
+        ctx.lineTo(xCenter, yCenter + size * 0.3);
+        ctx.stroke();
+      }
+    }
+
+    function drawBoard() {
+      // Background
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Board area subtle border
+      ctx.strokeStyle = "#1f2937";
+      ctx.lineWidth = 2;
+      drawRoundedRect(
+        BOARD_OFFSET_X - 4,
+        BOARD_OFFSET_Y - 4,
+        BOARD_WIDTH + 8,
+        BOARD_HEIGHT + 8,
+        14
+      );
+      ctx.stroke();
+
+      // Cells + candies
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          drawCandy(r, c, board[r][c]);
+        }
+      }
+
+      // Grid lines (very soft)
+      ctx.strokeStyle = "rgba(15,23,42,0.7)";
+      ctx.lineWidth = 1;
+      for (let r = 0; r <= ROWS; r++) {
+        const y = BOARD_OFFSET_Y + r * TILE_SIZE + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(BOARD_OFFSET_X + 0.5, y);
+        ctx.lineTo(BOARD_OFFSET_X + BOARD_WIDTH - 0.5, y);
+        ctx.stroke();
+      }
+      for (let c = 0; c <= COLS; c++) {
+        const x = BOARD_OFFSET_X + c * TILE_SIZE + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, BOARD_OFFSET_Y + 0.5);
+        ctx.lineTo(x, BOARD_OFFSET_Y + BOARD_HEIGHT - 0.5);
+        ctx.stroke();
+      }
+
+      // Highlight selected
+      if (selectedCell) {
+        const { row, col } = selectedCell;
+        const x = BOARD_OFFSET_X + col * TILE_SIZE;
+        const y = BOARD_OFFSET_Y + row * TILE_SIZE;
+        ctx.strokeStyle = "#facc15";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x + 3, y + 3, TILE_SIZE - 6, TILE_SIZE - 6);
+      }
+
+      // Top text inside canvas (optional)
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "16px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(
+        "Make matches, create special candies, enjoy cascades!",
+        canvas.width / 2,
+        32
+      );
+    }
+
+    function draw() {
+      drawBoard();
+    }
+
+    // ===== START GAME =====
+    function startGame() {
+      score = 0;
+      scoreSpan.textContent = score;
+      bestSpan.textContent = bestScore;
+      selectedCell = null;
+      isProcessing = false;
+      initBoard();
+      draw();
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
