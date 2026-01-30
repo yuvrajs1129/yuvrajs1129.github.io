@@ -110,10 +110,10 @@
     // ===== CONSTANTS =====
     const GRAVITY       = 0.35;
     const FLAP_STRENGTH = -7;
-    const PIPE_GAP      = 190;
-    const PIPE_WIDTH    = 140;
+    const PIPE_GAP      = 190;    // bigger vertical gap
+    const PIPE_WIDTH    = 140;    // thick pillars
     const PIPE_SPEED    = 2.4;
-    const PIPE_INTERVAL = 95; // frames
+    const PIPE_INTERVAL = 95;     // frames
 
     // ===== STATE =====
     let gameState  = "ready";   // "ready", "running", "over"
@@ -130,19 +130,6 @@
 
     let pipes = [];      // { x, topHeight, bottomY, color, scored }
     let explosion = null; // { x, y, radius, alpha }
-
-    // ===== UTILS =====
-    function clamp(v, min, max) {
-      return Math.max(min, Math.min(max, v));
-    }
-
-    function circleRectCollision(cx, cy, r, rect) {
-      const closestX = clamp(cx, rect.left, rect.right);
-      const closestY = clamp(cy, rect.top,  rect.bottom);
-      const dx = cx - closestX;
-      const dy = cy - closestY;
-      return (dx * dx + dy * dy) <= r * r;
-    }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -208,8 +195,8 @@
 
     function updateExplosion() {
       if (!explosion) return;
-      explosion.radius += 6;      // per frame
-      explosion.alpha  -= 0.04;   // fade
+      explosion.radius += 6;
+      explosion.alpha  -= 0.04;
       if (explosion.alpha <= 0) {
         explosion = null;
       }
@@ -236,45 +223,37 @@
         // Remove off-screen
         pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-        // ===== COLLISION =====
-        // Circle hitbox (smaller than sprite)
-        const hitRadius = eagle.radius * 0.7; // smaller circle inside sprite
+        // ===== COLLISION CHECK (very forgiving, center-based) =====
+        const cx = eagle.x;
+        const cy = eagle.y;
 
-        // Ground collision only (no top collision)
-        const groundY = canvas.height; 
-        if (eagle.y + hitRadius >= groundY - 2) {
+        // Ground collision only
+        if (cy >= canvas.height - 4) {
           gameOver();
         }
 
-        // Pillars collision (circle vs rect)
         pipes.forEach(pipe => {
-          const rectTop = {
-            left:  pipe.x,
-            right: pipe.x + PIPE_WIDTH,
-            top:   0,
-            bottom: pipe.topHeight
-          };
-          const rectBottom = {
-            left:  pipe.x,
-            right: pipe.x + PIPE_WIDTH,
-            top:   pipe.bottomY,
-            bottom: canvas.height
-          };
+          const pipeLeft   = pipe.x;
+          const pipeRight  = pipe.x + PIPE_WIDTH;
+          const gapTop     = pipe.topHeight;
+          const gapBottom  = pipe.bottomY;
 
-          // Thoda lenient banane ke liye horizontal shrink
-          const shrink = 10;
-          rectTop.left   += shrink;
-          rectTop.right  -= shrink;
-          rectBottom.left += shrink;
-          rectBottom.right -= shrink;
+          // We check center X is deep inside pillar body, with margin
+          const horizontalCenterInside =
+            cx > pipeLeft + 10 && cx < pipeRight - 10;
 
-          if (circleRectCollision(eagle.x, eagle.y, hitRadius, rectTop) ||
-              circleRectCollision(eagle.x, eagle.y, hitRadius, rectBottom)) {
-            gameOver();
+          if (horizontalCenterInside) {
+            // Center should be inside the gap; use margin so touch looks real
+            const verticalInsideGap =
+              cy > gapTop + 10 && cy < gapBottom - 10;
+
+            if (!verticalInsideGap) {
+              gameOver();
+            }
           }
 
-          // Score when crossing
-          if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
+          // Score when just passed pillar
+          if (!pipe.scored && pipe.x + PIPE_WIDTH < cx) {
             pipe.scored = true;
             score++;
             playSound(scoreSound);
