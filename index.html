@@ -24,7 +24,7 @@
     }
 
     h1 {
-      margin: 0 0 6px;
+      margin: 0 0 8px;
       font-size: 24px;
       text-align: center;
       color: #f97316;
@@ -35,7 +35,7 @@
       font-size: 14px;
       color: #9ca3af;
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     canvas {
@@ -77,9 +77,9 @@
     const OWNER_NAME = "Yuvraj";
 
     // ===== SOUNDS =====
-    // Ye files repo ke root me honi chahiye:
+    // Ye dono file tumhare repo ke root me honi chahiye:
     // flap.mp3  --> flap ke time
-    // score.mp3 --> point milne par
+    // score.mp3 --> point milne pe
     const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
 
@@ -92,7 +92,7 @@
         sound.currentTime = 0;
         sound.play();
       } catch (e) {
-        // iOS agar kabhi block kare to error ignore
+        // ignore error agar browser block kare
       }
     }
 
@@ -110,6 +110,7 @@
     let bestScore = 0;
     let frameCount = 0;
 
+    // Eagle object
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
@@ -118,16 +119,8 @@
       wingTime: 0
     };
 
+    // Pillars (pipes)
     let pipes = []; // { x, topHeight, bottomY, color, scored }
-
-    // Background gradient ko ek hi baar banayenge (har frame nahi)
-    let backgroundGradient = null;
-    function initBackgroundGradient() {
-      backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      backgroundGradient.addColorStop(0, "#0f172a");
-      backgroundGradient.addColorStop(0.5, "#0b3b5c");
-      backgroundGradient.addColorStop(1, "#020617");
-    }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -225,11 +218,11 @@
           }
         }
 
-        // Score point milne par
+        // ===== YAHAN SCORE POINT MILTA HAI =====
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);
+          playSound(scoreSound);  // <-- point milne pe sound
           if (score > bestScore) bestScore = score;
         }
       });
@@ -241,10 +234,12 @@
 
     // ===== DRAW =====
     function drawBackground() {
-      if (!backgroundGradient) {
-        initBackgroundGradient();
-      }
-      ctx.fillStyle = backgroundGradient;
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#0f172a");
+      gradient.addColorStop(0.5, "#0b3b5c");
+      gradient.addColorStop(1, "#020617");
+
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#020617";
@@ -255,12 +250,12 @@
       pipes.forEach(pipe => {
         ctx.fillStyle = pipe.color;
         ctx.shadowColor = pipe.color;
-        ctx.shadowBlur = 12;  // GLOW wapas
+        ctx.shadowBlur = 12;
 
         ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
         ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
 
-        ctx.shadowBlur = 0;   // reset
+        ctx.shadowBlur = 0;
       });
     }
 
@@ -362,24 +357,15 @@
       }
     }
 
-    // ===== MAIN LOOP – FIXED 60 FPS engine =====
-    const FRAME_DURATION = 1000 / 60; // ~16.67 ms
-    let lastTime = 0;
-    let accumulator = 0;
+    function draw() {
+      drawBackground();
+      drawPipes();
+      drawEagle();
+      drawUI();
+    }
 
-    function loop(timestamp) {
-      if (!lastTime) lastTime = timestamp;
-      const delta = timestamp - lastTime;
-      lastTime = timestamp;
-
-      accumulator += delta;
-
-      // Logic 60 FPS pe run hoga, display 60/120 jo bhi ho
-      while (accumulator >= FRAME_DURATION) {
-        update();
-        accumulator -= FRAME_DURATION;
-      }
-
+    function loop() {
+      update();
       draw();
       requestAnimationFrame(loop);
     }
@@ -403,8 +389,7 @@
 
     // ===== START =====
     resetGame();
-    initBackgroundGradient();
-    requestAnimationFrame(loop);
+    loop();
   </script>
 </body>
 </html>
