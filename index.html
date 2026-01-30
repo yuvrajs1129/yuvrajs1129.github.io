@@ -24,7 +24,7 @@
     }
 
     h1 {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       font-size: 24px;
       text-align: center;
       color: #f97316;
@@ -35,7 +35,34 @@
       font-size: 14px;
       color: #9ca3af;
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
+    }
+
+    /* FPS menu */
+    #fpsMenu {
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #cbd5f5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fps-btn {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .fps-btn.active {
+      background: #22c55e;
+      border-color: #059669;
+      color: #020617;
+      font-weight: 600;
     }
 
     canvas {
@@ -63,6 +90,13 @@
     Tap / Click / Space / ↑ dabao aur eagle ko pillars ke beech se udao.
   </div>
 
+  <!-- FPS SWITCH MENU -->
+  <div id="fpsMenu">
+    FPS:
+    <button class="fps-btn active" data-fps="60">60 FPS (Recommended)</button>
+    <button class="fps-btn" data-fps="120">120 FPS</button>
+  </div>
+
   <canvas id="gameCanvas" width="400" height="600"></canvas>
 
   <div id="footerName">
@@ -76,10 +110,26 @@
 
     const OWNER_NAME = "Yuvraj";
 
+    // ===== FPS CONTROL =====
+    const fpsButtons = document.querySelectorAll(".fps-btn");
+    let targetFPS = 60;                 // default: 60 FPS
+    let frameDuration = 1000 / targetFPS;
+    let lastTime = 0;
+    let accumulator = 0;
+
+    fpsButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const newFPS = parseInt(btn.dataset.fps, 10);
+        targetFPS = newFPS;
+        frameDuration = 1000 / targetFPS;
+
+        fpsButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
     // ===== SOUNDS =====
-    // Ye dono file tumhare repo ke root me honi chahiye:
-    // flap.mp3  --> flap ke time
-    // score.mp3 --> point milne pe
+    // Ye file root me honi chahiye: flap.mp3, score.mp3
     const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
 
@@ -92,7 +142,7 @@
         sound.currentTime = 0;
         sound.play();
       } catch (e) {
-        // ignore error agar browser block kare
+        // agar koi error ho to ignore
       }
     }
 
@@ -110,7 +160,6 @@
     let bestScore = 0;
     let frameCount = 0;
 
-    // Eagle object
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
@@ -119,7 +168,6 @@
       wingTime: 0
     };
 
-    // Pillars (pipes)
     let pipes = []; // { x, topHeight, bottomY, color, scored }
 
     // ===== GAME FUNCTIONS =====
@@ -218,11 +266,11 @@
           }
         }
 
-        // ===== YAHAN SCORE POINT MILTA HAI =====
+        // SCORE POINT MILNE PAR
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);  // <-- point milne pe sound
+          playSound(scoreSound);  // yahan score wali sound
           if (score > bestScore) bestScore = score;
         }
       });
@@ -364,8 +412,20 @@
       drawUI();
     }
 
-    function loop() {
-      update();
+    // ===== MAIN LOOP WITH FPS CONTROL =====
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const delta = timestamp - lastTime;
+      lastTime = timestamp;
+
+      accumulator += delta;
+
+      // Fixed timestep: targetFPS (60 ya 120) par update chalega
+      while (accumulator >= frameDuration) {
+        update();
+        accumulator -= frameDuration;
+      }
+
       draw();
       requestAnimationFrame(loop);
     }
@@ -389,7 +449,7 @@
 
     // ===== START =====
     resetGame();
-    loop();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
