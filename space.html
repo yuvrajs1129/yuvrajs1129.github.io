@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Space Runner – by Yuvraj</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="Neon Space Runner, a high-graphics space dodge game made by Yuvraj. Fly your ship through glowing asteroids and survive as long as you can.">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000 100%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      text-align: center;
+      color: #38bdf8;
+      text-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+    }
+
+    #subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    canvas {
+      background: radial-gradient(circle at top, #0b1120 0, #020617 55%, #020617 100%);
+      border-radius: 16px;
+      border: 2px solid #0f172a;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.85);
+      max-width: 480px;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    #footerName {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Neon Space Runner – by Yuvraj</h1>
+  <div id="subtitle">
+    Arrows / W-S / Drag se ship ko up-down move karo. Glowing asteroids se bach ke udao.
+  </div>
+
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+  <div id="footerName">
+    Game owner: <strong>Yuvraj</strong>
+  </div>
+
+  <script>
+    // ===== BASIC SETUP =====
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const OWNER_NAME = "Yuvraj";
+
+    // ===== GAME STATE =====
+    let gameState = "ready"; // "ready", "running", "over"
+    let score = 0;
+    let bestScore = 0;
+
+    const ship = {
+      x: canvas.width * 0.2,
+      y: canvas.height / 2,
+      radius: 18,
+      speed: 280 // pixels per second
+    };
+
+    const stars = [];
+    const enemies = [];
+
+    let enemyTimer = 0;
+    const ENEMY_INTERVAL_MIN = 0.8; // seconds
+    const ENEMY_INTERVAL_MAX = 1.5;
+    let lastTime = null;
+
+    // Input flags
+    let moveUp = false;
+    let moveDown = false;
+    let pointerActive = false;
+    let pointerOffsetY = 0;
+
+    // ===== STARS (BACKGROUND) =====
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < 80; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2 + 0.5,
+          speed: 20 + Math.random() * 70,
+          alpha: 0.3 + Math.random() * 0.7
+        });
+      }
+    }
+
+    function updateStars(dt) {
+      for (const s of stars) {
+        s.x -= s.speed * dt;
+        if (s.x < -10) {
+          s.x = canvas.width + Math.random() * 40;
+          s.y = Math.random() * canvas.height;
+          s.speed = 20 + Math.random() * 70;
+          s.alpha = 0.3 + Math.random() * 0.7;
+        }
+      }
+    }
+
+    function drawStars() {
+      for (const s of stars) {
+        ctx.fillStyle = `rgba(148, 163, 184, ${s.alpha})`;
+        ctx.fillRect(s.x, s.y, s.size, s.size);
+      }
+    }
+
+    // ===== ENEMIES (ASTEROIDS) =====
+    function spawnEnemy() {
+      const margin = 40;
+      const y = margin + Math.random() * (canvas.height - margin * 2);
+      const radius = 16 + Math.random() * 18;
+      const speed = 140 + Math.random() * 100;
+      const wobbleSpeed = 1 + Math.random() * 1.5;
+      const wobbleAmount = 8 + Math.random() * 8;
+
+      enemies.push({
+        x: canvas.width + radius + 10,
+        y,
+        radius,
+        speed,
+        wobbleSpeed,
+        wobbleAmount,
+        wobblePhase: Math.random() * Math.PI * 2,
+        passed: false
+      });
+    }
+
+    function updateEnemies(dt) {
+      for (const e of enemies) {
+        e.x -= e.speed * dt;
+        e.wobblePhase += e.wobbleSpeed * dt;
+        e.y += Math.sin(e.wobblePhase) * e.wobbleAmount * dt;
+      }
+
+      // Remove off-screen
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].x < -enemies[i].radius * 2) {
+          enemies.splice(i, 1);
+        }
+      }
+    }
+
+    function drawEnemies() {
+      for (const e of enemies) {
+        // Glow
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.shadowColor = "#f97316";
+        ctx.shadowBlur = 20;
+
+        // Main asteroid
+        const gradient = ctx.createRadialGradient(0, 0, e.radius * 0.2, 0, 0, e.radius);
+        gradient.addColorStop(0, "#fed7aa");
+        gradient.addColorStop(0.4, "#fb923c");
+        gradient.addColorStop(1, "#7c2d12");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Crater-ish details
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = "#9a3412";
+        ctx.beginPath();
+        ctx.arc(-e.radius * 0.3, -e.radius * 0.2, e.radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(e.radius * 0.2, e.radius * 0.25, e.radius * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    // ===== PLAYER SHIP =====
+    function updateShip(dt) {
+      if (moveUp) {
+        ship.y -= ship.speed * dt;
+      }
+      if (moveDown) {
+        ship.y += ship.speed * dt;
+      }
+
+      // Clamp inside screen
+      const margin = 30;
+      if (ship.y < margin) ship.y = margin;
+      if (ship.y > canvas.height - margin) ship.y = canvas.height - margin;
+    }
+
+    function drawShip() {
+      ctx.save();
+      ctx.translate(ship.x, ship.y);
+
+      // Ship glow
+      ctx.shadowColor = "#38bdf8";
+      ctx.shadowBlur = 22;
+
+      // Body (triangle)
+      ctx.fillStyle = "#0ea5e9";
+      ctx.beginPath();
+      ctx.moveTo(-ship.radius * 0.8, -ship.radius);
+      ctx.lineTo(-ship.radius * 0.8, ship.radius);
+      ctx.lineTo(ship.radius * 1.3, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cockpit
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#e0f2fe";
+      ctx.beginPath();
+      ctx.arc(ship.radius * 0.2, -ship.radius * 0.3, ship.radius * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Engine flame
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = "#f97316";
+      const flameGradient = ctx.createLinearGradient(
+        -ship.radius * 1.4, 0,
+        -ship.radius * 0.5, 0
+      );
+      flameGradient.addColorStop(0, "rgba(248, 250, 252, 0.1)");
+      flameGradient.addColorStop(0.4, "rgba(251, 146, 60, 0.7)");
+      flameGradient.addColorStop(1, "rgba(248, 113, 113, 0)");
+      ctx.fillStyle = flameGradient;
+      ctx.beginPath();
+      ctx.moveTo(-ship.radius * 0.8, -ship.radius * 0.4);
+      ctx.lineTo(-ship.radius * 1.6, 0);
+      ctx.lineTo(-ship.radius * 0.8, ship.radius * 0.4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // ===== COLLISION =====
+    function checkCollisions() {
+      for (const e of enemies) {
+        const dx = e.x - ship.x;
+        const dy = e.y - ship.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < e.radius + ship.radius * 0.7) {
+          gameOver();
+          return;
+        }
+      }
+    }
+
+    // ===== SCORE =====
+    function updateScore(dt) {
+      // Score based on time survived
+      if (gameState === "running") {
+        score += dt * 10; // 10 points per second
+        if (score > bestScore) bestScore = score;
+      }
+    }
+
+    // ===== GAME CONTROL =====
+    function resetGame() {
+      gameState = "ready";
+      score = 0;
+      ship.y = canvas.height / 2;
+      enemies.length = 0;
+      enemyTimer = 0;
+      lastTime = null;
+    }
+
+    function startGame() {
+      gameState = "running";
+      score = 0;
+      enemies.length = 0;
+      enemyTimer = 0;
+      lastTime = null;
+    }
+
+    function gameOver() {
+      if (gameState !== "over") {
+        gameState = "over";
+        // yahan chahe to future me hit sound add kar sakte hain
+      }
+    }
+
+    // ===== MAIN UPDATE (TIME-BASED) =====
+    function update(dt) {
+      if (gameState === "running") {
+        updateStars(dt);
+        updateShip(dt);
+
+        enemyTimer -= dt;
+        if (enemyTimer <= 0) {
+          spawnEnemy();
+          enemyTimer =
+            ENEMY_INTERVAL_MIN +
+            Math.random() * (ENEMY_INTERVAL_MAX - ENEMY_INTERVAL_MIN);
+        }
+
+        updateEnemies(dt);
+        checkCollisions();
+        updateScore(dt);
+      } else {
+        // Even in ready/over, stars animate for nice background
+        updateStars(dt);
+      }
+    }
+
+    // ===== DRAW =====
+    function drawBackground() {
+      // subtle extra glow trail
+      const g = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      g.addColorStop(0, "rgba(15,23,42,0.0)");
+      g.addColorStop(0.4, "rgba(30,64,175,0.35)");
+      g.addColorStop(1, "rgba(15,23,42,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawUI() {
+      // Score
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "20px system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`Score: ${Math.floor(score)}`, 14, 26);
+
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillText(`Best: ${Math.floor(bestScore)}`, 14, 44);
+
+      // Owner
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#e5e7eb";
+      ctx.fillText(`Game by ${OWNER_NAME}`, canvas.width - 10, 24);
+
+      ctx.textAlign = "center";
+
+      if (gameState === "ready") {
+        ctx.fillStyle = "#e5e7eb";
+        ctx.font = "22px system-ui, sans-serif";
+        ctx.fillText("Tap / Click / Space to Start", canvas.width / 2, canvas.height / 2 - 10);
+
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillStyle = "#cbd5f5";
+        ctx.fillText(
+          "Move up-down and dodge the asteroids.",
+          canvas.width / 2,
+          canvas.height / 2 + 16
+        );
+      }
+
+      if (gameState === "over") {
+        ctx.fillStyle = "#fee2e2";
+        ctx.font = "26px system-ui, sans-serif";
+        ctx.fillText("Crashed!", canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.font = "16px system-ui, sans-serif";
+        ctx.fillStyle = "#e5e7eb";
+        ctx.fillText(`Score: ${Math.floor(score)}`, canvas.width / 2, canvas.height / 2 + 8);
+        ctx.fillText(`Best: ${Math.floor(bestScore)}`, canvas.width / 2, canvas.height / 2 + 32);
+
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillStyle = "#cbd5f5";
+        ctx.fillText(
+          "Press Space / Tap to Play Again",
+          canvas.width / 2,
+          canvas.height / 2 + 60
+        );
+      }
+    }
+
+    function draw() {
+      // Clear base
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawBackground();
+      drawStars();
+      drawEnemies();
+      drawShip();
+      drawUI();
+    }
+
+    // ===== MAIN LOOP (time-based) =====
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      let dt = (timestamp - lastTime) / 1000; // seconds
+      lastTime = timestamp;
+
+      // Kabhi-kabhi tab change se dt bohot bada ho jata hai, usko limit kar dete hain
+      if (dt > 0.05) dt = 0.05;
+
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // ===== INPUT HANDLERS =====
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "ArrowUp" || e.key === "w" || e.key === "W") {
+        moveUp = true;
+      }
+      if (e.code === "ArrowDown" || e.key === "s" || e.key === "S") {
+        moveDown = true;
+      }
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (gameState === "ready") startGame();
+        else if (gameState === "over") resetGame();
+      }
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.code === "ArrowUp" || e.key === "w" || e.key === "W") {
+        moveUp = false;
+      }
+      if (e.code === "ArrowDown" || e.key === "s" || e.key === "S") {
+        moveDown = false;
+      }
+    });
+
+    function canvasYFromEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return clientY - rect.top;
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+      pointerActive = true;
+      const y = canvasYFromEvent(e);
+      pointerOffsetY = y - ship.y;
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      if (!pointerActive) return;
+      const y = canvasYFromEvent(e);
+      ship.y = y - pointerOffsetY;
+    });
+
+    document.addEventListener("mouseup", () => {
+      pointerActive = false;
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      const y = canvasYFromEvent(e);
+      pointerActive = true;
+      pointerOffsetY = y - ship.y;
+
+      if (gameState === "ready") startGame();
+      else if (gameState === "over") resetGame();
+    }, { passive: false });
+
+    canvas.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      if (!pointerActive) return;
+      const y = canvasYFromEvent(e);
+      ship.y = y - pointerOffsetY;
+    }, { passive: false });
+
+    canvas.addEventListener("touchend", () => {
+      pointerActive = false;
+    });
+
+    // ===== START =====
+    initStars();
+    resetGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
