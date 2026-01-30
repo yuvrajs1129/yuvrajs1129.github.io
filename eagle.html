@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Eagle Flight – Game by Yuvraj</title>
+  <title>Eagle Flight – Game by Yuvraj Soni</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="description" content="Play Eagle Flight, a flappy-style browser game created by Yuvraj. Control a flying eagle, avoid glowing pillars, and get the highest score.">
+  <meta name="description" content="Eagle Flight, a flappy-style browser game created by Yuvraj Soni. Control a realistic flying eagle, dodge realistic pillars, and get the highest score.">
 
   <style>
     * {
@@ -21,6 +21,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
     }
 
     h1 {
@@ -36,10 +37,11 @@
       color: #9ca3af;
       text-align: center;
       margin-bottom: 12px;
+      max-width: 480px;
     }
 
     canvas {
-      background: linear-gradient(180deg, #0f172a, #1e293b);
+      background: #020617;
       border-radius: 12px;
       border: 2px solid #0f172a;
       box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
@@ -58,15 +60,15 @@
   </style>
 </head>
 <body>
-  <h1>Eagle Flight – by Yuvraj</h1>
+  <h1>Eagle Flight – by Yuvraj Soni</h1>
   <div id="subtitle">
-    Tap / Click / Space / ↑ dabao aur eagle ko pillars ke beech se udao.
+    Tap / Click / Space / ↑ se realistic eagle ko pillars ke beech se udao. Sounds on rakho for best experience.
   </div>
 
   <canvas id="gameCanvas" width="400" height="600"></canvas>
 
   <div id="footerName">
-    Game owner: <strong>Yuvraj</strong>
+    Game owner: <strong>Yuvraj Soni</strong>
   </div>
 
   <script>
@@ -74,16 +76,13 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    const OWNER_NAME = "Yuvraj"; // yahi naam game ke top corner me dikhega
+    const OWNER_NAME = "Yuvraj Soni";
 
     // ===== SOUNDS =====
-    // in fileon ko tumne repo ke root me upload kiya hai:
-    // flap.mp3, score.mp3, hit.mp3
     const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
     const hitSound   = new Audio("hit.mp3");
 
-    // Volume adjust (0.0 se 1.0 tak)
     flapSound.volume  = 0.7;
     scoreSound.volume = 0.7;
     hitSound.volume   = 0.8;
@@ -93,10 +92,15 @@
       try {
         sound.currentTime = 0;
         sound.play();
-      } catch (e) {
-        // kabhi kabhar browser block kare to error ignore kar do
-      }
+      } catch (e) {}
     }
+
+    // ===== IMAGE ASSETS (realistic eagle + pillars) =====
+    const eagleImg = new Image();
+    const pillarImg = new Image();
+
+    eagleImg.src = "eagle-bird.png";    // realistic eagle sprite
+    pillarImg.src = "eagle-pillar.png"; // realistic pillar texture
 
     // ===== GAME CONSTANTS =====
     const GRAVITY = 0.35;
@@ -104,7 +108,7 @@
     const PIPE_GAP = 160;
     const PIPE_WIDTH = 70;
     const PIPE_SPEED = 2.4;
-    const PIPE_INTERVAL = 95;  // kitne frames baad naya pillar
+    const PIPE_INTERVAL = 95;  // frames
 
     // ===== GAME STATE =====
     let gameState = "ready";   // "ready", "running", "over"
@@ -112,24 +116,20 @@
     let bestScore = 0;
     let frameCount = 0;
 
-    // Eagle object
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
       radius: 18,
-      velocity: 0,
-      wingTime: 0
+      velocity: 0
     };
 
-    // Pillars (pipes)
-    let pipes = []; // har item: { x, topHeight, bottomY, color, scored }
+    let pipes = []; // { x, topHeight, bottomY, color, scored }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
       score = 0;
       eagle.y = canvas.height / 2;
       eagle.velocity = 0;
-      eagle.wingTime = 0;
       pipes = [];
       frameCount = 0;
       gameState = "ready";
@@ -139,7 +139,6 @@
       score = 0;
       eagle.y = canvas.height / 2;
       eagle.velocity = 0;
-      eagle.wingTime = 0;
       pipes = [];
       frameCount = 0;
       gameState = "running";
@@ -147,14 +146,11 @@
 
     function flap() {
       if (gameState === "ready") {
-        // pehli baar: game start karo + turant flap karao
         startGame();
         eagle.velocity = FLAP_STRENGTH;
-        eagle.wingTime = 0;
         playSound(flapSound);
       } else if (gameState === "running") {
         eagle.velocity = FLAP_STRENGTH;
-        eagle.wingTime = 0;
         playSound(flapSound);
       } else if (gameState === "over") {
         resetGame();
@@ -167,8 +163,7 @@
       const topHeight = Math.random() * (maxTop - minTop) + minTop;
       const bottomY = topHeight + PIPE_GAP;
 
-      // Different new colors from Flappy Bird – teal / purple / cyan
-      const hue = 180 + Math.random() * 120; // 180–300
+      const hue = 180 + Math.random() * 120; // sirf fallback color ke liye
       const color = `hsl(${hue}, 75%, 55%)`;
 
       pipes.push({
@@ -188,9 +183,8 @@
       // Eagle physics
       eagle.velocity += GRAVITY;
       eagle.y += eagle.velocity;
-      eagle.wingTime += 0.15;
 
-      // Create new pipes
+      // New pipes
       if (frameCount % PIPE_INTERVAL === 0) {
         createPipe();
       }
@@ -200,15 +194,15 @@
         pipe.x -= PIPE_SPEED;
       });
 
-      // Remove off-screen pipes
+      // Remove off-screen
       pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-      // Collision: top/bottom
+      // Top/bottom collision
       if (eagle.y - eagle.radius <= 0 || eagle.y + eagle.radius >= canvas.height) {
         gameOver();
       }
 
-      // Collision with pipes + scoring
+      // Pipes collision + scoring
       pipes.forEach(pipe => {
         // Horizontal overlap
         if (
@@ -222,49 +216,67 @@
           }
         }
 
-        // ===== YAHAN SCORE POINT MILTA HAI =====
+        // Score when crossing
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);  // point milne pe sound
+          playSound(scoreSound);
           if (score > bestScore) bestScore = score;
         }
       });
     }
 
     function gameOver() {
-      if (gameState !== "over") {        // taaki sound sirf ek baar bajey
+      if (gameState !== "over") {
         gameState = "over";
-        playSound(hitSound);            // crash pe hit sound
+        playSound(hitSound);
       }
     }
 
-    // ===== DRAW =====
+    // ===== DRAW FUNCTIONS =====
     function drawBackground() {
+      // Gradient sky-like background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, "#0f172a");
-      gradient.addColorStop(0.5, "#0b3b5c");
+      gradient.addColorStop(0.4, "#1e293b");
       gradient.addColorStop(1, "#020617");
 
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Ground strip
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, canvas.height - 6, canvas.width, 6);
     }
 
     function drawPipes() {
       pipes.forEach(pipe => {
-        ctx.fillStyle = pipe.color;
-        ctx.shadowColor = pipe.color;
-        ctx.shadowBlur = 12;
+        const x = pipe.x;
 
-        // Top pillar
-        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-        // Bottom pillar
-        ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
-
-        ctx.shadowBlur = 0;
+        // If realistic pillar image loaded, use it
+        if (pillarImg.complete && pillarImg.naturalWidth) {
+          // Top pillar
+          ctx.drawImage(
+            pillarImg,
+            x,
+            0,
+            PIPE_WIDTH,
+            pipe.topHeight
+          );
+          // Bottom pillar
+          ctx.drawImage(
+            pillarImg,
+            x,
+            pipe.bottomY,
+            PIPE_WIDTH,
+            canvas.height - pipe.bottomY
+          );
+        } else {
+          // Fallback: colored rectangles
+          ctx.fillStyle = pipe.color;
+          ctx.fillRect(x, 0, PIPE_WIDTH, pipe.topHeight);
+          ctx.fillRect(x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
+        }
       });
     }
 
@@ -273,43 +285,50 @@
       const y = eagle.y;
       const r = eagle.radius;
 
-      ctx.save();
+      // Rotation based on velocity for more realistic feel
+      const angle = Math.max(Math.min(eagle.velocity / 8, 0.5), -0.8);
+      const w = r * 2.4;
+      const h = r * 2.0;
 
-      // Body (brown oval)
-      ctx.fillStyle = "#78350f";
-      ctx.beginPath();
-      ctx.ellipse(x, y, r * 1.1, r * 0.9, 0, 0, Math.PI * 2);
-      ctx.fill();
+      if (eagleImg.complete && eagleImg.naturalWidth) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.drawImage(eagleImg, -w / 2, -h / 2, w, h);
+        ctx.restore();
+      } else {
+        // Fallback: simple drawn eagle (old style)
+        ctx.save();
 
-      // Wing (flapping)
-      const wingOffset = Math.sin(eagle.wingTime) * 6;
-      ctx.fillStyle = "#451a03";
-      ctx.beginPath();
-      ctx.ellipse(x - 6, y + wingOffset, r * 1.1, r * 0.6, -0.4, 0, Math.PI * 2);
-      ctx.fill();
+        // Body
+        ctx.fillStyle = "#78350f";
+        ctx.beginPath();
+        ctx.ellipse(x, y, r * 1.1, r * 0.9, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Head (white)
-      ctx.fillStyle = "#f9fafb";
-      ctx.beginPath();
-      ctx.arc(x + r * 0.6, y - r * 0.3, r * 0.7, 0, Math.PI * 2);
-      ctx.fill();
+        // Head
+        ctx.fillStyle = "#f9fafb";
+        ctx.beginPath();
+        ctx.arc(x + r * 0.6, y - r * 0.3, r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Eye (dark)
-      ctx.fillStyle = "#0f172a";
-      ctx.beginPath();
-      ctx.arc(x + r * 0.9, y - r * 0.45, r * 0.15, 0, Math.PI * 2);
-      ctx.fill();
+        // Eye
+        ctx.fillStyle = "#0f172a";
+        ctx.beginPath();
+        ctx.arc(x + r * 0.9, y - r * 0.45, r * 0.15, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Beak (yellow)
-      ctx.fillStyle = "#facc15";
-      ctx.beginPath();
-      ctx.moveTo(x + r * 1.1, y - r * 0.1);
-      ctx.lineTo(x + r * 1.7, y - r * 0.2);
-      ctx.lineTo(x + r * 1.7, y + r * 0.1);
-      ctx.closePath();
-      ctx.fill();
+        // Beak
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath();
+        ctx.moveTo(x + r * 1.1, y - r * 0.1);
+        ctx.lineTo(x + r * 1.7, y - r * 0.2);
+        ctx.lineTo(x + r * 1.7, y + r * 0.1);
+        ctx.closePath();
+        ctx.fill();
 
-      ctx.restore();
+        ctx.restore();
+      }
     }
 
     function drawUI() {
@@ -324,7 +343,7 @@
       ctx.fillStyle = "#9ca3af";
       ctx.fillText(`Best: ${bestScore}`, canvas.width / 2, 74);
 
-      // Top‑right: owner name
+      // Owner name
       ctx.textAlign = "right";
       ctx.font = "14px system-ui, sans-serif";
       ctx.fillStyle = "#e5e7eb";
@@ -340,7 +359,7 @@
         ctx.font = "14px system-ui, sans-serif";
         ctx.fillStyle = "#cbd5f5";
         ctx.fillText(
-          "Eagle ko pillars ke beech se udao.",
+          "Realistic eagle & pillars – try to fly through the gaps!",
           canvas.width / 2,
           canvas.height / 2 + 16
         );
@@ -396,7 +415,7 @@
       flap();
     }, { passive: false });
 
-    // ===== START GAME =====
+    // ===== START =====
     resetGame();
     loop();
   </script>
