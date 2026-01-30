@@ -35,34 +35,7 @@
       font-size: 14px;
       color: #9ca3af;
       text-align: center;
-      margin-bottom: 6px;
-    }
-
-    /* FPS menu */
-    #fpsMenu {
       margin-bottom: 8px;
-      font-size: 13px;
-      color: #cbd5f5;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .fps-btn {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .fps-btn.active {
-      background: #22c55e;
-      border-color: #059669;
-      color: #020617;
-      font-weight: 600;
     }
 
     canvas {
@@ -90,13 +63,6 @@
     Tap / Click / Space / ↑ dabao aur eagle ko pillars ke beech se udao.
   </div>
 
-  <!-- FPS SWITCH MENU -->
-  <div id="fpsMenu">
-    FPS:
-    <button class="fps-btn" data-fps="30">30 FPS</button>
-    <button class="fps-btn active" data-fps="60">60 FPS (Default)</button>
-  </div>
-
   <canvas id="gameCanvas" width="400" height="600"></canvas>
 
   <div id="footerName">
@@ -110,26 +76,10 @@
 
     const OWNER_NAME = "Yuvraj";
 
-    // ===== FPS CONTROL =====
-    const fpsButtons = document.querySelectorAll(".fps-btn");
-    let targetFPS = 60;                 // default: 60 FPS
-    let frameDuration = 1000 / targetFPS;
-    let lastTime = 0;
-    let accumulator = 0;
-
-    fpsButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const newFPS = parseInt(btn.dataset.fps, 10);
-        targetFPS = newFPS;
-        frameDuration = 1000 / targetFPS;
-
-        fpsButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-      });
-    });
-
     // ===== SOUNDS =====
-    // Ye file root me honi chahiye: flap.mp3, score.mp3
+    // Ye files repo ke root me honi chahiye:
+    // flap.mp3  --> flap ke time
+    // score.mp3 --> point milne par
     const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
 
@@ -142,7 +92,7 @@
         sound.currentTime = 0;
         sound.play();
       } catch (e) {
-        // agar koi error ho to ignore
+        // iOS agar kabhi block kare to error ignore
       }
     }
 
@@ -169,6 +119,15 @@
     };
 
     let pipes = []; // { x, topHeight, bottomY, color, scored }
+
+    // Background gradient ko ek hi baar banayenge (har frame nahi)
+    let backgroundGradient = null;
+    function initBackgroundGradient() {
+      backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      backgroundGradient.addColorStop(0, "#0f172a");
+      backgroundGradient.addColorStop(0.5, "#0b3b5c");
+      backgroundGradient.addColorStop(1, "#020617");
+    }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -266,11 +225,11 @@
           }
         }
 
-        // SCORE POINT MILNE PAR
+        // Score point milne par
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);  // point milne pe sound
+          playSound(scoreSound);
           if (score > bestScore) bestScore = score;
         }
       });
@@ -282,12 +241,10 @@
 
     // ===== DRAW =====
     function drawBackground() {
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#0f172a");
-      gradient.addColorStop(0.5, "#0b3b5c");
-      gradient.addColorStop(1, "#020617");
-
-      ctx.fillStyle = gradient;
+      if (!backgroundGradient) {
+        initBackgroundGradient();
+      }
+      ctx.fillStyle = backgroundGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#020617";
@@ -298,12 +255,12 @@
       pipes.forEach(pipe => {
         ctx.fillStyle = pipe.color;
         ctx.shadowColor = pipe.color;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 12;  // GLOW wapas
 
         ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
         ctx.fillRect(pipe.x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
 
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = 0;   // reset
       });
     }
 
@@ -405,14 +362,11 @@
       }
     }
 
-    function draw() {
-      drawBackground();
-      drawPipes();
-      drawEagle();
-      drawUI();
-    }
+    // ===== MAIN LOOP – FIXED 60 FPS engine =====
+    const FRAME_DURATION = 1000 / 60; // ~16.67 ms
+    let lastTime = 0;
+    let accumulator = 0;
 
-    // ===== MAIN LOOP WITH FPS CONTROL =====
     function loop(timestamp) {
       if (!lastTime) lastTime = timestamp;
       const delta = timestamp - lastTime;
@@ -420,10 +374,10 @@
 
       accumulator += delta;
 
-      // Fixed timestep: targetFPS (30 ya 60) par update chalega
-      while (accumulator >= frameDuration) {
+      // Logic 60 FPS pe run hoga, display 60/120 jo bhi ho
+      while (accumulator >= FRAME_DURATION) {
         update();
-        accumulator -= frameDuration;
+        accumulator -= FRAME_DURATION;
       }
 
       draw();
@@ -449,6 +403,7 @@
 
     // ===== START =====
     resetGame();
+    initBackgroundGradient();
     requestAnimationFrame(loop);
   </script>
 </body>
