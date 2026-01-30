@@ -78,13 +78,15 @@
 
     // ===== SOUNDS =====
     // in fileon ko tumne repo ke root me upload kiya hai:
-    // flap.mp3, score.mp3
-    const flapSound = new Audio("flap.mp3");
+    // flap.mp3, score.mp3, hit.mp3
+    const flapSound  = new Audio("flap.mp3");
     const scoreSound = new Audio("score.mp3");
+    const hitSound   = new Audio("hit.mp3");
 
-    // Volume adjust kar sakte ho (0.0 se 1.0 tak)
-    flapSound.volume = 0.7;
+    // Volume adjust (0.0 se 1.0 tak)
+    flapSound.volume  = 0.7;
     scoreSound.volume = 0.7;
+    hitSound.volume   = 0.8;
 
     function playSound(sound) {
       if (!sound) return;
@@ -224,14 +226,17 @@
         if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
           pipe.scored = true;
           score++;
-          playSound(scoreSound);  // <-- point milne pe sound
+          playSound(scoreSound);  // point milne pe sound
           if (score > bestScore) bestScore = score;
         }
       });
     }
 
     function gameOver() {
-      gameState = "over";
+      if (gameState !== "over") {        // taaki sound sirf ek baar bajey
+        gameState = "over";
+        playSound(hitSound);            // crash pe hit sound
+      }
     }
 
     // ===== DRAW =====
