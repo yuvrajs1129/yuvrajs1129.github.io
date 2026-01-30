@@ -62,7 +62,7 @@
 <body>
   <h1>Eagle Flight – by Yuvraj Soni</h1>
   <div id="subtitle">
-    Tap / Click / Space / ↑ se realistic eagle ko pillars ke beech se udao. Eagle pillar ko actual touch kare tabhi blast hoga – bilkul visually accurate.
+    Tap / Click / Space / ↑ se realistic eagle ko pillars ke beech se udao.
   </div>
 
   <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -264,7 +264,7 @@
             pipe.scored = true;
             score++;
             playSound(scoreSound);
-            if (score > bestScore) bestScore = score;
+            if (score > bestScore) bestScore = bestScore = score;
           }
         });
       }
@@ -415,14 +415,7 @@
         ctx.fillStyle = "#e5e7eb";
         ctx.font = "22px system-ui, sans-serif";
         ctx.fillText("Tap / Space to start", canvas.width / 2, canvas.height / 2 - 10);
-
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillStyle = "#cbd5f5";
-        ctx.fillText(
-          "Realistic eagle & thicker pillars – eagle ke actual touch pe hi blast.",
-          canvas.width / 2,
-          canvas.height / 2 + 16
-        );
+        // Extra description removed as requested
       }
 
       if (gameState === "over") {
