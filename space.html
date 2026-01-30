@@ -200,7 +200,8 @@
     // ===== STARS (BACKGROUND) =====
     function initStars() {
       stars.length = 0;
-      for (let i = 0; i < 80; i++) {
+      // Thoda kam stars for performance
+      for (let i = 0; i < 50; i++) {
         stars.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
@@ -271,7 +272,7 @@
         ctx.save();
         ctx.translate(e.x, e.y);
         ctx.shadowColor = "#f97316";
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 10; // thoda kam blur for performance
 
         const gradient = ctx.createRadialGradient(0, 0, e.radius * 0.2, 0, 0, e.radius);
         gradient.addColorStop(0, "#fed7aa");
@@ -324,19 +325,16 @@
     }
 
     function drawBullets() {
+      // Simple bullet (no shadowBlur) for smooth performance
       ctx.save();
-      ctx.shadowColor = "#facc15";
-      ctx.shadowBlur = 18;
       ctx.strokeStyle = "#fde68a";
-      ctx.lineWidth = 3;
-
+      ctx.lineWidth = 2;
       for (const b of bullets) {
         ctx.beginPath();
-        ctx.moveTo(b.x - 6, b.y);
+        ctx.moveTo(b.x - 4, b.y);
         ctx.lineTo(b.x + 14, b.y);
         ctx.stroke();
       }
-
       ctx.restore();
     }
 
@@ -363,7 +361,7 @@
       ctx.translate(ship.x, ship.y);
 
       ctx.shadowColor = "#38bdf8";
-      ctx.shadowBlur = 22;
+      ctx.shadowBlur = 18;
 
       ctx.fillStyle = "#0ea5e9";
       ctx.beginPath();
@@ -379,7 +377,7 @@
       ctx.arc(ship.radius * 0.2, -ship.radius * 0.3, ship.radius * 0.5, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = 14;
       ctx.shadowColor = "#f97316";
       const flameGradient = ctx.createLinearGradient(
         -ship.radius * 1.4, 0,
@@ -675,7 +673,7 @@
 
     // Touch controls for ship (canvas only)
     canvas.addEventListener("touchstart", (e) => {
-      if (e.target !== canvas) return; // ignore touches that start on FIRE button
+      if (e.target !== canvas) return;
       e.preventDefault();
       unlockAudio();
       const y = canvasYFromEvent(e);
