@@ -97,7 +97,7 @@
       } catch (e) {}
     }
 
-    // ===== IMAGE ASSETS (realistic eagle + pillars) =====
+    // ===== IMAGE ASSETS =====
     const eagleImg  = new Image();
     const pillarImg = new Image();
 
@@ -107,15 +107,15 @@
     eagleImg.src  = "eagle-bird.png";     // realistic eagle sprite
     pillarImg.src = "eagle-pillar.png";   // realistic pillar texture
 
-    // ===== GAME CONSTANTS =====
+    // ===== CONSTANTS =====
     const GRAVITY       = 0.35;
     const FLAP_STRENGTH = -7;
-    const PIPE_GAP      = 190;    // bigger gap between pillars
-    const PIPE_WIDTH    = 140;    // thick pillars
+    const PIPE_GAP      = 190;
+    const PIPE_WIDTH    = 140;
     const PIPE_SPEED    = 2.4;
-    const PIPE_INTERVAL = 95;     // frames
+    const PIPE_INTERVAL = 95; // frames
 
-    // ===== GAME STATE =====
+    // ===== STATE =====
     let gameState  = "ready";   // "ready", "running", "over"
     let score      = 0;
     let bestScore  = 0;
@@ -130,6 +130,19 @@
 
     let pipes = [];      // { x, topHeight, bottomY, color, scored }
     let explosion = null; // { x, y, radius, alpha }
+
+    // ===== UTILS =====
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function circleRectCollision(cx, cy, r, rect) {
+      const closestX = clamp(cx, rect.left, rect.right);
+      const closestY = clamp(cy, rect.top,  rect.bottom);
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return (dx * dx + dy * dy) <= r * r;
+    }
 
     // ===== GAME FUNCTIONS =====
     function resetGame() {
@@ -190,7 +203,7 @@
         radius: 0,
         alpha: 1
       };
-      playSound(explosionSound); // blast sound
+      playSound(explosionSound);
     }
 
     function updateExplosion() {
@@ -224,43 +237,40 @@
         pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
         // ===== COLLISION =====
-        // Eagle hitbox (smaller rectangle for more accurate feel)
-        const hitW = eagle.radius * 0.7; // was 1.0
-        const hitH = eagle.radius * 0.5; // was 0.7
+        // Circle hitbox (smaller than sprite)
+        const hitRadius = eagle.radius * 0.7; // smaller circle inside sprite
 
-        const birdLeft   = eagle.x - hitW;
-        const birdRight  = eagle.x + hitW;
-        const birdTop    = eagle.y - hitH;
-        const birdBottom = eagle.y + hitH;
-
-        // Ground collision only (no top collision) with small margin
-        const marginY = 4;
-        if (birdBottom >= canvas.height - marginY) {
+        // Ground collision only (no top collision)
+        const groundY = canvas.height; 
+        if (eagle.y + hitRadius >= groundY - 2) {
           gameOver();
         }
 
-        // Pipes collision + scoring
-        const pipeInnerMargin = 12; // was 6 – shrink pillars horizontally more
-        const gapMargin       = 10; // was 4 – extra safe gap
-
+        // Pillars collision (circle vs rect)
         pipes.forEach(pipe => {
-          const pipeInnerLeft  = pipe.x + pipeInnerMargin;
-          const pipeInnerRight = pipe.x + PIPE_WIDTH - pipeInnerMargin;
-          const topPipeBottom  = pipe.topHeight;
-          const bottomPipeTop  = pipe.bottomY;
+          const rectTop = {
+            left:  pipe.x,
+            right: pipe.x + PIPE_WIDTH,
+            top:   0,
+            bottom: pipe.topHeight
+          };
+          const rectBottom = {
+            left:  pipe.x,
+            right: pipe.x + PIPE_WIDTH,
+            top:   pipe.bottomY,
+            bottom: canvas.height
+          };
 
-          const horizontalOverlap =
-            birdRight > pipeInnerLeft && birdLeft < pipeInnerRight;
+          // Thoda lenient banane ke liye horizontal shrink
+          const shrink = 10;
+          rectTop.left   += shrink;
+          rectTop.right  -= shrink;
+          rectBottom.left += shrink;
+          rectBottom.right -= shrink;
 
-          if (horizontalOverlap) {
-            const insideGap =
-              birdTop    >= topPipeBottom + gapMargin &&
-              birdBottom <= bottomPipeTop - gapMargin;
-
-            if (!insideGap) {
-              // Only now we trigger game over – eagle visually touches pillar
-              gameOver();
-            }
+          if (circleRectCollision(eagle.x, eagle.y, hitRadius, rectTop) ||
+              circleRectCollision(eagle.x, eagle.y, hitRadius, rectBottom)) {
+            gameOver();
           }
 
           // Score when crossing
@@ -273,17 +283,14 @@
         });
       }
 
-      // Explosion animation always update (even when game over)
       updateExplosion();
     }
 
     function gameOver() {
       if (gameState !== "over") {
         gameState = "over";
-        // Explosion at eagle position
         triggerExplosionAt(eagle.x, eagle.y);
-        // optional extra hit sound:
-        // playSound(hitSound);
+        // optional: playSound(hitSound);
       }
     }
 
@@ -334,7 +341,7 @@
     function drawEagle() {
       // During explosion after game over, hide eagle body
       if (gameState === "over" && explosion) return;
-      if (!eagleSpriteLoaded) return; // avoid fat fallback
+      if (!eagleSpriteLoaded) return; // no fallback fat bird
 
       const x = eagle.x;
       const y = eagle.y;
