@@ -77,13 +77,31 @@
 
     const OWNER_NAME = "Yuvraj";
 
-    // ===== SOUNDS (simple, eagle game jaisa pattern) =====
+    // ===== SOUNDS =====
     const engineSound    = new Audio("engine.mp3");
     const explosionSound = new Audio("explosion.mp3");
 
-    engineSound.loop    = true;
-    engineSound.volume  = 0.5;
+    engineSound.loop      = true;
+    engineSound.volume    = 0.5;
     explosionSound.volume = 0.9;
+
+    let audioUnlocked = false;
+
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      // iOS ke liye dono sounds ko ek baar user input se play-pause karke unlock karte hain
+      [engineSound, explosionSound].forEach(sound => {
+        if (!sound) return;
+        try {
+          sound.currentTime = 0;
+          sound.play().then(() => {
+            sound.pause();
+            sound.currentTime = 0;
+          }).catch(() => {});
+        } catch (e) {}
+      });
+    }
 
     function playSound(sound) {
       if (!sound) return;
@@ -207,13 +225,11 @@
 
     function drawEnemies() {
       for (const e of enemies) {
-        // Glow
         ctx.save();
         ctx.translate(e.x, e.y);
         ctx.shadowColor = "#f97316";
         ctx.shadowBlur = 20;
 
-        // Main asteroid
         const gradient = ctx.createRadialGradient(0, 0, e.radius * 0.2, 0, 0, e.radius);
         gradient.addColorStop(0, "#fed7aa");
         gradient.addColorStop(0.4, "#fb923c");
@@ -224,7 +240,6 @@
         ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Craters
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = "#9a3412";
         ctx.beginPath();
@@ -260,11 +275,9 @@
       ctx.save();
       ctx.translate(ship.x, ship.y);
 
-      // Ship glow
       ctx.shadowColor = "#38bdf8";
       ctx.shadowBlur = 22;
 
-      // Body (triangle)
       ctx.fillStyle = "#0ea5e9";
       ctx.beginPath();
       ctx.moveTo(-ship.radius * 0.8, -ship.radius);
@@ -273,14 +286,12 @@
       ctx.closePath();
       ctx.fill();
 
-      // Cockpit
       ctx.shadowBlur = 0;
       ctx.fillStyle = "#e0f2fe";
       ctx.beginPath();
       ctx.arc(ship.radius * 0.2, -ship.radius * 0.3, ship.radius * 0.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Engine flame
       ctx.shadowBlur = 18;
       ctx.shadowColor = "#f97316";
       const flameGradient = ctx.createLinearGradient(
@@ -396,7 +407,6 @@
 
     // ===== MAIN UPDATE (TIME + DIFFICULTY) =====
     function update(dt) {
-      // Difficulty: score badhne pe 1x se 3x tak
       let difficulty = 1 + score / 200;
       if (difficulty > 3) difficulty = 3;
 
@@ -406,7 +416,6 @@
       if (gameState === "running") {
         updateShip(dt);
 
-        // Enemy spawn
         enemyTimer -= dt;
         if (enemyTimer <= 0) {
           spawnEnemy(difficulty);
@@ -432,7 +441,6 @@
     }
 
     function drawUI() {
-      // Score
       ctx.fillStyle = "#e5e7eb";
       ctx.font = "20px system-ui, sans-serif";
       ctx.textAlign = "left";
@@ -442,7 +450,6 @@
       ctx.fillStyle = "#9ca3af";
       ctx.fillText(`Best: ${Math.floor(bestScore)}`, 14, 44);
 
-      // Owner
       ctx.textAlign = "right";
       ctx.fillStyle = "#e5e7eb";
       ctx.fillText(`Game by ${OWNER_NAME}`, canvas.width - 10, 24);
@@ -517,6 +524,7 @@
       }
       if (e.code === "Space") {
         e.preventDefault();
+        unlockAudio();
         if (gameState === "ready") startGame();
         else if (gameState === "over") resetGame();
       }
@@ -538,6 +546,7 @@
     }
 
     canvas.addEventListener("mousedown", (e) => {
+      unlockAudio();
       pointerActive = true;
       const y = canvasYFromEvent(e);
       pointerOffsetY = y - ship.y;
@@ -555,6 +564,7 @@
 
     canvas.addEventListener("touchstart", (e) => {
       e.preventDefault();
+      unlockAudio();
       const y = canvasYFromEvent(e);
       pointerActive = true;
       pointerOffsetY = y - ship.y;
