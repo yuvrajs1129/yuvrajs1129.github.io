@@ -462,7 +462,7 @@
       text-align:center;
     }
 
-     /* Rating + generic popup overlay/modal */
+    /* Rating + generic popup overlay/modal with animation */
     .rating-overlay {
       position:fixed;
       inset:0;
@@ -502,6 +502,7 @@
         opacity: 1;
       }
     }
+
     .rating-title { font-size:17px; margin-bottom:4px; color:#e5e7eb; }
     .rating-subtitle { font-size:12px; color:#fee2e2; margin-bottom:10px; }
     .rating-stars {
@@ -911,7 +912,7 @@
       }
       function ensureBgm() {
         if (!bgm) {
-          bgm = new Audio("bgm.mp3"); // you need to upload bgm.mp3
+          bgm = new Audio("bgm.mp3"); // make sure bgm.mp3 is in the root
           bgm.loop = true;
           bgm.volume = 0.4;
         }
@@ -926,8 +927,31 @@
         try { bgm.pause(); } catch(e){}
       }
 
+      // Auto-start logic: try once after load + on first user interaction
+      function setupBgmAutostart() {
+        // 1) Try once shortly after page load
+        setTimeout(() => {
+          if (soundEnabled) {
+            tryPlayBgm();
+          }
+        }, 700);
+
+        // 2) Start on very first click/touch anywhere
+        function firstInteraction() {
+          if (soundEnabled) {
+            tryPlayBgm();
+          }
+          document.removeEventListener("click", firstInteraction);
+          document.removeEventListener("touchstart", firstInteraction);
+        }
+
+        document.addEventListener("click", firstInteraction, { passive: true });
+        document.addEventListener("touchstart", firstInteraction, { passive: true });
+      }
+
       loadSoundSetting();
       updateSoundToggleUI();
+      setupBgmAutostart();
 
       if (btnSoundToggle) {
         btnSoundToggle.addEventListener("click", () => {
