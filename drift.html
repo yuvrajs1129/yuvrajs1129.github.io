@@ -253,14 +253,14 @@
   <h1>Neon Drift Racer – by Yuvraj</h1>
   <div id="subtitle">
     3-lane neon highway racer. Move left/right to dodge traffic and survive as long as possible.<br>
-    PC: <strong>← / →</strong> or <strong>A / D</strong> · Mobile: tap left/right half of the road.
+    PC: <strong>← / →</strong> or <strong>A / D</strong> · Mobile: swipe/drag left-right on the road.
   </div>
 
   <div class="canvas-wrapper">
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="hint-overlay">
       <div class="hint-box" id="hintText">
-        Choose difficulty, then start the race. Move between lanes to avoid every car.
+        Choose difficulty, then start the race. Swipe / drag to steer the car smoothly.
       </div>
     </div>
   </div>
@@ -328,7 +328,7 @@
 
     const OWNER_NAME = "Yuvraj";
 
-    // ===== DIFFICULTY CONFIG (endless, only affects speed & traffic) =====
+    // ===== DIFFICULTY CONFIG =====
     const DIFF_CONFIG = {
       easy: {
         label: "Easy",
@@ -495,14 +495,10 @@
     ];
 
     const car = {
-      lane: 1,          // 0,1,2
       x: laneCenters[1],
       y: canvas.height * 0.78,
-      targetX: laneCenters[1],
       width: 32,
-      height: 58,
-      moveTime: 0,
-      moveDuration: 0.12
+      height: 58
     };
 
     const enemies = []; // { lane, x, y, width, height, speed, color, glow }
@@ -512,6 +508,11 @@
     let laneDashOffset = 0;
 
     let explosion = null; // { x, y, radius, alpha }
+
+    // Pointer drag state (for smooth steering)
+    let pointerDown = false;
+    let pointerStartX = 0;
+    let carStartX     = 0;
 
     // ===== DIFFICULTY HELPERS =====
     function applyDifficultyBase() {
@@ -535,10 +536,7 @@
       enemies.length = 0;
       explosion = null;
 
-      car.lane     = 1;
-      car.x        = laneCenters[1];
-      car.targetX  = laneCenters[1];
-      car.moveTime = 0;
+      car.x = laneCenters[1];
 
       achievementMessage = "";
       achievementTimer   = 0;
@@ -551,7 +549,7 @@
       resetGameStateOnly();
       stopEngine();
       if (hintEl) {
-        hintEl.textContent = "Tap left/right half of the road or use arrow keys to drift between lanes.";
+        hintEl.textContent = "Swipe / drag on the road or use arrow keys to steer.";
       }
     }
 
@@ -611,27 +609,6 @@
         color,
         glow
       });
-    }
-
-    function updateCar(dt) {
-      if (Math.abs(car.x - car.targetX) < 0.5) {
-        car.x = car.targetX;
-        car.moveTime = 0;
-        return;
-      }
-      car.moveTime += dt;
-      const t = Math.min(car.moveTime / car.moveDuration, 1);
-      const smoothT = t*t*(3 - 2*t); // smoothstep
-      car.x = car.x + (car.targetX - car.x) * smoothT;
-    }
-
-    function tryMoveLane(direction) {
-      if (gameState !== "running") return;
-      const newLane = car.lane + direction;
-      if (newLane < 0 || newLane >= LANES_COUNT) return;
-      car.lane = newLane;
-      car.targetX = laneCenters[newLane];
-      car.moveTime = 0;
     }
 
     function updateEnemies(dt) {
@@ -702,9 +679,7 @@
       baseSpawnInterval = cfg.spawnBase - Math.min(distance / 3000, 0.4);
       if (baseSpawnInterval < 0.4) baseSpawnInterval = 0.4;
 
-      // Car & enemies
-      updateCar(dt);
-
+      // Enemies
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
         createEnemy();
@@ -937,7 +912,6 @@
     }
 
     // ===== LOOP =====
-    let lastTime = null;
     function loop(timestamp) {
       if (!lastTime) lastTime = timestamp;
       let dt = (timestamp - lastTime) / 1000;
@@ -955,6 +929,7 @@
       return el && !el.classList.contains("hidden");
     }
 
+    // Keyboard: smooth nudge left/right (no lane jump)
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
         e.preventDefault();
@@ -969,37 +944,80 @@
       }
       if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") {
         unlockAudio();
-        tryMoveLane(-1);
+        if (gameState === "running") {
+          const minX = road.left + 18;
+          const maxX = road.right - 18;
+          car.x = Math.max(minX, car.x - 18);
+        }
       }
       if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") {
         unlockAudio();
-        tryMoveLane(1);
+        if (gameState === "running") {
+          const minX = road.left + 18;
+          const maxX = road.right - 18;
+          car.x = Math.min(maxX, car.x + 18);
+        }
       }
     });
 
-    canvas.addEventListener("mousedown", (e) => {
-      unlockAudio();
+    // Drag / swipe steering
+    function startPointerDrag(clientX) {
       if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) return;
       if (gameState !== "running") return;
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const mid = rect.width / 2;
-      if (x < mid) tryMoveLane(-1);
-      else tryMoveLane(1);
+      pointerDown   = true;
+      pointerStartX = clientX - rect.left;
+      carStartX     = car.x;
+    }
+
+    function updatePointerDrag(clientX) {
+      if (!pointerDown) return;
+      if (gameState !== "running") return;
+      const rect = canvas.getBoundingClientRect();
+      const xCanvas = clientX - rect.left;
+      const dx = xCanvas - pointerStartX;
+      let newX = carStartX + dx;
+      const minX = road.left + 18;
+      const maxX = road.right - 18;
+      if (newX < minX) newX = minX;
+      if (newX > maxX) newX = maxX;
+      car.x = newX;
+    }
+
+    function endPointerDrag() {
+      pointerDown = false;
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+      unlockAudio();
+      startPointerDrag(e.clientX);
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      updatePointerDrag(e.clientX);
+    });
+
+    document.addEventListener("mouseup", () => {
+      endPointerDrag();
     });
 
     canvas.addEventListener("touchstart", (e) => {
       e.preventDefault();
       unlockAudio();
-      if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) return;
-      if (gameState !== "running") return;
-      const rect = canvas.getBoundingClientRect();
       const touch = e.touches[0];
-      const x = touch.clientX - rect.left;
-      const mid = rect.width / 2;
-      if (x < mid) tryMoveLane(-1);
-      else tryMoveLane(1);
+      startPointerDrag(touch.clientX);
     }, { passive: false });
+
+    document.addEventListener("touchmove", (e) => {
+      if (!pointerDown) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      updatePointerDrag(touch.clientX);
+    }, { passive: false });
+
+    document.addEventListener("touchend", () => {
+      endPointerDrag();
+    });
 
     // Difficulty selection buttons
     function setDifficulty(diff) {
