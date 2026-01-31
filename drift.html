@@ -247,10 +247,6 @@
       color: #a5b4fc;
       margin-bottom: 8px;
     }
-
-    /* Explosion highlight (already had) */
-    .cell { /* placeholder to avoid confusion, not used here */ }
-
   </style>
 </head>
 <body>
@@ -278,7 +274,7 @@
     <div class="modal">
       <div class="modal-title">Start race</div>
       <div class="modal-text">
-        Choose the traffic difficulty and start your neon highway run.
+        Choose the traffic difficulty and start your endless neon highway run.
       </div>
 
       <div class="choice-label">Difficulty</div>
@@ -294,7 +290,7 @@
     </div>
   </div>
 
-  <!-- RESULT OVERLAY -->
+  <!-- RESULT OVERLAY (only crash) -->
   <div id="resultOverlay" class="overlay hidden">
     <div class="modal">
       <div id="resultTitle" class="result-title">You crashed</div>
@@ -332,28 +328,25 @@
 
     const OWNER_NAME = "Yuvraj";
 
-    // ===== DIFFICULTY CONFIG =====
+    // ===== DIFFICULTY CONFIG (endless, only affects speed & traffic) =====
     const DIFF_CONFIG = {
       easy: {
         label: "Easy",
         speedBase: 170,
         speedMax: 320,
-        spawnBase: 1.1,
-        winDistance: 1000
+        spawnBase: 1.1
       },
       medium: {
         label: "Medium",
         speedBase: 220,
         speedMax: 380,
-        spawnBase: 0.8,
-        winDistance: 1600
+        spawnBase: 0.8
       },
       hard: {
         label: "Hard",
         speedBase: 270,
         speedMax: 430,
-        spawnBase: 0.6,
-        winDistance: 2200
+        spawnBase: 0.6
       }
     };
 
@@ -486,7 +479,6 @@
     // ===== GAME STATE =====
     let gameState = "ready"; // "ready", "running", "over"
     let lastTime  = null;
-    let lastResult = "crash"; // "crash" or "win"
 
     const LANES_COUNT = 3;
     const road = {
@@ -568,31 +560,16 @@
       gameState = "running";
       startEngine();
       if (hintEl) {
-        hintEl.textContent = "Avoid every car. Reach the distance target to win!";
+        hintEl.textContent = "Endless race: dodge every car and go as far as you can.";
       }
     }
 
     function handleCrash() {
       if (gameState === "over") return;
       gameState = "over";
-      lastResult = "crash";
       stopEngine();
       playSound(crashSound);
       triggerExplosion(car.x, car.y - 5);
-
-      if (distance > bestDist) {
-        bestDist = distance;
-        saveDriftProgress();
-      }
-
-      openResultOverlay();
-    }
-
-    function handleWin() {
-      if (gameState === "over") return;
-      gameState = "over";
-      lastResult = "win";
-      stopEngine();
 
       if (distance > bestDist) {
         bestDist = distance;
@@ -724,12 +701,6 @@
       // Spawn interval lower with distance
       baseSpawnInterval = cfg.spawnBase - Math.min(distance / 3000, 0.4);
       if (baseSpawnInterval < 0.4) baseSpawnInterval = 0.4;
-
-      // Check win condition
-      if (distance >= cfg.winDistance) {
-        handleWin();
-        return;
-      }
 
       // Car & enemies
       updateCar(dt);
@@ -893,8 +864,8 @@
       ctx.fillStyle = "#9ca3af";
       ctx.fillText("Best: " + Math.floor(bestDist) + "m", 14, 32);
 
-      // Difficulty + target
-      ctx.fillText("Mode: " + cfg.label + " · Target: " + cfg.winDistance + "m", 14, 48);
+      // Difficulty
+      ctx.fillText("Mode: " + cfg.label, 14, 48);
 
       // Owner
       ctx.textAlign = "right";
@@ -911,14 +882,6 @@
         ctx.globalAlpha = Math.min(1, achievementTimer / 40);
         ctx.fillText(achievementMessage, canvas.width / 2, 40);
         ctx.restore();
-      }
-
-      // Center messages (only if no overlays)
-      ctx.textAlign = "center";
-      if (gameState === "ready") {
-        ctx.fillStyle = "#e5e7eb";
-        ctx.font = "18px system-ui, sans-serif";
-        ctx.fillText("Press Space to start from menu", canvas.width / 2, canvas.height / 2 - 10);
       }
     }
 
@@ -944,15 +907,9 @@
       const dist  = Math.floor(distance);
       const best  = Math.floor(bestDist);
 
-      if (lastResult === "crash") {
-        resultTitle.textContent = "You crashed";
-        resultMessage.textContent =
-          "Difficulty: " + cfg.label + ". Your race ended in traffic. Try again or lower the difficulty.";
-      } else {
-        resultTitle.textContent = "You win!";
-        resultMessage.textContent =
-          "You beat the traffic on " + cfg.label + " mode and reached the target distance.";
-      }
+      resultTitle.textContent = "You crashed";
+      resultMessage.textContent =
+        "Difficulty: " + cfg.label + ". Your endless run ended in traffic.";
       resultStats.textContent =
         "Distance: " + dist + "m · Best: " + best + "m";
 
@@ -980,6 +937,7 @@
     }
 
     // ===== LOOP =====
+    let lastTime = null;
     function loop(timestamp) {
       if (!lastTime) lastTime = timestamp;
       let dt = (timestamp - lastTime) / 1000;
