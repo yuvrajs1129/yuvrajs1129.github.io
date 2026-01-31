@@ -126,10 +126,12 @@
 
     let audioUnlocked = false;
 
+    // NOTE: Engine sound ko yahan unlock nahi kar rahe,
+    // sirf explosion/laser ko prime kar rahe hain.
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
-      [engineSound, explosionSound, laserSound].forEach(sound => {
+      [explosionSound, laserSound].forEach(sound => {
         if (!sound) return;
         try {
           sound.currentTime = 0;
@@ -571,7 +573,7 @@
       enemyTimer = 0;
       bulletCooldown = 0;
       explosion = null;
-      startEngine();
+      startEngine(); // engine yahin se start hoga (user gesture ke andar)
       lastTime = null;
       achievementMessage = "";
       achievementTimer   = 0;
@@ -791,6 +793,8 @@
       pointerActive = true;
       const y = canvasYFromEvent(e);
       pointerOffsetY = y - ship.y;
+      if (gameState === "ready") startGame();
+      else if (gameState === "over") resetGame();
     });
 
     canvas.addEventListener("mousemove", (e) => {
