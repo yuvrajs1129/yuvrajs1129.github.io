@@ -404,11 +404,11 @@
     const LS_DRIFT_BEST = "drift_best_distance_v1";
     const LS_DRIFT_ACH  = "drift_achievements_v1";
 
-    const DRIFT_THRESHOLDS = {
-      noob:   500,
-      pro:    1200,
-      legend: 2200,
-      hacker: 3500
+       const DRIFT_THRESHOLDS = {
+      noob:   5000,
+      pro:    20000,
+      legend: 50000,
+      hacker: 100000
     };
 
     let driftAchievements = {
@@ -447,33 +447,34 @@
       achievementTimer   = 180; // ~3 seconds
     }
 
-    function updateDriftAchievements() {
+       function updateDriftAchievements() {
       let changed = false;
 
       if (distance >= DRIFT_THRESHOLDS.noob && !driftAchievements.noob) {
         driftAchievements.noob = true;
-        showAchievement("Drift badge unlocked: Noob (500m+)");
+        showAchievement("Drift badge unlocked: Noob (5000m+)");
         changed = true;
       }
       if (distance >= DRIFT_THRESHOLDS.pro && !driftAchievements.pro) {
         driftAchievements.pro = true;
-        showAchievement("Drift badge unlocked: Pro (1200m+)");
+        showAchievement("Drift badge unlocked: Pro (20000m+)");
         changed = true;
       }
       if (distance >= DRIFT_THRESHOLDS.legend && !driftAchievements.legend) {
         driftAchievements.legend = true;
-        showAchievement("Drift badge unlocked: Legend (2200m+)");
+        showAchievement("Drift badge unlocked: Legend (50000m+)");
         changed = true;
       }
       if (distance >= DRIFT_THRESHOLDS.hacker && !driftAchievements.hacker) {
         driftAchievements.hacker = true;
-        showAchievement("Drift badge unlocked: Hacker (3500m+)");
+        showAchievement("Drift badge unlocked: Hacker (100000m+)");
         changed = true;
       }
 
       if (changed) {
         saveDriftProgress();
       }
+    }
     }
 
     // ===== GAME STATE =====
