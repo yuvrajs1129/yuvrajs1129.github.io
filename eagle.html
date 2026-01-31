@@ -123,9 +123,9 @@
     const LS_KEY_EAGLE_ACH  = "eagle_achievements_v1";
 
     let eagleAchievements = {
-      rookie: false,  // 5+
-      pro:    false,  // 15+
-      legend: false   // 30+
+      noob:   false,  // 15+
+      pro:    false,  // 30+
+      legend: false   // 60+
     };
 
     let achievementMessage = "";
@@ -158,18 +158,20 @@
     }
 
     function handleScoreIncrease() {
-      // Achievements thresholds
-      if (score >= 5 && !eagleAchievements.rookie) {
-        eagleAchievements.rookie = true;
-        showAchievement("Achievement unlocked: Rookie (Score 5+)");
+      // 15 - Noob
+      if (score >= 15 && !eagleAchievements.noob) {
+        eagleAchievements.noob = true;
+        showAchievement("Achievement unlocked: Noob (Score 15+)");
       }
-      if (score >= 15 && !eagleAchievements.pro) {
+      // 30 - Pro
+      if (score >= 30 && !eagleAchievements.pro) {
         eagleAchievements.pro = true;
-        showAchievement("Achievement unlocked: Pro (Score 15+)");
+        showAchievement("Achievement unlocked: Pro (Score 30+)");
       }
-      if (score >= 30 && !eagleAchievements.legend) {
+      // 60 - Legend
+      if (score >= 60 && !eagleAchievements.legend) {
         eagleAchievements.legend = true;
-        showAchievement("Achievement unlocked: Legend (Score 30+)");
+        showAchievement("Achievement unlocked: Legend (Score 60+)");
       }
       saveProgress();
     }
@@ -196,6 +198,8 @@
       pipes = [];
       frameCount = 0;
       explosion = null;
+      achievementMessage = "";
+      achievementTimer = 0;
       gameState = "ready";
     }
 
@@ -206,6 +210,8 @@
       pipes = [];
       frameCount = 0;
       explosion = null;
+      achievementMessage = "";
+      achievementTimer = 0;
       gameState = "running";
     }
 
