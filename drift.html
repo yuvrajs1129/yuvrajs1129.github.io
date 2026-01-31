@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Drift Racer – by Yuvraj</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="Neon Drift Racer, a high-graphics 3-lane highway racing game by Yuvraj. Dodge traffic, drift between lanes and reach the highest distance.">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000 100%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      text-align: center;
+      color: #f97316;
+      text-shadow: 0 0 14px rgba(249, 115, 22, 0.9);
+    }
+
+    #subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      margin-bottom: 10px;
+      max-width: 520px;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    canvas {
+      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000000 100%);
+      border-radius: 18px;
+      border: 2px solid #0f172a;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+      width: 100%;
+      height: auto;
+      display: block;
+      touch-action: none;
+    }
+
+    .hint-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+      padding: 8px 10px;
+    }
+
+    .hint-box {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.9), rgba(15,23,42,0.98));
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #9ca3af;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.85);
+    }
+
+    #footerName {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Neon Drift Racer – by Yuvraj</h1>
+  <div id="subtitle">
+    3-lane neon highway racer. Move left/right to dodge traffic and survive as long as possible.<br>
+    PC: <strong>← / →</strong> or <strong>A / D</strong> · Mobile: tap left/right half of the road.
+  </div>
+
+  <div class="canvas-wrapper">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div class="hint-overlay">
+      <div class="hint-box" id="hintText">
+        Tap / Press Space to start · Move between lanes to avoid traffic.
+      </div>
+    </div>
+  </div>
+
+  <div id="footerName">
+    Game owner: <strong>Yuvraj</strong>
+  </div>
+
+  <script>
+    // ===== BASIC SETUP =====
+    const canvas = document.getElementById("gameCanvas");
+    const ctx    = canvas.getContext("2d");
+    const hintEl = document.getElementById("hintText");
+
+    const OWNER_NAME = "Yuvraj";
+
+    // ===== SOUNDS =====
+    const engineSound = new Audio("drift-engine.mp3");
+    const crashSound  = new Audio("drift-crash.mp3");
+
+    engineSound.loop   = true;
+    engineSound.volume = 0.5;
+    crashSound.volume  = 0.9;
+
+    let audioUnlocked = false;
+
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      [engineSound, crashSound].forEach(sound => {
+        try {
+          sound.currentTime = 0;
+          sound.play().then(() => {
+            sound.pause();
+            sound.currentTime = 0;
+          }).catch(() => {});
+        } catch (e) {}
+      });
+    }
+
+    function playSound(sound) {
+      if (!sound) return;
+      try {
+        sound.currentTime = 0;
+        sound.play().catch(()=>{});
+      } catch (e) {}
+    }
+
+    function startEngine() {
+      try {
+        engineSound.currentTime = 0;
+        engineSound.play().catch(()=>{});
+      } catch (e) {}
+    }
+
+    function stopEngine() {
+      try {
+        engineSound.pause();
+      } catch (e) {}
+    }
+
+    // ===== SCORE + ACHIEVEMENTS (LOCALSTORAGE) =====
+    let distance   = 0;
+    let bestDist   = 0;
+
+    const LS_DRIFT_BEST = "drift_best_distance_v1";
+    const LS_DRIFT_ACH  = "drift_achievements_v1";
+
+    const DRIFT_THRESHOLDS = {
+      noob:   500,
+      pro:    1200,
+      legend: 2200,
+      hacker: 3500
+    };
+
+    let driftAchievements = {
+      noob:   false,
+      pro:    false,
+      legend: false,
+      hacker: false
+    };
+
+    let achievementMessage = "";
+    let achievementTimer   = 0; // frames
+
+    function loadDriftProgress() {
+      try {
+        const savedBest = localStorage.getItem(LS_DRIFT_BEST);
+        if (savedBest !== null) {
+          bestDist = parseInt(savedBest, 10) || 0;
+        }
+        const savedAch = localStorage.getItem(LS_DRIFT_ACH);
+        if (savedAch) {
+          const obj = JSON.parse(savedAch);
+          driftAchievements = Object.assign(driftAchievements, obj);
+        }
+      } catch (e) {}
+    }
+
+    function saveDriftProgress() {
+      try {
+        localStorage.setItem(LS_DRIFT_BEST, String(bestDist));
+        localStorage.setItem(LS_DRIFT_ACH, JSON.stringify(driftAchievements));
+      } catch (e) {}
+    }
+
+    function showAchievement(text) {
+      achievementMessage = text;
+      achievementTimer   = 180; // 3 seconds at ~60 fps
+    }
+
+    function updateDriftAchievements() {
+      let changed = false;
+
+      if (distance >= DRIFT_THRESHOLDS.noob && !driftAchievements.noob) {
+        driftAchievements.noob = true;
+        showAchievement("Drift badge unlocked: Noob (500m+)");
+        changed = true;
+      }
+      if (distance >= DRIFT_THRESHOLDS.pro && !driftAchievements.pro) {
+        driftAchievements.pro = true;
+        showAchievement("Drift badge unlocked: Pro (1200m+)");
+        changed = true;
+      }
+      if (distance >= DRIFT_THRESHOLDS.legend && !driftAchievements.legend) {
+        driftAchievements.legend = true;
+        showAchievement("Drift badge unlocked: Legend (2200m+)");
+        changed = true;
+      }
+      if (distance >= DRIFT_THRESHOLDS.hacker && !driftAchievements.hacker) {
+        driftAchievements.hacker = true;
+        showAchievement("Drift badge unlocked: Hacker (3500m+)");
+        changed = true;
+      }
+
+      if (changed) {
+        saveDriftProgress();
+      }
+    }
+
+    // ===== GAME STATE =====
+    let gameState = "ready"; // "ready", "running", "over"
+    let lastTime  = null;
+
+    const LANES_COUNT = 3;
+    const road = {
+      top: 40,
+      bottom: canvas.height - 40,
+      left: canvas.width * 0.1,
+      right: canvas.width * 0.9
+    };
+    const laneWidth = (road.right - road.left) / LANES_COUNT;
+    const laneCenters = [
+      road.left + laneWidth * 0.5,
+      road.left + laneWidth * 1.5,
+      road.left + laneWidth * 2.5
+    ];
+
+    const car = {
+      lane: 1,          // 0,1,2
+      x: laneCenters[1],
+      y: canvas.height * 0.78,
+      targetX: laneCenters[1],
+      width: 32,
+      height: 58,
+      moveTime: 0,
+      moveDuration: 0.12
+    };
+
+    const enemies = []; // { lane, x, y, width, height, speed, color, glow }
+    let speed      = 180; // pixels per second vertical base speed
+    let spawnTimer = 0;
+    let baseSpawnInterval = 1.0; // seconds
+
+    let explosion = null; // { x, y, radius, alpha }
+
+    // ===== GAME FUNCTIONS =====
+    function resetGame() {
+      distance   = 0;
+      speed      = 180;
+      baseSpawnInterval = 1.0;
+      spawnTimer = 0;
+
+      enemies.length = 0;
+      explosion = null;
+
+      car.lane     = 1;
+      car.x        = laneCenters[1];
+      car.targetX  = laneCenters[1];
+      car.moveTime = 0;
+
+      achievementMessage = "";
+      achievementTimer   = 0;
+
+      gameState = "ready";
+      lastTime  = null;
+      stopEngine();
+      if (hintEl) {
+        hintEl.textContent = "Tap / Press Space to start · Move between lanes to avoid traffic.";
+      }
+    }
+
+    function startGame() {
+      distance   = 0;
+      speed      = 180;
+      baseSpawnInterval = 1.0;
+      spawnTimer = 0;
+
+      enemies.length = 0;
+      explosion = null;
+
+      car.lane     = 1;
+      car.x        = laneCenters[1];
+      car.targetX  = laneCenters[1];
+      car.moveTime = 0;
+
+      achievementMessage = "";
+      achievementTimer   = 0;
+
+      gameState = "running";
+      lastTime  = null;
+      startEngine();
+      if (hintEl) {
+        hintEl.textContent = "";
+      }
+    }
+
+    function gameOver() {
+      if (gameState === "over") return;
+      gameState = "over";
+      stopEngine();
+      playSound(crashSound);
+
+      if (distance > bestDist) {
+        bestDist = distance;
+        saveDriftProgress();
+      }
+
+      if (hintEl) {
+        hintEl.textContent = "Crashed! Tap / Press Space to play again.";
+      }
+    }
+
+    function triggerExplosion(x, y) {
+      explosion = {
+        x,
+        y,
+        radius: 0,
+        alpha: 1
+      };
+    }
+
+    function createEnemy() {
+      const lane = Math.floor(Math.random() * LANES_COUNT);
+      const laneX = laneCenters[lane];
+
+      const width  = 30 + Math.random() * 10;
+      const height = 56 + Math.random() * 8;
+
+      const hue = 20 + Math.random() * 50;  // orange/red range
+      const color = `hsl(${hue}, 90%, 55%)`;
+      const glow  = `rgba(248,113,113,0.8)`;
+
+      const enemySpeed = speed * (0.9 + Math.random() * 0.3);
+
+      enemies.push({
+        lane,
+        x: laneX,
+        y: road.top - height - 20,
+        width,
+        height,
+        speed: enemySpeed,
+        color,
+        glow
+      });
+    }
+
+    function updateCar(dt) {
+      if (Math.abs(car.x - car.targetX) < 0.5) {
+        car.x = car.targetX;
+        car.moveTime = 0;
+        return;
+      }
+      car.moveTime += dt;
+      const t = Math.min(car.moveTime / car.moveDuration, 1);
+      const smoothT = t*t*(3 - 2*t); // smoothstep
+      car.x = car.x + (car.targetX - car.x) * smoothT;
+    }
+
+    function tryMoveLane(direction) {
+      if (gameState === "ready") {
+        startGame();
+      } else if (gameState === "over") {
+        resetGame();
+        return;
+      }
+      if (gameState !== "running") return;
+
+      const newLane = car.lane + direction;
+      if (newLane < 0 || newLane >= LANES_COUNT) return;
+      car.lane = newLane;
+      car.targetX = laneCenters[newLane];
+      car.moveTime = 0;
+    }
+
+    function updateEnemies(dt) {
+      for (const e of enemies) {
+        e.y += e.speed * dt;
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].y - enemies[i].height > canvas.height + 40) {
+          enemies.splice(i, 1);
+        }
+      }
+    }
+
+    function checkCollisions() {
+      const cx = car.x;
+      const cy = car.y;
+      const cw = car.width;
+      const ch = car.height;
+
+      for (const e of enemies) {
+        const ex = e.x;
+        const ey = e.y;
+        const ew = e.width;
+        const eh = e.height;
+
+        if (Math.abs(cx - ex) < (cw + ew) * 0.5 &&
+            Math.abs(cy - ey) < (ch + eh) * 0.5) {
+          triggerExplosion(cx, cy - 5);
+          gameOver();
+          return;
+        }
+      }
+    }
+
+    function updateExplosion(dt) {
+      if (!explosion) return;
+      explosion.radius += 260 * dt;
+      explosion.alpha  -= 1.7 * dt;
+      if (explosion.alpha <= 0) {
+        explosion = null;
+      }
+    }
+
+    function updateGame(dt) {
+      if (gameState !== "running") {
+        updateExplosion(dt);
+        if (achievementTimer > 0) achievementTimer--;
+        return;
+      }
+
+      // Distance
+      distance += speed * dt * 0.7;
+      if (distance > bestDist) {
+        bestDist = distance;
+      }
+      updateDriftAchievements();
+
+      // Increase difficulty with distance
+      if (distance < 800) {
+        speed = 180 + distance * 0.08;
+      } else if (distance < 2000) {
+        speed = 240 + (distance - 800) * 0.04;
+      } else {
+        speed = 290 + (distance - 2000) * 0.02;
+      }
+      if (speed > 420) speed = 420;
+
+      baseSpawnInterval = 1.0 - Math.min(distance / 3000, 0.5); // from 1.0 -> 0.5
+
+      // Car & enemies
+      updateCar(dt);
+
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        createEnemy();
+        const minI = baseSpawnInterval * 0.5;
+        const maxI = baseSpawnInterval * 1.3;
+        spawnTimer = minI + Math.random() * (maxI - minI);
+      }
+
+      updateEnemies(dt);
+      checkCollisions();
+      updateExplosion(dt);
+
+      if (achievementTimer > 0) {
+        achievementTimer--;
+      }
+    }
+
+    // ===== DRAW FUNCTIONS =====
+    function drawBackground() {
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, "#020617");
+      g.addColorStop(0.35, "#020617");
+      g.addColorStop(1, "#000000");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Road
+      const roadGradient = ctx.createLinearGradient(road.left, 0, road.right, 0);
+      roadGradient.addColorStop(0, "#020617");
+      roadGradient.addColorStop(0.5, "#111827");
+      roadGradient.addColorStop(1, "#020617");
+
+      ctx.fillStyle = roadGradient;
+      ctx.beginPath();
+      ctx.roundRect(road.left, road.top, road.right - road.left, road.bottom - road.top, 20);
+      ctx.fill();
+
+      // Lane lines
+      ctx.save();
+      ctx.setLineDash([14, 12]);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(156, 163, 175, 0.7)";
+      for (let i = 1; i < LANES_COUNT; i++) {
+        const x = road.left + laneWidth * i;
+        ctx.beginPath();
+        ctx.moveTo(x, road.top + 8);
+        ctx.lineTo(x, road.bottom - 8);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Road border glow
+      ctx.save();
+      ctx.strokeStyle = "rgba(59,130,246,0.6)";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = "rgba(59,130,246,0.7)";
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.roundRect(road.left, road.top, road.right - road.left, road.bottom - road.top, 20);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawEnemies() {
+      for (const e of enemies) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.shadowColor = e.glow;
+        ctx.shadowBlur = 18;
+
+        const grd = ctx.createLinearGradient(0, -e.height/2, 0, e.height/2);
+        grd.addColorStop(0, "#fee2e2");
+        grd.addColorStop(0.4, e.color);
+        grd.addColorStop(1, "#7f1d1d");
+
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.roundRect(-e.width/2, -e.height/2, e.width, e.height, 10);
+        ctx.fill();
+
+        // windows
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "rgba(15,23,42,0.9)";
+        ctx.beginPath();
+        ctx.roundRect(-e.width*0.38, -e.height*0.2, e.width*0.76, e.height*0.26, 6);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    function drawCar() {
+      ctx.save();
+      ctx.translate(car.x, car.y);
+      ctx.shadowColor = "#22c55e";
+      ctx.shadowBlur = 18;
+
+      const grd = ctx.createLinearGradient(0, -car.height/2, 0, car.height/2);
+      grd.addColorStop(0, "#e0f2fe");
+      grd.addColorStop(0.4, "#38bdf8");
+      grd.addColorStop(1, "#0f172a");
+      ctx.fillStyle = grd;
+
+      ctx.beginPath();
+      ctx.roundRect(-car.width/2, -car.height/2, car.width, car.height, 10);
+      ctx.fill();
+
+      // windows
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(15,23,42,0.9)";
+      ctx.beginPath();
+      ctx.roundRect(-car.width*0.35, -car.height*0.2, car.width*0.7, car.height*0.28, 6);
+      ctx.fill();
+
+      // headlights
+      ctx.fillStyle = "#fef9c3";
+      ctx.beginPath();
+      ctx.roundRect(-car.width*0.4, -car.height*0.52, car.width*0.26, car.height*0.14, 4);
+      ctx.roundRect(car.width*0.14, -car.height*0.52, car.width*0.26, car.height*0.14, 4);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawExplosion() {
+      if (!explosion) return;
+
+      ctx.save();
+      ctx.translate(explosion.x, explosion.y - 10);
+      const r = explosion.radius;
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      g.addColorStop(0, `rgba(248, 250, 252, ${explosion.alpha})`);
+      g.addColorStop(0.3, `rgba(252, 211, 77, ${explosion.alpha})`);
+      g.addColorStop(0.7, `rgba(248, 113, 113, ${explosion.alpha * 0.9})`);
+      g.addColorStop(1, `rgba(15, 23, 42, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawUI() {
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+
+      // Distance
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "18px system-ui, sans-serif";
+      ctx.fillText("Distance: " + Math.floor(distance) + "m", 14, 12);
+
+      // Best
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillText("Best: " + Math.floor(bestDist) + "m", 14, 34);
+
+      // Owner
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.fillText("Game by " + OWNER_NAME, canvas.width - 10, 12);
+
+      // Achievement message
+      if (achievementTimer > 0 && achievementMessage) {
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.font = "13px system-ui, sans-serif";
+        ctx.fillStyle = "#facc15";
+        ctx.globalAlpha = Math.min(1, achievementTimer / 40);
+        ctx.fillText(achievementMessage, canvas.width / 2, 40);
+        ctx.restore();
+      }
+
+      // Center messages
+      ctx.textAlign = "center";
+      if (gameState === "ready") {
+        ctx.fillStyle = "#e5e7eb";
+        ctx.font = "22px system-ui, sans-serif";
+        ctx.fillText("Tap / Press Space to start", canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillStyle = "#cbd5f5";
+        ctx.fillText("Move between lanes and dodge every car.", canvas.width / 2, canvas.height / 2 + 6);
+      }
+
+      if (gameState === "over") {
+        ctx.fillStyle = "#fee2e2";
+        ctx.font = "26px system-ui, sans-serif";
+        ctx.fillText("Crashed!", canvas.width / 2, canvas.height / 2 - 24);
+
+        ctx.font = "16px system-ui, sans-serif";
+        ctx.fillStyle = "#e5e7eb";
+        ctx.fillText("Distance: " + Math.floor(distance) + "m", canvas.width / 2, canvas.height / 2 + 4);
+        ctx.fillText("Best: " + Math.floor(bestDist) + "m", canvas.width / 2, canvas.height / 2 + 26);
+
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillStyle = "#cbd5f5";
+        ctx.fillText("Press Space / Tap to play again", canvas.width / 2, canvas.height / 2 + 52);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      drawEnemies();
+      drawCar();
+      drawExplosion();
+      drawUI();
+    }
+
+    // ===== LOOP =====
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      let dt = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      if (dt > 0.05) dt = 0.05;
+
+      updateGame(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // ===== INPUT HANDLERS =====
+    function handleStartOrRestart() {
+      unlockAudio();
+      if (gameState === "ready") {
+        startGame();
+      } else if (gameState === "over") {
+        resetGame();
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleStartOrRestart();
+      }
+      if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        unlockAudio();
+        tryMoveLane(-1);
+      }
+      if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") {
+        unlockAudio();
+        tryMoveLane(1);
+      }
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+      unlockAudio();
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const mid = rect.width / 2;
+      if (gameState === "ready" || gameState === "over") {
+        handleStartOrRestart();
+        return;
+      }
+      if (x < mid) tryMoveLane(-1);
+      else tryMoveLane(1);
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      unlockAudio();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const mid = rect.width / 2;
+      if (gameState === "ready" || gameState === "over") {
+        handleStartOrRestart();
+        return;
+      }
+      if (x < mid) tryMoveLane(-1);
+      else tryMoveLane(1);
+    }, { passive: false });
+
+    // ===== START =====
+    loadDriftProgress();
+    resetGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
