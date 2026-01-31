@@ -365,10 +365,12 @@
 
     let audioUnlocked = false;
 
+    // NOTE: yahan sirf crash sound ko prime kar rahe hain, engine ko nahi
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
-      [engineSound, crashSound].forEach(sound => {
+      [crashSound].forEach(sound => {
+        if (!sound) return;
         try {
           sound.currentTime = 0;
           sound.play().then(() => {
@@ -407,8 +409,6 @@
     const LS_DRIFT_BEST = "drift_best_distance_v1";
     const LS_DRIFT_ACH  = "drift_achievements_v1";
 
-    // Updated thresholds as per your request:
-    // 5000m - Noob, 20000m - Pro, 50000m - Legend, 100000m - Hacker
     const DRIFT_THRESHOLDS = {
       noob:   5000,
       pro:    20000,
@@ -782,7 +782,6 @@
           const bodyH = e.height * 0.65;
           const cabinH = e.height - bodyH;
 
-          // Trailer/body
           const grdBody = ctx.createLinearGradient(0, -e.height/2, 0, e.height/2);
           grdBody.addColorStop(0, "#dbeafe");
           grdBody.addColorStop(0.4, e.color);
@@ -793,7 +792,7 @@
           ctx.roundRect(-e.width/2, -e.height/2, e.width, bodyH, 10);
           ctx.fill();
 
-          // Cabin (front)
+          // Cabin
           ctx.shadowBlur = 10;
           ctx.fillStyle = "#0f172a";
           ctx.beginPath();
@@ -818,7 +817,6 @@
           ctx.roundRect(-e.width/2, -e.height/2, e.width, e.height, 10);
           ctx.fill();
 
-          // windows
           ctx.shadowBlur = 0;
           ctx.fillStyle = "rgba(15,23,42,0.9)";
           ctx.beginPath();
@@ -846,14 +844,12 @@
       ctx.roundRect(-car.width/2, -car.height/2, car.width, car.height, 10);
       ctx.fill();
 
-      // windows
       ctx.shadowBlur = 0;
       ctx.fillStyle = "rgba(15,23,42,0.9)";
       ctx.beginPath();
       ctx.roundRect(-car.width*0.35, -car.height*0.2, car.width*0.7, car.height*0.28, 6);
       ctx.fill();
 
-      // headlights
       ctx.fillStyle = "#fef9c3";
       ctx.beginPath();
       ctx.roundRect(-car.width*0.4, -car.height*0.52, car.width*0.26, car.height*0.14, 4);
@@ -887,26 +883,21 @@
 
       const cfg = DIFF_CONFIG[difficulty];
 
-      // Distance
       ctx.fillStyle = "#e5e7eb";
       ctx.font = "18px system-ui, sans-serif";
       ctx.fillText("Distance: " + Math.floor(distance) + "m", 14, 12);
 
-      // Best
       ctx.font = "13px system-ui, sans-serif";
       ctx.fillStyle = "#9ca3af";
       ctx.fillText("Best: " + Math.floor(bestDist) + "m", 14, 32);
 
-      // Difficulty
       ctx.fillText("Mode: " + cfg.label, 14, 48);
 
-      // Owner
       ctx.textAlign = "right";
       ctx.fillStyle = "#e5e7eb";
       ctx.font = "13px system-ui, sans-serif";
       ctx.fillText("Game by " + OWNER_NAME, canvas.width - 10, 12);
 
-      // Achievement message
       if (achievementTimer > 0 && achievementMessage) {
         ctx.save();
         ctx.textAlign = "center";
@@ -927,7 +918,7 @@
       drawUI();
     }
 
-    // ===== OVERLAYS (setup + result) =====
+    // ===== OVERLAYS =====
     function openSetupOverlay() {
       setupOverlay.classList.remove("hidden");
     }
@@ -982,12 +973,11 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== INPUT HANDLERS =====
+    // ===== INPUT & CONTROLS =====
     function isOverlayVisible(el) {
       return el && !el.classList.contains("hidden");
     }
 
-    // Keyboard: smooth nudge left/right (no lane jump)
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
         e.preventDefault();
@@ -1018,7 +1008,6 @@
       }
     });
 
-    // Drag / swipe steering
     function startPointerDrag(clientX) {
       if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) return;
       if (gameState !== "running") return;
@@ -1077,7 +1066,6 @@
       endPointerDrag();
     });
 
-    // Difficulty selection buttons
     function setDifficulty(diff) {
       difficulty = diff;
       btnDiffEasy.classList.toggle("active",   diff === "easy");
