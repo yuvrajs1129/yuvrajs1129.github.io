@@ -117,7 +117,7 @@
     // ===== SOUNDS =====
     const engineSound    = new Audio("engine.mp3");
     const explosionSound = new Audio("explosion.mp3");
-    const laserSound     = new Audio("laser.mp3"); // laser fire sound
+    const laserSound     = new Audio("laser.mp3");
 
     engineSound.loop      = true;
     engineSound.volume    = 0.5;
@@ -162,16 +162,91 @@
       } catch (e) {}
     }
 
-    // ===== GAME STATE =====
-    let gameState = "ready"; // "ready", "running", "over"
+    // ===== SCORE + ACHIEVEMENTS (LOCALSTORAGE) =====
     let score = 0;
     let bestScore = 0;
+
+    const LS_SPACE_BEST = "space_best_score_v1";
+    const LS_SPACE_ACH  = "space_achievements_v1";
+
+    let spaceAchievements = {
+      noob:   false, // 150+
+      pro:    false, // 350+
+      legend: false, // 600+
+      hacker: false  // 800+
+    };
+
+    let achievementMessage = "";
+    let achievementTimer   = 0; // frames (~60fps)
+
+    function loadSpaceProgress() {
+      try {
+        const savedBest = localStorage.getItem(LS_SPACE_BEST);
+        if (savedBest !== null) {
+          bestScore = parseInt(savedBest, 10) || 0;
+        }
+        const savedAch = localStorage.getItem(LS_SPACE_ACH);
+        if (savedAch) {
+          const obj = JSON.parse(savedAch);
+          spaceAchievements = Object.assign(spaceAchievements, obj);
+        }
+      } catch (e) {}
+    }
+
+    function saveSpaceProgress() {
+      try {
+        localStorage.setItem(LS_SPACE_BEST, String(bestScore));
+        localStorage.setItem(LS_SPACE_ACH, JSON.stringify(spaceAchievements));
+      } catch (e) {}
+    }
+
+    function showSpaceAchievement(text) {
+      achievementMessage = text;
+      achievementTimer   = 120; // ~2 seconds
+    }
+
+    function updateBestAndAchievements() {
+      let changed = false;
+
+      if (score > bestScore) {
+        bestScore = score;
+        changed = true;
+      }
+
+      if (score >= 150 && !spaceAchievements.noob) {
+        spaceAchievements.noob = true;
+        showSpaceAchievement("Achievement unlocked: Noob (Score 150+)");
+        changed = true;
+      }
+      if (score >= 350 && !spaceAchievements.pro) {
+        spaceAchievements.pro = true;
+        showSpaceAchievement("Achievement unlocked: Pro (Score 350+)");
+        changed = true;
+      }
+      if (score >= 600 && !spaceAchievements.legend) {
+        spaceAchievements.legend = true;
+        showSpaceAchievement("Achievement unlocked: Legend (Score 600+)");
+        changed = true;
+      }
+      if (score >= 800 && !spaceAchievements.hacker) {
+        spaceAchievements.hacker = true;
+        showSpaceAchievement("Achievement unlocked: Hacker (Score 800+)");
+        changed = true;
+      }
+
+      if (changed) {
+        saveSpaceProgress();
+      }
+    }
+
+    // ===== GAME STATE =====
+    let gameState = "ready"; // "ready", "running", "over"
 
     const ship = {
       x: canvas.width * 0.2,
       y: canvas.height / 2,
       radius: 18,
-      speed: 280, // px/s
+      speed: 280,
       alive: true
     };
 
@@ -180,15 +255,15 @@
     const bullets = [];
 
     let enemyTimer = 0;
-    const ENEMY_INTERVAL_MIN = 0.7; // faster spawn
+    const ENEMY_INTERVAL_MIN = 0.7;
     const ENEMY_INTERVAL_MAX = 1.3;
-    const BULLET_SPEED = 520;       // px/s
-    const BULLET_COOLDOWN = 0.25;   // seconds between shots
-    let bulletCooldown = 0;
+
+    const BULLET_SPEED   = 520;
+    const BULLET_COOLDOWN = 0.25;
+    const MAX_BULLETS     = 3;
+    let bulletCooldown    = 0;
 
     let lastTime = null;
-
-    // Explosion state
     let explosion = null;
 
     // Input flags
@@ -197,13 +272,9 @@
     let pointerActive = false;
     let pointerOffsetY = 0;
 
-    // Queue flag for firing (to avoid heavy work inside touch handlers)
-    let pendingFire = false;
-
-    // ===== STARS (BACKGROUND) =====
+    // ===== STARS =====
     function initStars() {
       stars.length = 0;
-      // Thoda kam stars for performance
       for (let i = 0; i < 50; i++) {
         stars.push({
           x: Math.random() * canvas.width,
@@ -234,13 +305,13 @@
       }
     }
 
-    // ===== ENEMIES (ASTEROIDS) =====
+    // ===== ENEMIES =====
     function spawnEnemy(difficulty = 1) {
       const margin = 40;
       const y = margin + Math.random() * (canvas.height - margin * 2);
       const radius = 16 + Math.random() * 18;
       const baseSpeed = 140 + Math.random() * 110;
-      const speed = baseSpeed * difficulty; // difficulty se speed badao
+      const speed = baseSpeed * difficulty;
       const wobbleSpeed = 1 + Math.random() * 1.5;
       const wobbleAmount = 8 + Math.random() * 8;
 
@@ -262,7 +333,6 @@
         e.y += Math.sin(e.wobblePhase) * e.wobbleAmount * dt;
       }
 
-      // Remove off-screen
       for (let i = enemies.length - 1; i >= 0; i--) {
         if (enemies[i].x < -enemies[i].radius * 2) {
           enemies.splice(i, 1);
@@ -275,7 +345,7 @@
         ctx.save();
         ctx.translate(e.x, e.y);
         ctx.shadowColor = "#f97316";
-        ctx.shadowBlur = 10; // thoda kam blur for performance
+        ctx.shadowBlur = 10;
 
         const gradient = ctx.createRadialGradient(0, 0, e.radius * 0.2, 0, 0, e.radius);
         gradient.addColorStop(0, "#fed7aa");
@@ -305,10 +375,11 @@
       if (gameState !== "running") return;
       if (!ship.alive) return;
       if (bulletCooldown > 0) return;
+      if (bullets.length >= MAX_BULLETS) return;
 
       bullets.push({
         x: ship.x + ship.radius * 1.4,
-        y: ship.y,
+        y: ship.y
       });
 
       bulletCooldown = BULLET_COOLDOWN;
@@ -319,7 +390,6 @@
       for (const b of bullets) {
         b.x += BULLET_SPEED * dt;
       }
-      // remove bullets off-screen
       for (let i = bullets.length - 1; i >= 0; i--) {
         if (bullets[i].x > canvas.width + 40) {
           bullets.splice(i, 1);
@@ -328,7 +398,6 @@
     }
 
     function drawBullets() {
-      // Simple bullet (no shadowBlur) for smooth performance
       ctx.save();
       ctx.strokeStyle = "#fde68a";
       ctx.lineWidth = 2;
@@ -341,16 +410,12 @@
       ctx.restore();
     }
 
-    // ===== PLAYER SHIP =====
+    // ===== SHIP =====
     function updateShip(dt) {
       if (!ship.alive) return;
 
-      if (moveUp) {
-        ship.y -= ship.speed * dt;
-      }
-      if (moveDown) {
-        ship.y += ship.speed * dt;
-      }
+      if (moveUp)   ship.y -= ship.speed * dt;
+      if (moveDown) ship.y += ship.speed * dt;
 
       const margin = 30;
       if (ship.y < margin) ship.y = margin;
@@ -414,7 +479,7 @@
     function updateExplosion(dt) {
       if (!explosion) return;
       explosion.radius += 260 * dt;
-      explosion.alpha -= 1.6 * dt;
+      explosion.alpha  -= 1.6 * dt;
       if (explosion.alpha <= 0) {
         explosion = null;
       }
@@ -463,9 +528,9 @@
           if (dist < e.radius) {
             enemies.splice(j, 1);
             bullets.splice(i, 1);
-            triggerExplosionAt(e.x, e.y); // rock blast
+            triggerExplosionAt(e.x, e.y);
             score += 8;
-            if (score > bestScore) bestScore = score;
+            updateBestAndAchievements();
             return;
           }
         }
@@ -475,8 +540,8 @@
     // ===== SCORE =====
     function updateScore(dt) {
       if (gameState === "running") {
-        score += dt * 10;
-        if (score > bestScore) bestScore = score;
+        score += dt * 10; // 10 points per second
+        updateBestAndAchievements();
       }
     }
 
@@ -493,6 +558,8 @@
       explosion = null;
       stopEngine();
       lastTime = null;
+      achievementMessage = "";
+      achievementTimer   = 0;
     }
 
     function startGame() {
@@ -506,6 +573,8 @@
       explosion = null;
       startEngine();
       lastTime = null;
+      achievementMessage = "";
+      achievementTimer   = 0;
     }
 
     function gameOver() {
@@ -514,10 +583,11 @@
         ship.alive = false;
         stopEngine();
         triggerExplosionAt(ship.x, ship.y);
+        saveSpaceProgress();
       }
     }
 
-    // ===== MAIN UPDATE (TIME + HIGHER DIFFICULTY) =====
+    // ===== MAIN UPDATE =====
     function update(dt) {
       let difficulty = 1 + score / 150;
       if (difficulty > 4) difficulty = 4;
@@ -529,12 +599,6 @@
         if (bulletCooldown > 0) {
           bulletCooldown -= dt;
           if (bulletCooldown < 0) bulletCooldown = 0;
-        }
-
-        // Queue se fire handle karo (main loop ke andar)
-        if (pendingFire) {
-          pendingFire = false;
-          fireBullet();
         }
 
         updateShip(dt);
@@ -552,6 +616,10 @@
         checkShipCollisions();
         checkBulletCollisions();
         updateScore(dt);
+      }
+
+      if (achievementTimer > 0) {
+        achievementTimer--;
       }
     }
 
@@ -578,6 +646,17 @@
       ctx.textAlign = "right";
       ctx.fillStyle = "#e5e7eb";
       ctx.fillText(`Game by ${OWNER_NAME}`, canvas.width - 10, 24);
+
+      // Achievement message
+      if (achievementTimer > 0 && achievementMessage) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, achievementTimer / 30);
+        ctx.fillStyle = "#facc15";
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(achievementMessage, canvas.width / 2, 60);
+        ctx.restore();
+      }
 
       ctx.textAlign = "center";
 
@@ -630,7 +709,7 @@
     // ===== MAIN LOOP =====
     function loop(timestamp) {
       if (!lastTime) lastTime = timestamp;
-      let dt = (timestamp - lastTime) / 1000; // seconds
+      let dt = (timestamp - lastTime) / 1000;
       lastTime = timestamp;
 
       if (dt > 0.05) dt = 0.05;
@@ -640,13 +719,13 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== FIRE REQUEST (event handlers se sirf flag set) =====
+    // ===== INPUT HANDLERS =====
     function requestFire() {
       if (gameState !== "running") return;
-      pendingFire = true;
+      unlockAudio();
+      fireBullet();
     }
 
-    // ===== INPUT HANDLERS =====
     document.addEventListener("keydown", (e) => {
       if (e.code === "ArrowUp" || e.key === "w" || e.key === "W") {
         moveUp = true;
@@ -661,7 +740,6 @@
         else if (gameState === "over") resetGame();
       }
       if (e.key === "e" || e.key === "E") {
-        unlockAudio();
         requestFire();
       }
     });
@@ -681,7 +759,7 @@
       return clientY - rect.top;
     }
 
-    // Touch controls for ship (canvas only)
+    // Touch drag for ship
     canvas.addEventListener("touchstart", (e) => {
       if (e.target !== canvas) return;
       e.preventDefault();
@@ -725,21 +803,20 @@
       pointerActive = false;
     });
 
-    // Mobile FIRE button – support touch + click
+    // Mobile FIRE button – click + touch
     fireButton.addEventListener("click", (e) => {
       e.stopPropagation();
-      unlockAudio();
       requestFire();
     });
 
     fireButton.addEventListener("touchstart", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      unlockAudio();
       requestFire();
     }, { passive: false });
 
     // ===== START =====
+    loadSpaceProgress();
     initStars();
     resetGame();
     requestAnimationFrame(loop);
