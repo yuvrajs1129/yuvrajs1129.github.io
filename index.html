@@ -581,7 +581,7 @@
             Optimized for mobile & desktop
           </div>
           <div class="hero-badge">
-            🎮 Eagle Flight · Neon Space Runner
+            🎮 Eagle Flight · Neon Space Runner · X/O Bot Duel
           </div>
           <div class="hero-badge">
             ⭐ Unlock badges & achievements
@@ -686,6 +686,15 @@
             <span class="badge badge-locked" id="spaceBadgeHacker">Hacker</span>
           </div>
         </div>
+        <div class="status-card">
+          <div class="status-title">Your X/O Bot Duel badges</div>
+          <div class="badge-row">
+            <span class="badge badge-locked" id="xoBadgeNoob">Noob (10 pts)</span>
+            <span class="badge badge-locked" id="xoBadgePro">Pro (20 pts)</span>
+            <span class="badge badge-locked" id="xoBadgeLegend">Legend (50 pts)</span>
+            <span class="badge badge-locked" id="xoBadgeHacker">Hacker (200 pts)</span>
+          </div>
+        </div>
       </div>
 
       <div class="daily-card" id="dailyChallengeCard">
@@ -725,6 +734,20 @@
           <div class="game-title">Neon Space Runner</div>
           <div class="game-meta">
             High-graphics space dodge game. Avoid asteroids and control the ship – difficulty slowly increases over time.
+          </div>
+        </a>
+
+        <!-- Neon X/O Bot Duel game card -->
+        <a class="game-card" href="xo.html">
+          <div class="game-icon" style="
+            background: radial-gradient(circle at 30% 20%, #f5f3ff, #a855f7 40%, #0f172a 100%);
+            box-shadow: 0 0 18px rgba(168, 85, 247, 0.85);
+          ">
+            ❌
+          </div>
+          <div class="game-title">Neon X/O Bot Duel</div>
+          <div class="game-meta">
+            Extreme high-graphics tic‑tac‑toe style game vs a smart robot. Choose X or O, pick difficulty and earn points.
           </div>
         </a>
 
@@ -938,7 +961,7 @@
         btnShareSite.addEventListener("click", async () => {
           const shareData = {
             title: "Games made by Yuvraj Soni",
-            text: "Play Eagle Flight & Neon Space Runner (phone + PC):",
+            text: "Play Eagle Flight, Neon Space Runner & X/O Bot Duel (phone + PC):",
             url: "https://yuvrajs1129.github.io/"
           };
 
@@ -1000,6 +1023,7 @@
       // ===== BADGES UI (front page) =====
       const LS_EAGLE_ACH = "eagle_achievements_v1";
       const LS_SPACE_ACH = "space_achievements_v1";
+      const LS_XO_ACH    = "xo_achievements_v1";
 
       function loadEagleAch() {
         let ach = { noob:false, pro:false, legend:false };
@@ -1025,6 +1049,18 @@
         return ach;
       }
 
+      function loadXoAch() {
+        let ach = { noob:false, pro:false, legend:false, hacker:false };
+        try {
+          const saved = localStorage.getItem(LS_XO_ACH);
+          if (saved) {
+            const obj = JSON.parse(saved);
+            ach = Object.assign(ach, obj);
+          }
+        } catch(e){}
+        return ach;
+      }
+
       function setBadge(id, unlocked) {
         const el = document.getElementById(id);
         if (!el) return;
@@ -1039,6 +1075,7 @@
 
       const eagleAch = loadEagleAch();
       const spaceAch = loadSpaceAch();
+      const xoAch    = loadXoAch();
 
       setBadge("eagleBadgeNoob",   eagleAch.noob);
       setBadge("eagleBadgePro",    eagleAch.pro);
@@ -1048,6 +1085,11 @@
       setBadge("spaceBadgePro",    spaceAch.pro);
       setBadge("spaceBadgeLegend", spaceAch.legend);
       setBadge("spaceBadgeHacker", spaceAch.hacker);
+
+      setBadge("xoBadgeNoob",      xoAch.noob);
+      setBadge("xoBadgePro",       xoAch.pro);
+      setBadge("xoBadgeLegend",    xoAch.legend);
+      setBadge("xoBadgeHacker",    xoAch.hacker);
 
       // ===== DAILY CHALLENGE =====
       const dailyText   = document.getElementById("dailyChallengeText");
