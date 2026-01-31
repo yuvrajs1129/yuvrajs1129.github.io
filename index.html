@@ -11,17 +11,6 @@
 
   <meta name="description" content="Play premium browser games made by Yuvraj – Eagle Flight, Neon Space Runner and more. Free HTML5 games for phone and PC.">
 
-  <!-- Google Analytics (Yuvraj Games) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z7X14R7T1M"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-Z7X14R7T1M');
-  </script>
-  <!-- End Google Analytics -->
-  
   <style>
     * { box-sizing: border-box; }
 
@@ -83,6 +72,14 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: pageFadeIn 0.6s ease-out forwards;
+    }
+
+    @keyframes pageFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     /* NAV */
@@ -111,13 +108,27 @@
     }
     .nav-title-main { font-size:16px; font-weight:600; }
     .nav-title-sub { font-size:11px; color:var(--text-muted); }
-    .nav-right { display:flex; align-items:center; gap:10px; font-size:11px; color:var(--text-muted); }
+    .nav-right {
+      display:flex; align-items:center; gap:8px;
+      font-size:11px; color:var(--text-muted);
+    }
     .nav-pill {
       padding:4px 10px;
       border-radius:999px;
       border:1px solid rgba(148,163,184,0.35);
       background: rgba(15,23,42,0.9);
       color:#e5e7eb;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      cursor: default;
+    }
+    .sound-toggle {
+      cursor:pointer;
+    }
+    .sound-toggle.muted {
+      border-color: #ef4444;
+      color:#9ca3af;
     }
 
     /* HERO */
@@ -195,6 +206,7 @@
       align-items:center;
       gap:6px;
       text-decoration:none;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
     }
     .btn-primary {
       background: linear-gradient(135deg, #ef4444, #f97316);
@@ -205,6 +217,7 @@
     .btn-primary:hover {
       filter:brightness(1.05);
       box-shadow:0 12px 30px rgba(248,113,113,0.45);
+      transform: translateY(-1px);
     }
     .btn-ghost {
       background: rgba(15,23,42,0.9);
@@ -214,7 +227,9 @@
     .btn-ghost:hover {
       border-color: rgba(248,250,252,0.6);
       background: rgba(15,23,42,1);
+      transform: translateY(-1px);
     }
+
     .hero-note {
       font-size:11px;
       color:#9ca3af;
@@ -309,10 +324,83 @@
       cursor:pointer;
     }
 
+    /* STATUS + BADGES + DAILY CHALLENGE */
+    .status-section {
+      margin-top: 4px;
+      margin-bottom: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .status-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+      gap:10px;
+    }
+    .status-card {
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(31,41,55,0.95);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    }
+    .status-title {
+      font-size:13px;
+      font-weight:600;
+      margin-bottom:6px;
+    }
+    .badge-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+    .badge {
+      font-size:11px;
+      padding:3px 9px;
+      border-radius:999px;
+      border:1px solid rgba(55,65,81,0.9);
+      background:rgba(15,23,42,0.9);
+      color:#6b7280;
+      text-transform:uppercase;
+      letter-spacing:0.03em;
+    }
+    .badge-unlocked {
+      border-color:#facc15;
+      background:rgba(250,204,21,0.1);
+      color:#facc15;
+      box-shadow:0 0 10px rgba(250,204,21,0.4);
+    }
+
+    .daily-card {
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: radial-gradient(circle at top left, rgba(30,64,175,0.35), rgba(15,23,42,0.98));
+      border: 1px solid rgba(37,99,235,0.7);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.85);
+    }
+    .daily-title {
+      font-size:14px;
+      font-weight:600;
+      margin-bottom:4px;
+    }
+    .daily-text {
+      font-size:12px;
+      color:#e5e7eb;
+      margin-bottom:4px;
+    }
+    .daily-status {
+      font-size:12px;
+    }
+    .daily-status.done {
+      color:#22c55e;
+    }
+    .daily-status.todo {
+      color:#f97316;
+    }
+
     /* GAMES SECTION */
     .games-section {
       margin-top:8px;
-      transition: opacity 0.2s ease, transform 0.2s ease;
     }
     .games-section.hidden-games {
       display:none;
@@ -466,6 +554,9 @@
       </div>
       <div class="nav-right">
         <div class="nav-pill">No download · Play in browser</div>
+        <button id="btnSoundToggle" class="nav-pill sound-toggle" type="button">
+          🔊 Sound: On
+        </button>
       </div>
     </header>
 
@@ -493,22 +584,22 @@
             🎮 Eagle Flight · Neon Space Runner
           </div>
           <div class="hero-badge">
-            ⭐ Community-rated experiences
+            ⭐ Unlock badges & achievements
           </div>
         </div>
 
         <div class="hero-actions">
-  <button id="btnPlayGames" class="btn-primary" type="button">
-    <span>Play games now</span>
-    <span>→</span>
-  </button>
-  <button id="btnShareSite" class="btn-ghost" type="button">
-    <span>Share these games</span>
-  </button>
-  <button id="btnOpenMain" class="btn-ghost" type="button">
-    <span>Refresh homepage</span>
-  </button>
-</div>
+          <button id="btnPlayGames" class="btn-primary" type="button">
+            <span>Play games now</span>
+            <span>→</span>
+          </button>
+          <button id="btnShareSite" class="btn-ghost" type="button">
+            <span>Share these games</span>
+          </button>
+          <button id="btnOpenMain" class="btn-ghost" type="button">
+            <span>Refresh homepage</span>
+          </button>
+        </div>
 
         <div class="hero-note">
           Tip: Add this site to your home screen to make it feel like a real app.
@@ -575,7 +666,36 @@
       </div>
     </section>
 
-    <!-- GAMES SECTION (hidden until button click) -->
+    <!-- STATUS + BADGES + DAILY CHALLENGE -->
+    <section id="statusSection" class="status-section">
+      <div class="status-grid">
+        <div class="status-card">
+          <div class="status-title">Your Eagle Flight badges</div>
+          <div class="badge-row">
+            <span class="badge badge-locked" id="eagleBadgeNoob">Noob</span>
+            <span class="badge badge-locked" id="eagleBadgePro">Pro</span>
+            <span class="badge badge-locked" id="eagleBadgeLegend">Legend</span>
+          </div>
+        </div>
+        <div class="status-card">
+          <div class="status-title">Your Space Runner badges</div>
+          <div class="badge-row">
+            <span class="badge badge-locked" id="spaceBadgeNoob">Noob</span>
+            <span class="badge badge-locked" id="spaceBadgePro">Pro</span>
+            <span class="badge badge-locked" id="spaceBadgeLegend">Legend</span>
+            <span class="badge badge-locked" id="spaceBadgeHacker">Hacker</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="daily-card" id="dailyChallengeCard">
+        <div class="daily-title">🎯 Today's challenge</div>
+        <div class="daily-text" id="dailyChallengeText"></div>
+        <div class="daily-status" id="dailyChallengeStatus"></div>
+      </div>
+    </section>
+
+    <!-- GAMES SECTION -->
     <section id="gamesSection" class="games-section hidden-games">
       <div class="section-title">Available games</div>
       <div class="section-sub">
@@ -645,19 +765,19 @@
       const btnCancel = document.getElementById("ratingCancel");
       const btnSubmit = document.getElementById("ratingSubmit");
       const msg = document.getElementById("ratingMessage");
-      const STORAGE_KEY = "yuvraj_site_rating_done_v2";
+      const STORAGE_KEY_RATING = "yuvraj_site_rating_done_v2";
 
       let currentRating = 0;
 
       function showOverlay() { overlay.classList.remove("hidden"); }
       function hideOverlay() { overlay.classList.add("hidden"); }
 
-      function loadShouldShow() {
-        try { return !localStorage.getItem(STORAGE_KEY); }
+      function loadRatingShown() {
+        try { return !localStorage.getItem(STORAGE_KEY_RATING); }
         catch { return true; }
       }
-      function markDone(value) {
-        try { localStorage.setItem(STORAGE_KEY, String(value)); }
+      function markRatingDone(value) {
+        try { localStorage.setItem(STORAGE_KEY_RATING, String(value)); }
         catch {}
       }
       function updateStars() {
@@ -676,7 +796,7 @@
       });
 
       btnCancel.addEventListener("click", () => {
-        markDone("canceled");
+        markRatingDone("canceled");
         hideOverlay();
       });
 
@@ -685,21 +805,74 @@
           msg.textContent = "Please select star rating pehle 🙂";
           return;
         }
-        markDone(currentRating);
+        markRatingDone(currentRating);
         msg.textContent = "Thanks for rating " + currentRating + "★!";
         setTimeout(hideOverlay, 600);
       });
 
-      if (loadShouldShow()) {
+      if (loadRatingShown()) {
         setTimeout(showOverlay, 1500);
       }
 
-// ===== GAMES SECTION TOGGLE (buttons working) =====
-      const gamesSection = document.getElementById("gamesSection");
-      const btnPlayGames = document.getElementById("btnPlayGames");
+      // ===== SOUND TOGGLE + BGM =====
+      const btnSoundToggle = document.getElementById("btnSoundToggle");
+      const LS_SOUND = "global_sound_enabled_v1";
+      let soundEnabled = true;
+      let bgm = null;
+
+      function loadSoundSetting() {
+        try {
+          const v = localStorage.getItem(LS_SOUND);
+          if (v === "false") soundEnabled = false;
+          else soundEnabled = true;
+        } catch (e) {
+          soundEnabled = true;
+        }
+      }
+      function saveSoundSetting() {
+        try { localStorage.setItem(LS_SOUND, String(soundEnabled)); } catch(e){}
+      }
+      function updateSoundToggleUI() {
+        if (!btnSoundToggle) return;
+        btnSoundToggle.classList.toggle("muted", !soundEnabled);
+        btnSoundToggle.textContent = soundEnabled ? "🔊 Sound: On" : "🔇 Sound: Off";
+      }
+      function ensureBgm() {
+        if (!bgm) {
+          bgm = new Audio("bgm.mp3"); // tumhe bgm.mp3 upload karna hoga
+          bgm.loop = true;
+          bgm.volume = 0.4;
+        }
+      }
+      function tryPlayBgm() {
+        if (!soundEnabled) return;
+        ensureBgm();
+        try { bgm.play().catch(()=>{}); } catch(e){}
+      }
+      function stopBgm() {
+        if (!bgm) return;
+        try { bgm.pause(); } catch(e){}
+      }
+
+      loadSoundSetting();
+      updateSoundToggleUI();
+
+      if (btnSoundToggle) {
+        btnSoundToggle.addEventListener("click", () => {
+          soundEnabled = !soundEnabled;
+          saveSoundSetting();
+          updateSoundToggleUI();
+          if (soundEnabled) tryPlayBgm();
+          else stopBgm();
+        });
+      }
+
+      // ===== GAMES SECTION TOGGLE (buttons working) =====
+      const gamesSection   = document.getElementById("gamesSection");
+      const btnPlayGames   = document.getElementById("btnPlayGames");
       const btnBrowseGames = document.getElementById("btnBrowseGames");
-      const btnOpenMain = document.getElementById("btnOpenMain");
-      const btnShareSite = document.getElementById("btnShareSite"); // NEW
+      const btnOpenMain    = document.getElementById("btnOpenMain");
+      const btnShareSite   = document.getElementById("btnShareSite");
 
       function showGamesSection() {
         if (!gamesSection) return;
@@ -710,6 +883,7 @@
       if (btnPlayGames) {
         btnPlayGames.addEventListener("click", (e) => {
           e.preventDefault();
+          tryPlayBgm();
           showGamesSection();
         });
       }
@@ -717,6 +891,7 @@
       if (btnBrowseGames) {
         btnBrowseGames.addEventListener("click", (e) => {
           e.preventDefault();
+          tryPlayBgm();
           showGamesSection();
         });
       }
@@ -735,6 +910,8 @@
             url: "https://yuvrajs1129.github.io/"
           };
 
+          tryPlayBgm();
+
           if (navigator.share) {
             try {
               await navigator.share(shareData);
@@ -751,6 +928,123 @@
           }
         });
       }
+
+      // ===== BADGES UI (front page) =====
+      const LS_EAGLE_ACH = "eagle_achievements_v1";
+      const LS_SPACE_ACH = "space_achievements_v1";
+
+      function loadEagleAch() {
+        let ach = { noob:false, pro:false, legend:false };
+        try {
+          const saved = localStorage.getItem(LS_EAGLE_ACH);
+          if (saved) {
+            const obj = JSON.parse(saved);
+            ach = Object.assign(ach, obj);
+          }
+        } catch(e){}
+        return ach;
+      }
+
+      function loadSpaceAch() {
+        let ach = { noob:false, pro:false, legend:false, hacker:false };
+        try {
+          const saved = localStorage.getItem(LS_SPACE_ACH);
+          if (saved) {
+            const obj = JSON.parse(saved);
+            ach = Object.assign(ach, obj);
+          }
+        } catch(e){}
+        return ach;
+      }
+
+      function setBadge(id, unlocked) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (unlocked) {
+          el.classList.add("badge-unlocked");
+          el.classList.remove("badge-locked");
+        } else {
+          el.classList.remove("badge-unlocked");
+          el.classList.add("badge-locked");
+        }
+      }
+
+      const eagleAch = loadEagleAch();
+      const spaceAch = loadSpaceAch();
+
+      setBadge("eagleBadgeNoob",   eagleAch.noob);
+      setBadge("eagleBadgePro",    eagleAch.pro);
+      setBadge("eagleBadgeLegend", eagleAch.legend);
+
+      setBadge("spaceBadgeNoob",   spaceAch.noob);
+      setBadge("spaceBadgePro",    spaceAch.pro);
+      setBadge("spaceBadgeLegend", spaceAch.legend);
+      setBadge("spaceBadgeHacker", spaceAch.hacker);
+
+      // ===== DAILY CHALLENGE =====
+      const dailyText   = document.getElementById("dailyChallengeText");
+      const dailyStatus = document.getElementById("dailyChallengeStatus");
+      const LS_DAILY    = "daily_challenge_v1";
+
+      const DAILY_CHALLENGES = [
+        { id: "eagle15", text: "Eagle Flight – reach score 15 (Noob badge).",   check: (e,s)=>e.noob },
+        { id: "eagle30", text: "Eagle Flight – reach score 30 (Pro badge).",    check: (e,s)=>e.pro },
+        { id: "eagle60", text: "Eagle Flight – reach score 60 (Legend badge).", check: (e,s)=>e.legend },
+        { id: "space150", text: "Space Runner – reach score 150 (Noob badge).",   check: (e,s)=>s.noob },
+        { id: "space350", text: "Space Runner – reach score 350 (Pro badge).",    check: (e,s)=>s.pro },
+        { id: "space600", text: "Space Runner – reach score 600 (Legend badge).", check: (e,s)=>s.legend },
+        { id: "space800", text: "Space Runner – reach score 800 (Hacker badge).", check: (e,s)=>s.hacker }
+      ];
+
+      function todayString() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth()+1).padStart(2,"0");
+        const dd= String(d.getDate()).padStart(2,"0");
+        return `${y}-${m}-${dd}`;
+      }
+
+      function loadDaily() {
+        try {
+          const saved = localStorage.getItem(LS_DAILY);
+          if (!saved) return null;
+          return JSON.parse(saved);
+        } catch(e){ return null; }
+      }
+      function saveDaily(obj) {
+        try { localStorage.setItem(LS_DAILY, JSON.stringify(obj)); } catch(e){}
+      }
+
+      function pickRandomChallenge() {
+        const idx = Math.floor(Math.random() * DAILY_CHALLENGES.length);
+        return DAILY_CHALLENGES[idx];
+      }
+
+      function initDaily() {
+        let stored = loadDaily();
+        const today = todayString();
+        let challenge;
+        if (!stored || stored.date !== today) {
+          challenge = pickRandomChallenge();
+          saveDaily({ id: challenge.id, date: today });
+        } else {
+          challenge = DAILY_CHALLENGES.find(c => c.id === stored.id) || pickRandomChallenge();
+        }
+
+        dailyText.textContent = challenge.text;
+        const completed = challenge.check(eagleAch, spaceAch);
+        if (completed) {
+          dailyStatus.textContent = "✅ Completed (badge already unlocked)";
+          dailyStatus.classList.add("done");
+          dailyStatus.classList.remove("todo");
+        } else {
+          dailyStatus.textContent = "❌ Not completed yet – play the game to complete it.";
+          dailyStatus.classList.add("todo");
+          dailyStatus.classList.remove("done");
+        }
+      }
+
+      initDaily();
 
       // ===== SERVICE WORKER REGISTRATION (PWA) =====
       if ("serviceWorker" in navigator) {
