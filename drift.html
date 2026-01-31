@@ -328,25 +328,28 @@
 
     const OWNER_NAME = "Yuvraj";
 
-    // ===== DIFFICULTY CONFIG =====
+    // ===== DIFFICULTY CONFIG (lane lines faster on higher modes) =====
     const DIFF_CONFIG = {
       easy: {
         label: "Easy",
         speedBase: 170,
         speedMax: 320,
-        spawnBase: 1.1
+        spawnBase: 1.1,
+        laneFactor: 0.22
       },
       medium: {
         label: "Medium",
         speedBase: 220,
         speedMax: 380,
-        spawnBase: 0.8
+        spawnBase: 0.8,
+        laneFactor: 0.30
       },
       hard: {
         label: "Hard",
         speedBase: 270,
         speedMax: 430,
-        spawnBase: 0.6
+        spawnBase: 0.6,
+        laneFactor: 0.38
       }
     };
 
@@ -404,7 +407,9 @@
     const LS_DRIFT_BEST = "drift_best_distance_v1";
     const LS_DRIFT_ACH  = "drift_achievements_v1";
 
-       const DRIFT_THRESHOLDS = {
+    // Updated thresholds as per your request:
+    // 5000m - Noob, 20000m - Pro, 50000m - Legend, 100000m - Hacker
+    const DRIFT_THRESHOLDS = {
       noob:   5000,
       pro:    20000,
       legend: 50000,
@@ -447,7 +452,7 @@
       achievementTimer   = 180; // ~3 seconds
     }
 
-       function updateDriftAchievements() {
+    function updateDriftAchievements() {
       let changed = false;
 
       if (distance >= DRIFT_THRESHOLDS.noob && !driftAchievements.noob) {
@@ -475,7 +480,6 @@
         saveDriftProgress();
       }
     }
-    }
 
     // ===== GAME STATE =====
     let gameState = "ready"; // "ready", "running", "over"
@@ -502,7 +506,7 @@
       height: 58
     };
 
-    const enemies = []; // { lane, x, y, width, height, speed, color, glow }
+    const enemies = []; // { type, lane, x, y, width, height, speed, color, glow }
     let speed      = 180; // vertical speed
     let spawnTimer = 0;
     let baseSpawnInterval = 1.0; // seconds
@@ -591,16 +595,37 @@
       const lane = Math.floor(Math.random() * LANES_COUNT);
       const laneX = laneCenters[lane];
 
-      const width  = 30 + Math.random() * 10;
-      const height = 56 + Math.random() * 8;
+      // random decide car or truck
+      const isTruck = Math.random() < 0.25; // 25% trucks
 
-      const hue = 20 + Math.random() * 50;  // orange/red range
+      let width, height, speedMul;
+      let type;
+
+      if (isTruck) {
+        type   = "truck";
+        width  = 32 + Math.random() * 6;    // a bit wider
+        height = 90 + Math.random() * 12;   // much taller
+        speedMul = 0.9 + Math.random() * 0.2; // slightly slower / same-ish
+      } else {
+        type   = "car";
+        width  = 30 + Math.random() * 10;
+        height = 56 + Math.random() * 8;
+        speedMul = 0.9 + Math.random() * 0.3;
+      }
+
+      const hue = isTruck
+        ? 200 + Math.random() * 40   // bluish trucks
+        : 20 + Math.random() * 50;   // orange/red cars
+
       const color = `hsl(${hue}, 90%, 55%)`;
-      const glow  = `rgba(248,113,113,0.8)`;
+      const glow  = isTruck
+        ? "rgba(59,130,246,0.8)"
+        : "rgba(248,113,113,0.8)";
 
-      const enemySpeed = speed * (0.9 + Math.random() * 0.3);
+      const enemySpeed = speed * speedMul;
 
       enemies.push({
+        type,
         lane,
         x: laneX,
         y: road.top - height - 40,
@@ -673,8 +698,8 @@
       const targetSpeed = cfg.speedBase + distance * 0.06;
       speed = Math.min(targetSpeed, cfg.speedMax);
 
-      // Lane dash offset (for moving lane lines)
-      laneDashOffset += speed * dt * 0.3;
+      // Lane dash offset (for moving lane lines) – difficulty factor
+      laneDashOffset += speed * dt * cfg.laneFactor;
 
       // Spawn interval lower with distance
       baseSpawnInterval = cfg.spawnBase - Math.min(distance / 3000, 0.4);
@@ -752,22 +777,54 @@
         ctx.shadowColor = e.glow;
         ctx.shadowBlur = 18;
 
-        const grd = ctx.createLinearGradient(0, -e.height/2, 0, e.height/2);
-        grd.addColorStop(0, "#fee2e2");
-        grd.addColorStop(0.4, e.color);
-        grd.addColorStop(1, "#7f1d1d");
+        if (e.type === "truck") {
+          // Truck: long body + cabin
+          const bodyH = e.height * 0.65;
+          const cabinH = e.height - bodyH;
 
-        ctx.fillStyle = grd;
-        ctx.beginPath();
-        ctx.roundRect(-e.width/2, -e.height/2, e.width, e.height, 10);
-        ctx.fill();
+          // Trailer/body
+          const grdBody = ctx.createLinearGradient(0, -e.height/2, 0, e.height/2);
+          grdBody.addColorStop(0, "#dbeafe");
+          grdBody.addColorStop(0.4, e.color);
+          grdBody.addColorStop(1, "#111827");
 
-        // windows
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "rgba(15,23,42,0.9)";
-        ctx.beginPath();
-        ctx.roundRect(-e.width*0.38, -e.height*0.2, e.width*0.76, e.height*0.26, 6);
-        ctx.fill();
+          ctx.fillStyle = grdBody;
+          ctx.beginPath();
+          ctx.roundRect(-e.width/2, -e.height/2, e.width, bodyH, 10);
+          ctx.fill();
+
+          // Cabin (front)
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = "#0f172a";
+          ctx.beginPath();
+          ctx.roundRect(-e.width/2, -e.height/2 + bodyH - 4, e.width, cabinH + 4, 10);
+          ctx.fill();
+
+          // Windows
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "rgba(15,23,42,0.9)";
+          ctx.beginPath();
+          ctx.roundRect(-e.width*0.35, -e.height/2 + bodyH + 2, e.width*0.7, cabinH*0.5, 6);
+          ctx.fill();
+        } else {
+          // Car
+          const grd = ctx.createLinearGradient(0, -e.height/2, 0, e.height/2);
+          grd.addColorStop(0, "#fee2e2");
+          grd.addColorStop(0.4, e.color);
+          grd.addColorStop(1, "#7f1d1d");
+
+          ctx.fillStyle = grd;
+          ctx.beginPath();
+          ctx.roundRect(-e.width/2, -e.height/2, e.width, e.height, 10);
+          ctx.fill();
+
+          // windows
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "rgba(15,23,42,0.9)";
+          ctx.beginPath();
+          ctx.roundRect(-e.width*0.38, -e.height*0.2, e.width*0.76, e.height*0.26, 6);
+          ctx.fill();
+        }
 
         ctx.restore();
       }
