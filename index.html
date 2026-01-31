@@ -694,11 +694,12 @@
         setTimeout(showOverlay, 1500);
       }
 
-      // ===== GAMES SECTION TOGGLE (buttons working) =====
+// ===== GAMES SECTION TOGGLE (buttons working) =====
       const gamesSection = document.getElementById("gamesSection");
       const btnPlayGames = document.getElementById("btnPlayGames");
       const btnBrowseGames = document.getElementById("btnBrowseGames");
       const btnOpenMain = document.getElementById("btnOpenMain");
+      const btnShareSite = document.getElementById("btnShareSite"); // NEW
 
       function showGamesSection() {
         if (!gamesSection) return;
@@ -723,6 +724,31 @@
       if (btnOpenMain) {
         btnOpenMain.addEventListener("click", () => {
           window.location.href = "/";
+        });
+      }
+
+      if (btnShareSite) {
+        btnShareSite.addEventListener("click", async () => {
+          const shareData = {
+            title: "Games made by Yuvraj Soni",
+            text: "Play Eagle Flight & Neon Space Runner (phone + PC):",
+            url: "https://yuvrajs1129.github.io/"
+          };
+
+          if (navigator.share) {
+            try {
+              await navigator.share(shareData);
+            } catch (err) {
+              // cancelled
+            }
+          } else {
+            try {
+              await navigator.clipboard.writeText(shareData.url);
+              alert("Link copied! WhatsApp / Instagram me paste karke share karo.");
+            } catch (err) {
+              alert("Share this link: " + shareData.url);
+            }
+          }
         });
       }
 
