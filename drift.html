@@ -84,6 +84,173 @@
       color: #64748b;
       text-align: center;
     }
+
+    /* Overlays (setup + result) */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: overlayFade 0.22s ease-out;
+    }
+    .overlay.hidden {
+      display: none;
+    }
+
+    @keyframes overlayFade {
+      from { background: rgba(15,23,42,0); }
+      to   { background: rgba(15,23,42,0.9); }
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 320px;
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      background:
+        radial-gradient(circle at top, rgba(79,70,229,0.6), rgba(15,23,42,0.98));
+      border: 1px solid rgba(129,140,248,0.9);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.95);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      animation: modalIn 0.25s ease-out;
+    }
+
+    @keyframes modalIn {
+      from {
+        transform: translateY(14px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #e5e7eb;
+      margin-bottom: 6px;
+    }
+
+    .modal-text {
+      font-size: 12px;
+      color: #c7d2fe;
+      margin-bottom: 10px;
+    }
+
+    .choice-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .choice-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+
+    .choice-btn {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.95);
+      color: #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+    }
+
+    .choice-btn.active {
+      border-color: #22c55e;
+      background: linear-gradient(135deg, #22c55e, #a3e635);
+      color: #020617;
+      box-shadow: 0 10px 24px rgba(34,197,94,0.45);
+      font-weight: 600;
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary-btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .primary-btn {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid #22c55e;
+      background: linear-gradient(135deg, #22c55e, #a3e635);
+      color: #020617;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 26px rgba(34,197,94,0.5);
+      transition: transform 0.08s ease, filter 0.08s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .secondary-btn {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.98);
+      color: #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.08s ease, border-color 0.08s ease;
+    }
+
+    .secondary-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(248,250,252,0.7);
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #e5e7eb;
+    }
+
+    .result-message {
+      font-size: 13px;
+      color: #e5e7eb;
+      margin-bottom: 6px;
+    }
+
+    .result-stats {
+      font-size: 12px;
+      color: #a5b4fc;
+      margin-bottom: 8px;
+    }
+
+    /* Explosion highlight (already had) */
+    .cell { /* placeholder to avoid confusion, not used here */ }
+
   </style>
 </head>
 <body>
@@ -97,7 +264,7 @@
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="hint-overlay">
       <div class="hint-box" id="hintText">
-        Tap / Press Space to start · Move between lanes to avoid traffic.
+        Choose difficulty, then start the race. Move between lanes to avoid every car.
       </div>
     </div>
   </div>
@@ -106,17 +273,95 @@
     Game owner: <strong>Yuvraj</strong>
   </div>
 
+  <!-- SETUP OVERLAY (difficulty) -->
+  <div id="setupOverlay" class="overlay">
+    <div class="modal">
+      <div class="modal-title">Start race</div>
+      <div class="modal-text">
+        Choose the traffic difficulty and start your neon highway run.
+      </div>
+
+      <div class="choice-label">Difficulty</div>
+      <div class="choice-row">
+        <button class="choice-btn active" data-diff="easy"   id="btnDiffEasy">Easy</button>
+        <button class="choice-btn"        data-diff="medium" id="btnDiffMedium">Medium</button>
+        <button class="choice-btn"        data-diff="hard"   id="btnDiffHard">Hard</button>
+      </div>
+
+      <div class="primary-btn-row">
+        <button class="primary-btn" id="btnStartRace" type="button">Start race</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT OVERLAY -->
+  <div id="resultOverlay" class="overlay hidden">
+    <div class="modal">
+      <div id="resultTitle" class="result-title">You crashed</div>
+      <div id="resultMessage" class="result-message"></div>
+      <div id="resultStats" class="result-stats"></div>
+
+      <div class="primary-btn-row">
+        <button class="primary-btn" id="btnResultAgain" type="button">
+          Race again
+        </button>
+        <button class="secondary-btn" id="btnResultChange" type="button">
+          Change difficulty
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ===== BASIC SETUP =====
     const canvas = document.getElementById("gameCanvas");
     const ctx    = canvas.getContext("2d");
     const hintEl = document.getElementById("hintText");
 
+    const setupOverlay   = document.getElementById("setupOverlay");
+    const resultOverlay  = document.getElementById("resultOverlay");
+    const btnDiffEasy    = document.getElementById("btnDiffEasy");
+    const btnDiffMedium  = document.getElementById("btnDiffMedium");
+    const btnDiffHard    = document.getElementById("btnDiffHard");
+    const btnStartRace   = document.getElementById("btnStartRace");
+    const btnResultAgain = document.getElementById("btnResultAgain");
+    const btnResultChange= document.getElementById("btnResultChange");
+    const resultTitle    = document.getElementById("resultTitle");
+    const resultMessage  = document.getElementById("resultMessage");
+    const resultStats    = document.getElementById("resultStats");
+
     const OWNER_NAME = "Yuvraj";
+
+    // ===== DIFFICULTY CONFIG =====
+    const DIFF_CONFIG = {
+      easy: {
+        label: "Easy",
+        speedBase: 170,
+        speedMax: 320,
+        spawnBase: 1.1,
+        winDistance: 1000
+      },
+      medium: {
+        label: "Medium",
+        speedBase: 220,
+        speedMax: 380,
+        spawnBase: 0.8,
+        winDistance: 1600
+      },
+      hard: {
+        label: "Hard",
+        speedBase: 270,
+        speedMax: 430,
+        spawnBase: 0.6,
+        winDistance: 2200
+      }
+    };
+
+    let difficulty = "easy";
 
     // ===== SOUNDS =====
     const engineSound = new Audio("drift-engine.mp3");
-   const crashSound  = new Audio("explosion.mp3");   // rocket/space wala sound reuse
+    const crashSound  = new Audio("explosion.mp3"); // reuse rocket explosion
 
     engineSound.loop   = true;
     engineSound.volume = 0.5;
@@ -206,7 +451,7 @@
 
     function showAchievement(text) {
       achievementMessage = text;
-      achievementTimer   = 180; // 3 seconds at ~60 fps
+      achievementTimer   = 180; // ~3 seconds
     }
 
     function updateDriftAchievements() {
@@ -241,6 +486,7 @@
     // ===== GAME STATE =====
     let gameState = "ready"; // "ready", "running", "over"
     let lastTime  = null;
+    let lastResult = "crash"; // "crash" or "win"
 
     const LANES_COUNT = 3;
     const road = {
@@ -268,18 +514,31 @@
     };
 
     const enemies = []; // { lane, x, y, width, height, speed, color, glow }
-    let speed      = 180; // pixels per second vertical base speed
+    let speed      = 180; // vertical speed
     let spawnTimer = 0;
     let baseSpawnInterval = 1.0; // seconds
+    let laneDashOffset = 0;
 
     let explosion = null; // { x, y, radius, alpha }
 
+    // ===== DIFFICULTY HELPERS =====
+    function applyDifficultyBase() {
+      const cfg = DIFF_CONFIG[difficulty];
+      speed = cfg.speedBase;
+      baseSpawnInterval = cfg.spawnBase;
+    }
+
+    function capitalize(str) {
+      if (!str) return str;
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
     // ===== GAME FUNCTIONS =====
-    function resetGame() {
+    function resetGameStateOnly() {
       distance   = 0;
-      speed      = 180;
-      baseSpawnInterval = 1.0;
+      applyDifficultyBase();
       spawnTimer = 0;
+      laneDashOffset = 0;
 
       enemies.length = 0;
       explosion = null;
@@ -294,51 +553,53 @@
 
       gameState = "ready";
       lastTime  = null;
+    }
+
+    function resetGame() {
+      resetGameStateOnly();
       stopEngine();
       if (hintEl) {
-        hintEl.textContent = "Tap / Press Space to start · Move between lanes to avoid traffic.";
+        hintEl.textContent = "Tap left/right half of the road or use arrow keys to drift between lanes.";
       }
     }
 
     function startGame() {
-      distance   = 0;
-      speed      = 180;
-      baseSpawnInterval = 1.0;
-      spawnTimer = 0;
-
-      enemies.length = 0;
-      explosion = null;
-
-      car.lane     = 1;
-      car.x        = laneCenters[1];
-      car.targetX  = laneCenters[1];
-      car.moveTime = 0;
-
-      achievementMessage = "";
-      achievementTimer   = 0;
-
+      resetGameStateOnly();
       gameState = "running";
-      lastTime  = null;
       startEngine();
       if (hintEl) {
-        hintEl.textContent = "";
+        hintEl.textContent = "Avoid every car. Reach the distance target to win!";
       }
     }
 
-    function gameOver() {
+    function handleCrash() {
       if (gameState === "over") return;
       gameState = "over";
+      lastResult = "crash";
       stopEngine();
       playSound(crashSound);
+      triggerExplosion(car.x, car.y - 5);
 
       if (distance > bestDist) {
         bestDist = distance;
         saveDriftProgress();
       }
 
-      if (hintEl) {
-        hintEl.textContent = "Crashed! Tap / Press Space to play again.";
+      openResultOverlay();
+    }
+
+    function handleWin() {
+      if (gameState === "over") return;
+      gameState = "over";
+      lastResult = "win";
+      stopEngine();
+
+      if (distance > bestDist) {
+        bestDist = distance;
+        saveDriftProgress();
       }
+
+      openResultOverlay();
     }
 
     function triggerExplosion(x, y) {
@@ -366,7 +627,7 @@
       enemies.push({
         lane,
         x: laneX,
-        y: road.top - height - 20,
+        y: road.top - height - 40,
         width,
         height,
         speed: enemySpeed,
@@ -388,14 +649,7 @@
     }
 
     function tryMoveLane(direction) {
-      if (gameState === "ready") {
-        startGame();
-      } else if (gameState === "over") {
-        resetGame();
-        return;
-      }
       if (gameState !== "running") return;
-
       const newLane = car.lane + direction;
       if (newLane < 0 || newLane >= LANES_COUNT) return;
       car.lane = newLane;
@@ -409,7 +663,7 @@
       }
 
       for (let i = enemies.length - 1; i >= 0; i--) {
-        if (enemies[i].y - enemies[i].height > canvas.height + 40) {
+        if (enemies[i].y - enemies[i].height > canvas.height + 60) {
           enemies.splice(i, 1);
         }
       }
@@ -429,8 +683,7 @@
 
         if (Math.abs(cx - ex) < (cw + ew) * 0.5 &&
             Math.abs(cy - ey) < (ch + eh) * 0.5) {
-          triggerExplosion(cx, cy - 5);
-          gameOver();
+          handleCrash();
           return;
         }
       }
@@ -452,6 +705,8 @@
         return;
       }
 
+      const cfg = DIFF_CONFIG[difficulty];
+
       // Distance
       distance += speed * dt * 0.7;
       if (distance > bestDist) {
@@ -459,17 +714,22 @@
       }
       updateDriftAchievements();
 
-      // Increase difficulty with distance
-      if (distance < 800) {
-        speed = 180 + distance * 0.08;
-      } else if (distance < 2000) {
-        speed = 240 + (distance - 800) * 0.04;
-      } else {
-        speed = 290 + (distance - 2000) * 0.02;
-      }
-      if (speed > 420) speed = 420;
+      // Speed based on distance
+      const targetSpeed = cfg.speedBase + distance * 0.06;
+      speed = Math.min(targetSpeed, cfg.speedMax);
 
-      baseSpawnInterval = 1.0 - Math.min(distance / 3000, 0.5); // from 1.0 -> 0.5
+      // Lane dash offset (for moving lane lines)
+      laneDashOffset += speed * dt * 0.3;
+
+      // Spawn interval lower with distance
+      baseSpawnInterval = cfg.spawnBase - Math.min(distance / 3000, 0.4);
+      if (baseSpawnInterval < 0.4) baseSpawnInterval = 0.4;
+
+      // Check win condition
+      if (distance >= cfg.winDistance) {
+        handleWin();
+        return;
+      }
 
       // Car & enemies
       updateCar(dt);
@@ -477,8 +737,8 @@
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
         createEnemy();
-        const minI = baseSpawnInterval * 0.5;
-        const maxI = baseSpawnInterval * 1.3;
+        const minI = baseSpawnInterval * 0.6;
+        const maxI = baseSpawnInterval * 1.2;
         spawnTimer = minI + Math.random() * (maxI - minI);
       }
 
@@ -511,9 +771,10 @@
       ctx.roundRect(road.left, road.top, road.right - road.left, road.bottom - road.top, 20);
       ctx.fill();
 
-      // Lane lines
+      // Lane lines with moving dash offset
       ctx.save();
       ctx.setLineDash([14, 12]);
+      ctx.lineDashOffset = -laneDashOffset;
       ctx.lineWidth = 3;
       ctx.strokeStyle = "rgba(156, 163, 175, 0.7)";
       for (let i = 1; i < LANES_COUNT; i++) {
@@ -620,6 +881,8 @@
       ctx.textBaseline = "top";
       ctx.textAlign = "left";
 
+      const cfg = DIFF_CONFIG[difficulty];
+
       // Distance
       ctx.fillStyle = "#e5e7eb";
       ctx.font = "18px system-ui, sans-serif";
@@ -628,7 +891,10 @@
       // Best
       ctx.font = "13px system-ui, sans-serif";
       ctx.fillStyle = "#9ca3af";
-      ctx.fillText("Best: " + Math.floor(bestDist) + "m", 14, 34);
+      ctx.fillText("Best: " + Math.floor(bestDist) + "m", 14, 32);
+
+      // Difficulty + target
+      ctx.fillText("Mode: " + cfg.label + " · Target: " + cfg.winDistance + "m", 14, 48);
 
       // Owner
       ctx.textAlign = "right";
@@ -647,31 +913,12 @@
         ctx.restore();
       }
 
-      // Center messages
+      // Center messages (only if no overlays)
       ctx.textAlign = "center";
       if (gameState === "ready") {
         ctx.fillStyle = "#e5e7eb";
-        ctx.font = "22px system-ui, sans-serif";
-        ctx.fillText("Tap / Press Space to start", canvas.width / 2, canvas.height / 2 - 20);
-
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillStyle = "#cbd5f5";
-        ctx.fillText("Move between lanes and dodge every car.", canvas.width / 2, canvas.height / 2 + 6);
-      }
-
-      if (gameState === "over") {
-        ctx.fillStyle = "#fee2e2";
-        ctx.font = "26px system-ui, sans-serif";
-        ctx.fillText("Crashed!", canvas.width / 2, canvas.height / 2 - 24);
-
-        ctx.font = "16px system-ui, sans-serif";
-        ctx.fillStyle = "#e5e7eb";
-        ctx.fillText("Distance: " + Math.floor(distance) + "m", canvas.width / 2, canvas.height / 2 + 4);
-        ctx.fillText("Best: " + Math.floor(bestDist) + "m", canvas.width / 2, canvas.height / 2 + 26);
-
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillStyle = "#cbd5f5";
-        ctx.fillText("Press Space / Tap to play again", canvas.width / 2, canvas.height / 2 + 52);
+        ctx.font = "18px system-ui, sans-serif";
+        ctx.fillText("Press Space to start from menu", canvas.width / 2, canvas.height / 2 - 10);
       }
     }
 
@@ -682,6 +929,54 @@
       drawCar();
       drawExplosion();
       drawUI();
+    }
+
+    // ===== OVERLAYS (setup + result) =====
+    function openSetupOverlay() {
+      setupOverlay.classList.remove("hidden");
+    }
+    function closeSetupOverlay() {
+      setupOverlay.classList.add("hidden");
+    }
+
+    function openResultOverlay() {
+      const cfg = DIFF_CONFIG[difficulty];
+      const dist  = Math.floor(distance);
+      const best  = Math.floor(bestDist);
+
+      if (lastResult === "crash") {
+        resultTitle.textContent = "You crashed";
+        resultMessage.textContent =
+          "Difficulty: " + cfg.label + ". Your race ended in traffic. Try again or lower the difficulty.";
+      } else {
+        resultTitle.textContent = "You win!";
+        resultMessage.textContent =
+          "You beat the traffic on " + cfg.label + " mode and reached the target distance.";
+      }
+      resultStats.textContent =
+        "Distance: " + dist + "m · Best: " + best + "m";
+
+      resultOverlay.classList.remove("hidden");
+    }
+    function closeResultOverlay() {
+      resultOverlay.classList.add("hidden");
+    }
+
+    function startRaceFromSetup() {
+      closeSetupOverlay();
+      unlockAudio();
+      startGame();
+    }
+
+    function raceAgain() {
+      closeResultOverlay();
+      unlockAudio();
+      startGame();
+    }
+
+    function changeDifficulty() {
+      closeResultOverlay();
+      openSetupOverlay();
     }
 
     // ===== LOOP =====
@@ -698,19 +993,21 @@
     }
 
     // ===== INPUT HANDLERS =====
-    function handleStartOrRestart() {
-      unlockAudio();
-      if (gameState === "ready") {
-        startGame();
-      } else if (gameState === "over") {
-        resetGame();
-      }
+    function isOverlayVisible(el) {
+      return el && !el.classList.contains("hidden");
     }
 
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
         e.preventDefault();
-        handleStartOrRestart();
+        if (isOverlayVisible(setupOverlay)) {
+          startRaceFromSetup();
+          return;
+        }
+        if (isOverlayVisible(resultOverlay)) {
+          raceAgain();
+          return;
+        }
       }
       if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") {
         unlockAudio();
@@ -724,13 +1021,11 @@
 
     canvas.addEventListener("mousedown", (e) => {
       unlockAudio();
+      if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) return;
+      if (gameState !== "running") return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const mid = rect.width / 2;
-      if (gameState === "ready" || gameState === "over") {
-        handleStartOrRestart();
-        return;
-      }
       if (x < mid) tryMoveLane(-1);
       else tryMoveLane(1);
     });
@@ -738,21 +1033,37 @@
     canvas.addEventListener("touchstart", (e) => {
       e.preventDefault();
       unlockAudio();
+      if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) return;
+      if (gameState !== "running") return;
       const rect = canvas.getBoundingClientRect();
       const touch = e.touches[0];
       const x = touch.clientX - rect.left;
       const mid = rect.width / 2;
-      if (gameState === "ready" || gameState === "over") {
-        handleStartOrRestart();
-        return;
-      }
       if (x < mid) tryMoveLane(-1);
       else tryMoveLane(1);
     }, { passive: false });
 
-    // ===== START =====
+    // Difficulty selection buttons
+    function setDifficulty(diff) {
+      difficulty = diff;
+      btnDiffEasy.classList.toggle("active",   diff === "easy");
+      btnDiffMedium.classList.toggle("active", diff === "medium");
+      btnDiffHard.classList.toggle("active",   diff === "hard");
+    }
+
+    btnDiffEasy.addEventListener("click",   () => setDifficulty("easy"));
+    btnDiffMedium.addEventListener("click", () => setDifficulty("medium"));
+    btnDiffHard.addEventListener("click",   () => setDifficulty("hard"));
+
+    btnStartRace.addEventListener("click",  () => startRaceFromSetup());
+    btnResultAgain.addEventListener("click",() => raceAgain());
+    btnResultChange.addEventListener("click",() => changeDifficulty());
+
+    // ===== INIT =====
     loadDriftProgress();
-    resetGame();
+    applyDifficultyBase();
+    resetGameStateOnly();
+    openSetupOverlay();
     requestAnimationFrame(loop);
   </script>
 </body>
