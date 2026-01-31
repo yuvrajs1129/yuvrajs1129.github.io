@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon X/O Bot Duel – Game by Yuvraj</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="High-graphics X/O (tic‑tac‑toe style) game vs a smart robot. Choose difficulty: Easy, Hard or Extreme. Created by Yuvraj.">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, #020617 0, #020617 50%, #000000 100%);
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      text-align: center;
+      color: #a855f7;
+      text-shadow: 0 0 16px rgba(168, 85, 247, 0.85);
+    }
+
+    #subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      margin-bottom: 12px;
+      max-width: 520px;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .info-chip {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #e5e7eb;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.35), rgba(15,23,42,0.98));
+      border: 1px solid rgba(37,99,235,0.8);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.85);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .board {
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 1 / 1;
+      padding: 12px;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,0.16), rgba(15,23,42,0.98)),
+        radial-gradient(circle at bottom right, rgba(168,85,247,0.2), rgba(15,23,42,1));
+      border: 1px solid #0f172a;
+      box-shadow:
+        0 22px 40px rgba(0,0,0,0.95),
+        0 0 35px rgba(59,130,246,0.35);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      touch-action: manipulation;
+    }
+
+    .cell {
+      border-radius: 16px;
+      border: 1px solid rgba(15,23,42,0.9);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(248,250,252,0.12), transparent 55%),
+        radial-gradient(circle at bottom, #020617, #020617 60%, #000000 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(51,65,85,0.9),
+        0 12px 24px rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(34px, 8vw, 44px);
+      font-weight: 700;
+      color: #e5e7eb;
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;
+    }
+
+    .cell:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 0 0 1px rgba(55,65,81,0.9),
+        0 18px 30px rgba(0,0,0,0.95);
+      border-color: #1d4ed8;
+    }
+
+    .cell.filled {
+      cursor: default;
+      box-shadow:
+        inset 0 0 0 1px rgba(15,23,42,0.95),
+        0 16px 30px rgba(0,0,0,0.95);
+    }
+
+    .cell.player-x {
+      color: #38bdf8;
+      text-shadow: 0 0 18px rgba(56,189,248,0.95);
+      border-color: rgba(56,189,248,0.8);
+    }
+
+    .cell.player-o {
+      color: #f97316;
+      text-shadow: 0 0 18px rgba(249,115,22,0.95);
+      border-color: rgba(249,115,22,0.8);
+    }
+
+    .cell.bot-move {
+      box-shadow:
+        inset 0 0 0 1px rgba(15,23,42,0.95),
+        0 0 30px rgba(168,85,247,0.75);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    #footerName {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+    }
+
+    /* Overlays (setup + result) */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 320px;
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      background:
+        radial-gradient(circle at top, rgba(79,70,229,0.6), rgba(15,23,42,0.98));
+      border: 1px solid rgba(129,140,248,0.9);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.95);
+      text-align: center;
+      backdrop-filter: blur(18px);
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #e5e7eb;
+      margin-bottom: 6px;
+    }
+
+    .modal-text {
+      font-size: 12px;
+      color: #c7d2fe;
+      margin-bottom: 10px;
+    }
+
+    .choice-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .choice-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+
+    .choice-btn {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.95);
+      color: #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+    }
+
+    .choice-btn span.symbol {
+      font-size: 16px;
+    }
+
+    .choice-btn.active {
+      border-color: #22c55e;
+      background: linear-gradient(135deg, #22c55e, #a3e635);
+      color: #020617;
+      box-shadow: 0 10px 24px rgba(34,197,94,0.45);
+      font-weight: 600;
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary-btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .primary-btn {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid #22c55e;
+      background: linear-gradient(135deg, #22c55e, #a3e635);
+      color: #020617;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 26px rgba(34,197,94,0.5);
+      transition: transform 0.08s ease, filter 0.08s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .secondary-btn {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.98);
+      color: #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.08s ease, border-color 0.08s ease;
+    }
+
+    .secondary-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(248,250,252,0.7);
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #e5e7eb;
+    }
+
+    .result-message {
+      font-size: 13px;
+      color: #e5e7eb;
+      margin-bottom: 6px;
+    }
+
+    .result-points {
+      font-size: 12px;
+      color: #a5b4fc;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 480px) {
+      .board {
+        max-width: 320px;
+      }
+      .info-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Neon X/O Bot Duel – by Yuvraj</h1>
+  <div id="subtitle">
+    High-graphics tic‑tac‑toe style game vs a smart robot.<br>
+    Tap on a cell to place your mark. Choose your symbol (X or O) and bot difficulty (Easy, Hard, Extreme).
+  </div>
+
+  <div class="game-wrapper">
+    <div class="info-row">
+      <div class="info-chip" id="infoDifficulty">Difficulty: -</div>
+      <div class="info-chip" id="infoPoints">Total points: 0</div>
+    </div>
+
+    <div class="board" id="board">
+      <button class="cell" data-index="0"></button>
+      <button class="cell" data-index="1"></button>
+      <button class="cell" data-index="2"></button>
+      <button class="cell" data-index="3"></button>
+      <button class="cell" data-index="4"></button>
+      <button class="cell" data-index="5"></button>
+      <button class="cell" data-index="6"></button>
+      <button class="cell" data-index="7"></button>
+      <button class="cell" data-index="8"></button>
+    </div>
+
+    <div class="hint">
+      Your turn: tap on any empty cell to place your mark.
+    </div>
+  </div>
+
+  <div id="footerName">
+    Game owner: <strong>Yuvraj</strong>
+  </div>
+
+  <!-- SETUP OVERLAY (symbol + difficulty) -->
+  <div id="setupOverlay" class="overlay">
+    <div class="modal">
+      <div class="modal-title">Start game</div>
+      <div class="modal-text">
+        Choose your symbol and the bot difficulty, then start playing.
+      </div>
+
+      <div class="choice-label">Your symbol</div>
+      <div class="choice-row">
+        <button class="choice-btn active" data-symbol="X" id="btnSymbolX">
+          <span class="symbol">X</span> (Player)
+        </button>
+        <button class="choice-btn" data-symbol="O" id="btnSymbolO">
+          <span class="symbol">O</span> (Player)
+        </button>
+      </div>
+
+      <div class="choice-label">Bot difficulty</div>
+      <div class="choice-row">
+        <button class="choice-btn active" data-diff="easy" id="btnDiffEasy">Easy</button>
+        <button class="choice-btn" data-diff="hard" id="btnDiffHard">Hard</button>
+        <button class="choice-btn" data-diff="extreme" id="btnDiffExtreme">Extreme</button>
+      </div>
+
+      <div class="primary-btn-row">
+        <button class="primary-btn" id="btnStartGame" type="button">Start game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT OVERLAY -->
+  <div id="resultOverlay" class="overlay hidden">
+    <div class="modal">
+      <div id="resultTitle" class="result-title">You win!</div>
+      <div id="resultMessage" class="result-message"></div>
+      <div id="resultPoints" class="result-points"></div>
+
+      <div class="primary-btn-row">
+        <button class="primary-btn" id="btnResultAgain" type="button">
+          Play again
+        </button>
+        <button class="secondary-btn" id="btnResultChange" type="button">
+          Change difficulty
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== SOUND SETUP =====
+    const placeSound = new Audio("xo-place.mp3");
+    const winSound   = new Audio("xo-win.mp3");
+    const loseSound  = new Audio("xo-lose.mp3");
+
+    [placeSound, winSound, loseSound].forEach(s => {
+      s.volume = 0.8;
+    });
+
+    function playSoundSafe(sound) {
+      if (!sound) return;
+      try {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+      } catch (e) {}
+    }
+
+    // ===== DOM ELEMENTS =====
+    const boardEl         = document.getElementById("board");
+    const cells           = Array.from(document.querySelectorAll(".cell"));
+    const infoDifficulty  = document.getElementById("infoDifficulty");
+    const infoPoints      = document.getElementById("infoPoints");
+
+    const setupOverlay    = document.getElementById("setupOverlay");
+    const btnSymbolX      = document.getElementById("btnSymbolX");
+    const btnSymbolO      = document.getElementById("btnSymbolO");
+    const btnDiffEasy     = document.getElementById("btnDiffEasy");
+    const btnDiffHard     = document.getElementById("btnDiffHard");
+    const btnDiffExtreme  = document.getElementById("btnDiffExtreme");
+    const btnStartGame    = document.getElementById("btnStartGame");
+
+    const resultOverlay   = document.getElementById("resultOverlay");
+    const resultTitle     = document.getElementById("resultTitle");
+    const resultMessage   = document.getElementById("resultMessage");
+    const resultPoints    = document.getElementById("resultPoints");
+    const btnResultAgain  = document.getElementById("btnResultAgain");
+    const btnResultChange = document.getElementById("btnResultChange");
+
+    // ===== GAME + PROGRESS STATE =====
+    const LS_XO_POINTS = "xo_total_points_v1";
+    const LS_XO_ACH    = "xo_achievements_v1";
+
+    const ACH_THRESHOLDS = {
+      noob:   10,
+      pro:    20,
+      legend: 50,
+      hacker: 200
+    };
+
+    let totalPoints = 0;
+    let xoAchievements = {
+      noob:   false,
+      pro:    false,
+      legend: false,
+      hacker: false
+    };
+
+    let board = Array(9).fill(null);
+    let playerSymbol = "X";
+    let botSymbol    = "O";
+    let difficulty   = "easy"; // "easy", "hard", "extreme"
+    let currentTurn  = "player"; // "player" or "bot"
+    let gameOver     = false;
+
+    // ===== LOAD/SAVE PROGRESS =====
+    function loadProgress() {
+      try {
+        const savedPoints = localStorage.getItem(LS_XO_POINTS);
+        if (savedPoints !== null) {
+          totalPoints = parseInt(savedPoints, 10) || 0;
+        }
+        const savedAch = localStorage.getItem(LS_XO_ACH);
+        if (savedAch) {
+          const obj = JSON.parse(savedAch);
+          xoAchievements = Object.assign(xoAchievements, obj);
+        }
+      } catch (e) {}
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(LS_XO_POINTS, String(totalPoints));
+        localStorage.setItem(LS_XO_ACH, JSON.stringify(xoAchievements));
+      } catch (e) {}
+    }
+
+    function updatePointsUI() {
+      infoPoints.textContent = "Total points: " + totalPoints;
+    }
+
+    function updateAchievements() {
+      let changed = false;
+
+      if (!xoAchievements.noob   && totalPoints >= ACH_THRESHOLDS.noob)   { xoAchievements.noob   = true; changed = true; }
+      if (!xoAchievements.pro    && totalPoints >= ACH_THRESHOLDS.pro)    { xoAchievements.pro    = true; changed = true; }
+      if (!xoAchievements.legend && totalPoints >= ACH_THRESHOLDS.legend) { xoAchievements.legend = true; changed = true; }
+      if (!xoAchievements.hacker && totalPoints >= ACH_THRESHOLDS.hacker) { xoAchievements.hacker = true; changed = true; }
+
+      if (changed) {
+        saveProgress();
+      }
+    }
+
+    function addWinPointsForDifficulty() {
+      let gained = 0;
+      if (difficulty === "easy") gained = 1;
+      else if (difficulty === "hard") gained = 5;
+      else gained = 7; // extreme
+
+      totalPoints += gained;
+      updateAchievements();
+      saveProgress();
+      updatePointsUI();
+      return gained;
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    const WIN_LINES = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    function calculateWinner(b) {
+      for (const [a, c, d] of WIN_LINES) {
+        if (b[a] && b[a] === b[c] && b[a] === b[d]) {
+          return b[a]; // "X" or "O"
+        }
+      }
+      return null;
+    }
+
+    function isBoardFull(b) {
+      return b.every(cell => cell !== null);
+    }
+
+    function capitalize(str) {
+      if (!str) return str;
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function updateDifficultyUI() {
+      infoDifficulty.textContent = "Difficulty: " + capitalize(difficulty);
+    }
+
+    function clearBoard() {
+      board = Array(9).fill(null);
+      cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove("filled", "player-x", "player-o", "bot-move");
+      });
+    }
+
+    function renderBoard() {
+      board.forEach((val, idx) => {
+        const cell = cells[idx];
+        cell.textContent = val ? val : "";
+        cell.classList.remove("player-x", "player-o", "bot-move", "filled");
+        if (val) {
+          cell.classList.add("filled");
+          if (val === "X") {
+            cell.classList.add("player-x");
+          } else {
+            cell.classList.add("player-o");
+          }
+        }
+      });
+    }
+
+    function makeMove(index, symbol, isBot = false) {
+      if (board[index] !== null || gameOver) return;
+      board[index] = symbol;
+      playSoundSafe(placeSound);
+      renderBoard();
+      if (isBot) {
+        cells[index].classList.add("bot-move");
+      }
+      handlePostMove(symbol);
+    }
+
+    function handlePostMove(lastSymbol) {
+      const winner = calculateWinner(board);
+      if (winner) {
+        gameOver = true;
+        if (winner === playerSymbol) {
+          handleWin();
+        } else {
+          handleLose();
+        }
+        return;
+      }
+      if (isBoardFull(board)) {
+        gameOver = true;
+        handleDraw();
+        return;
+      }
+
+      // Switch turn
+      currentTurn = (lastSymbol === playerSymbol) ? "bot" : "player";
+      if (currentTurn === "bot") {
+        setTimeout(botMove, 550);
+      }
+    }
+
+    // ===== BOT AI (minimax + difficulty) =====
+    function getEmptyIndices(b) {
+      const arr = [];
+      for (let i = 0; i < b.length; i++) {
+        if (b[i] === null) arr.push(i);
+      }
+      return arr;
+    }
+
+    function minimax(newBoard, currentPlayer, human, ai, depth) {
+      const winner = calculateWinner(newBoard);
+      if (winner === ai)    return { score: 10 - depth };
+      if (winner === human) return { score: depth - 10 };
+      if (isBoardFull(newBoard)) return { score: 0 };
+
+      const empty = getEmptyIndices(newBoard);
+      const moves = [];
+
+      for (const index of empty) {
+        newBoard[index] = currentPlayer;
+
+        const nextPlayer = (currentPlayer === ai) ? human : ai;
+        const result = minimax(newBoard, nextPlayer, human, ai, depth + 1);
+
+        moves.push({ index, score: result.score });
+        newBoard[index] = null;
+      }
+
+      let bestMove;
+      if (currentPlayer === ai) {
+        let bestScore = -Infinity;
+        for (const m of moves) {
+          if (m.score > bestScore) {
+            bestScore = m.score;
+            bestMove = m;
+          }
+        }
+      } else {
+        let bestScore = Infinity;
+        for (const m of moves) {
+          if (m.score < bestScore) {
+            bestScore = m.score;
+            bestMove = m;
+          }
+        }
+      }
+      return bestMove;
+    }
+
+    function getBestMoveForBot() {
+      const bCopy = board.slice();
+      const best = minimax(bCopy, botSymbol, playerSymbol, botSymbol, 0);
+      return best ? best.index : null;
+    }
+
+    function getRandomMove() {
+      const empty = getEmptyIndices(board);
+      if (!empty.length) return null;
+      const r = Math.floor(Math.random() * empty.length);
+      return empty[r];
+    }
+
+    function botMove() {
+      if (gameOver) return;
+      const empty = getEmptyIndices(board);
+      if (!empty.length) return;
+
+      let index = null;
+      if (difficulty === "easy") {
+        // Pure random
+        index = getRandomMove();
+      } else if (difficulty === "hard") {
+        // Mostly smart, sometimes random
+        if (Math.random() < 0.75) {
+          index = getBestMoveForBot();
+        } else {
+          index = getRandomMove();
+        }
+      } else {
+        // extreme: always best move
+        index = getBestMoveForBot();
+      }
+
+      if (index === null) return;
+      makeMove(index, botSymbol, true);
+    }
+
+    // ===== RESULT HANDLERS =====
+    function openResultOverlay() {
+      resultOverlay.classList.remove("hidden");
+    }
+
+    function closeResultOverlay() {
+      resultOverlay.classList.add("hidden");
+    }
+
+    function handleWin() {
+      const gained = addWinPointsForDifficulty();
+
+      resultTitle.textContent = "You win!";
+      resultMessage.textContent =
+        "Difficulty: " + capitalize(difficulty) +
+        ". The bot was not strong enough this time.";
+      resultPoints.textContent =
+        "You earned " + gained + " points this round. Total points: " + totalPoints + ".";
+
+      playSoundSafe(winSound);
+      openResultOverlay();
+    }
+
+    function handleLose() {
+      resultTitle.textContent = "You lost";
+      resultMessage.textContent =
+        "The bot outplayed you this round. Try again or lower the difficulty.";
+      resultPoints.textContent =
+        "No points earned this round. Total points: " + totalPoints + ".";
+
+      playSoundSafe(loseSound);
+      openResultOverlay();
+    }
+
+    function handleDraw() {
+      resultTitle.textContent = "Draw";
+      resultMessage.textContent =
+        "No one won this round. Try again to beat the bot.";
+      resultPoints.textContent =
+        "No points earned this round. Total points: " + totalPoints + ".";
+
+      playSoundSafe(loseSound);
+      openResultOverlay();
+    }
+
+    // ===== SETUP OVERLAY =====
+    function openSetupOverlay() {
+      setupOverlay.classList.remove("hidden");
+    }
+
+    function closeSetupOverlay() {
+      setupOverlay.classList.add("hidden");
+    }
+
+    function resetRound() {
+      gameOver = false;
+      clearBoard();
+      renderBoard();
+
+      // Decide who starts
+      currentTurn = (playerSymbol === "X") ? "player" : "bot";
+      if (currentTurn === "bot") {
+        setTimeout(botMove, 600);
+      }
+    }
+
+    function startGameFromSetup() {
+      updateDifficultyUI();
+      resetRound();
+      closeSetupOverlay();
+    }
+
+    // ===== EVENT LISTENERS =====
+    // Cell clicks
+    cells.forEach(cell => {
+      cell.addEventListener("click", () => {
+        const index = Number(cell.dataset.index);
+        if (gameOver) return;
+        if (currentTurn !== "player") return;
+        if (board[index] !== null) return;
+
+        makeMove(index, playerSymbol, false);
+      });
+    });
+
+    // Symbol selection
+    function setSymbol(symbol) {
+      playerSymbol = symbol;
+      botSymbol = (symbol === "X") ? "O" : "X";
+      btnSymbolX.classList.toggle("active", symbol === "X");
+      btnSymbolO.classList.toggle("active", symbol === "O");
+    }
+
+    btnSymbolX.addEventListener("click", () => setSymbol("X"));
+    btnSymbolO.addEventListener("click", () => setSymbol("O"));
+
+    // Difficulty selection
+    function setDifficulty(diff) {
+      difficulty = diff;
+      btnDiffEasy.classList.toggle("active", diff === "easy");
+      btnDiffHard.classList.toggle("active", diff === "hard");
+      btnDiffExtreme.classList.toggle("active", diff === "extreme");
+      updateDifficultyUI();
+    }
+
+    btnDiffEasy.addEventListener("click", () => setDifficulty("easy"));
+    btnDiffHard.addEventListener("click", () => setDifficulty("hard"));
+    btnDiffExtreme.addEventListener("click", () => setDifficulty("extreme"));
+
+    // Start game button
+    btnStartGame.addEventListener("click", () => {
+      startGameFromSetup();
+    });
+
+    // Result overlay buttons
+    btnResultAgain.addEventListener("click", () => {
+      closeResultOverlay();
+      resetRound();
+    });
+
+    btnResultChange.addEventListener("click", () => {
+      closeResultOverlay();
+      openSetupOverlay();
+    });
+
+    // ===== INIT =====
+    loadProgress();
+    updatePointsUI();
+    updateDifficultyUI();
+    clearBoard();
+    renderBoard();
+    openSetupOverlay();
+  </script>
+</body>
+</html>
