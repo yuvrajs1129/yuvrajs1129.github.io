@@ -462,7 +462,7 @@
       text-align:center;
     }
 
-    /* Rating popup */
+    /* Rating + generic popup overlay/modal */
     .rating-overlay {
       position:fixed;
       inset:0;
@@ -727,6 +727,21 @@
             High-graphics space dodge game. Asteroids se bach ke ship ko control karo – difficulty dhire dhire increase hoti hai.
           </div>
         </a>
+
+        <!-- Coming Soon game card -->
+        <button class="game-card" type="button" id="comingSoonCard">
+          <div class="game-icon" style="
+            background: radial-gradient(circle at 30% 20%, #e5e7eb, #a855f7 40%, #0f172a 100%);
+            box-shadow: 0 0 18px rgba(168, 85, 247, 0.8);
+          ">
+            🕹
+          </div>
+          <div class="game-title">New game – Coming soon</div>
+          <div class="game-meta">
+            Ek aur game development me hai by Yuvraj. Racing / puzzle / secret idea 🤫
+            Jaldi website par launch hoga.
+          </div>
+        </button>
       </div>
     </section>
 
@@ -754,6 +769,23 @@
         <button id="ratingSubmit" class="btn btn-submit">Submit</button>
       </div>
       <div id="ratingMessage" class="rating-message"></div>
+    </div>
+  </div>
+
+  <!-- COMING SOON POPUP -->
+  <div id="comingSoonOverlay" class="rating-overlay hidden">
+    <div class="rating-modal">
+      <div class="rating-title">New game coming soon</div>
+      <div class="rating-subtitle">
+        Yuvraj ek naya game bana raha hai – maybe racing, puzzle ya koi secret idea 🤫
+        Agar tumhare paas koi idea ho to Instagram pe DM karo:
+        <br><strong>@_yuvraj_x_clusive_</strong>
+      </div>
+      <div class="rating-buttons">
+        <button id="comingSoonClose" class="btn btn-submit" type="button">
+          Okay, nice!
+        </button>
+      </div>
     </div>
   </div>
 
@@ -839,7 +871,7 @@
       }
       function ensureBgm() {
         if (!bgm) {
-          bgm = new Audio("bgm.mp3"); // tumhe bgm.mp3 upload karna hoga
+          bgm = new Audio("bgm.mp3");
           bgm.loop = true;
           bgm.volume = 0.4;
         }
@@ -925,6 +957,42 @@
             } catch (err) {
               alert("Share this link: " + shareData.url);
             }
+          }
+        });
+      }
+
+      // ===== COMING SOON POPUP =====
+      const comingSoonCard    = document.getElementById("comingSoonCard");
+      const comingSoonOverlay = document.getElementById("comingSoonOverlay");
+      const comingSoonClose   = document.getElementById("comingSoonClose");
+
+      function openComingSoon() {
+        if (!comingSoonOverlay) return;
+        comingSoonOverlay.classList.remove("hidden");
+      }
+
+      function closeComingSoon() {
+        if (!comingSoonOverlay) return;
+        comingSoonOverlay.classList.add("hidden");
+      }
+
+      if (comingSoonCard) {
+        comingSoonCard.addEventListener("click", () => {
+          tryPlayBgm();
+          openComingSoon();
+        });
+      }
+
+      if (comingSoonClose) {
+        comingSoonClose.addEventListener("click", () => {
+          closeComingSoon();
+        });
+      }
+
+      if (comingSoonOverlay) {
+        comingSoonOverlay.addEventListener("click", (e) => {
+          if (e.target === comingSoonOverlay) {
+            closeComingSoon();
           }
         });
       }
