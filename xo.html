@@ -108,6 +108,8 @@
       user-select: none;
       outline: none;
       transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;
+      /* Fixed square cells */
+      aspect-ratio: 1 / 1;
     }
 
     .cell:hover {
@@ -143,6 +145,26 @@
         0 0 30px rgba(168,85,247,0.75);
     }
 
+    /* Mark place animation */
+    .cell.just-placed {
+      animation: markPop 0.22s ease-out;
+    }
+
+    @keyframes markPop {
+      0% {
+        transform: scale(0.3) rotate(-10deg);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.08) rotate(2deg);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+    }
+
     .hint {
       font-size: 12px;
       color: #9ca3af;
@@ -166,9 +188,15 @@
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      animation: overlayFade 0.22s ease-out;
     }
     .overlay.hidden {
       display: none;
+    }
+
+    @keyframes overlayFade {
+      from { background: rgba(15,23,42,0); }
+      to   { background: rgba(15,23,42,0.9); }
     }
 
     .modal {
@@ -182,6 +210,18 @@
       box-shadow: 0 20px 40px rgba(0,0,0,0.95);
       text-align: center;
       backdrop-filter: blur(18px);
+      animation: modalIn 0.25s ease-out;
+    }
+
+    @keyframes modalIn {
+      from {
+        transform: translateY(14px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
     }
 
     .modal-title {
@@ -457,13 +497,13 @@
       hacker: false
     };
 
-   let board = Array(9).fill(null);
+    let board = Array(9).fill(null);
     let playerSymbol = "X";
     let botSymbol    = "O";
     let difficulty   = "easy"; // "easy", "hard", "extreme"
     let currentTurn  = "player"; // "player" or "bot"
     let gameOver     = false;
-    let nextFirstTurn = "player"; // will alternate: player -> bot -> player -> ...
+    let nextFirstTurn = "player"; // alternate: player -> bot -> player -> ...
 
     // ===== LOAD/SAVE PROGRESS =====
     function loadProgress() {
@@ -550,7 +590,7 @@
       board = Array(9).fill(null);
       cells.forEach(cell => {
         cell.textContent = "";
-        cell.classList.remove("filled", "player-x", "player-o", "bot-move");
+        cell.classList.remove("filled", "player-x", "player-o", "bot-move", "just-placed");
       });
     }
 
@@ -575,9 +615,16 @@
       board[index] = symbol;
       playSoundSafe(placeSound);
       renderBoard();
+
+      const cell = cells[index];
       if (isBot) {
-        cells[index].classList.add("bot-move");
+        cell.classList.add("bot-move");
       }
+      cell.classList.add("just-placed");
+      setTimeout(() => {
+        cell.classList.remove("just-placed");
+      }, 230);
+
       handlePostMove(symbol);
     }
 
