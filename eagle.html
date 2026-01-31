@@ -104,8 +104,8 @@
     let eagleSpriteLoaded = false;
     eagleImg.onload = () => { eagleSpriteLoaded = true; };
 
-    eagleImg.src  = "eagle-bird.png";     // realistic eagle sprite
-    pillarImg.src = "eagle-pillar.png";   // realistic pillar texture
+    eagleImg.src  = "eagle-bird.png";
+    pillarImg.src = "eagle-pillar.png";
 
     // ===== CONSTANTS =====
     const GRAVITY       = 0.35;
@@ -115,10 +115,67 @@
     const PIPE_SPEED    = 2.4;
     const PIPE_INTERVAL = 95;     // frames
 
-    // ===== STATE =====
+    // ===== SCORE + ACHIEVEMENTS (LOCALSTORAGE) =====
+    let score     = 0;
+    let bestScore = 0;
+
+    const LS_KEY_EAGLE_BEST = "eagle_best_score_v1";
+    const LS_KEY_EAGLE_ACH  = "eagle_achievements_v1";
+
+    let eagleAchievements = {
+      rookie: false,  // 5+
+      pro:    false,  // 15+
+      legend: false   // 30+
+    };
+
+    let achievementMessage = "";
+    let achievementTimer   = 0;  // frames
+
+    function loadProgress() {
+      try {
+        const savedBest = localStorage.getItem(LS_KEY_EAGLE_BEST);
+        if (savedBest !== null) {
+          bestScore = parseInt(savedBest, 10) || 0;
+        }
+        const savedAch = localStorage.getItem(LS_KEY_EAGLE_ACH);
+        if (savedAch) {
+          const obj = JSON.parse(savedAch);
+          eagleAchievements = Object.assign(eagleAchievements, obj);
+        }
+      } catch (e) {}
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(LS_KEY_EAGLE_BEST, String(bestScore));
+        localStorage.setItem(LS_KEY_EAGLE_ACH, JSON.stringify(eagleAchievements));
+      } catch (e) {}
+    }
+
+    function showAchievement(text) {
+      achievementMessage = text;
+      achievementTimer   = 120; // ~2 seconds at 60fps
+    }
+
+    function handleScoreIncrease() {
+      // Achievements thresholds
+      if (score >= 5 && !eagleAchievements.rookie) {
+        eagleAchievements.rookie = true;
+        showAchievement("Achievement unlocked: Rookie (Score 5+)");
+      }
+      if (score >= 15 && !eagleAchievements.pro) {
+        eagleAchievements.pro = true;
+        showAchievement("Achievement unlocked: Pro (Score 15+)");
+      }
+      if (score >= 30 && !eagleAchievements.legend) {
+        eagleAchievements.legend = true;
+        showAchievement("Achievement unlocked: Legend (Score 30+)");
+      }
+      saveProgress();
+    }
+
+    // ===== GAME STATE =====
     let gameState  = "ready";   // "ready", "running", "over"
-    let score      = 0;
-    let bestScore  = 0;
     let frameCount = 0;
 
     const eagle = {
@@ -171,7 +228,7 @@
       const topHeight = Math.random() * (maxTop - minTop) + minTop;
       const bottomY = topHeight + PIPE_GAP;
 
-      const hue = 180 + Math.random() * 120; // fallback color only
+      const hue = 180 + Math.random() * 120;
       const color = `hsl(${hue}, 75%, 55%)`;
 
       pipes.push({
@@ -206,7 +263,7 @@
       if (gameState === "running") {
         frameCount++;
 
-        // Eagle physics (frame-based)
+        // Eagle physics
         eagle.velocity += GRAVITY;
         eagle.y += eagle.velocity;
 
@@ -223,7 +280,7 @@
         // Remove off-screen
         pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-        // ===== COLLISION CHECK (very forgiving, center-based) =====
+        // ===== COLLISION CHECK (center-based, forgiving) =====
         const cx = eagle.x;
         const cy = eagle.y;
 
@@ -238,12 +295,10 @@
           const gapTop     = pipe.topHeight;
           const gapBottom  = pipe.bottomY;
 
-          // We check center X is deep inside pillar body, with margin
           const horizontalCenterInside =
             cx > pipeLeft + 10 && cx < pipeRight - 10;
 
           if (horizontalCenterInside) {
-            // Center should be inside the gap; use margin so touch looks real
             const verticalInsideGap =
               cy > gapTop + 10 && cy < gapBottom - 10;
 
@@ -252,17 +307,25 @@
             }
           }
 
-          // Score when just passed pillar
+          // Score when crossing
           if (!pipe.scored && pipe.x + PIPE_WIDTH < cx) {
             pipe.scored = true;
             score++;
             playSound(scoreSound);
-            if (score > bestScore) bestScore = score;
+            if (score > bestScore) {
+              bestScore = score;
+            }
+            handleScoreIncrease();
           }
         });
       }
 
       updateExplosion();
+
+      // Achievement timer
+      if (achievementTimer > 0) {
+        achievementTimer--;
+      }
     }
 
     function gameOver() {
@@ -270,6 +333,7 @@
         gameState = "over";
         triggerExplosionAt(eagle.x, eagle.y);
         // optional: playSound(hitSound);
+        saveProgress();
       }
     }
 
@@ -292,7 +356,6 @@
         const x = pipe.x;
 
         if (pillarImg.complete && pillarImg.naturalWidth) {
-          // Top pillar
           ctx.drawImage(
             pillarImg,
             x,
@@ -300,7 +363,6 @@
             PIPE_WIDTH,
             pipe.topHeight
           );
-          // Bottom pillar
           ctx.drawImage(
             pillarImg,
             x,
@@ -309,7 +371,6 @@
             canvas.height - pipe.bottomY
           );
         } else {
-          // fallback
           ctx.fillStyle = pipe.color;
           ctx.fillRect(x, 0, PIPE_WIDTH, pipe.topHeight);
           ctx.fillRect(x, pipe.bottomY, PIPE_WIDTH, canvas.height - pipe.bottomY);
@@ -318,9 +379,8 @@
     }
 
     function drawEagle() {
-      // During explosion after game over, hide eagle body
       if (gameState === "over" && explosion) return;
-      if (!eagleSpriteLoaded) return; // no fallback fat bird
+      if (!eagleSpriteLoaded) return;
 
       const x = eagle.x;
       const y = eagle.y;
@@ -364,6 +424,17 @@
       ctx.font = "14px system-ui, sans-serif";
       ctx.fillStyle = "#9ca3af";
       ctx.fillText(`Best: ${bestScore}`, canvas.width / 2, 74);
+
+      // Achievement message
+      if (achievementTimer > 0 && achievementMessage) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, achievementTimer / 30);
+        ctx.fillStyle = "#facc15";
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(achievementMessage, canvas.width / 2, 96);
+        ctx.restore();
+      }
 
       ctx.textAlign = "right";
       ctx.font = "14px system-ui, sans-serif";
@@ -429,6 +500,7 @@
     }, { passive: false });
 
     // ===== START =====
+    loadProgress();
     resetGame();
     requestAnimationFrame(loop);
   </script>
