@@ -710,7 +710,7 @@
           </div>
           <div class="game-title">Eagle Flight</div>
           <div class="game-meta">
-            Neon flappy-style arcade game. Tap / Click / Space se eagle ko pillars ke beech se udao.
+            Neon flappy-style arcade game. Use Tap / Click / Space to fly the eagle between the pillars.
           </div>
         </a>
 
@@ -724,7 +724,7 @@
           </div>
           <div class="game-title">Neon Space Runner</div>
           <div class="game-meta">
-            High-graphics space dodge game. Asteroids se bach ke ship ko control karo – difficulty dhire dhire increase hoti hai.
+            High-graphics space dodge game. Avoid asteroids and control the ship – difficulty slowly increases over time.
           </div>
         </a>
 
@@ -738,8 +738,8 @@
           </div>
           <div class="game-title">New game – Coming soon</div>
           <div class="game-meta">
-            Ek aur game development me hai by Yuvraj. Racing / puzzle / secret idea 🤫
-            Jaldi website par launch hoga.
+            Another game is in development by Yuvraj. It might be racing, puzzle or a secret idea 🤫
+            Coming soon on this website.
           </div>
         </button>
       </div>
@@ -755,7 +755,7 @@
     <div class="rating-modal">
       <div class="rating-title">Rate my website</div>
       <div class="rating-subtitle">
-        Bataye aapko Yuvraj ke games kitne pasand aaye ⭐
+        Tell me how much you like Yuvraj's games ⭐
       </div>
       <div class="rating-stars">
         <span class="rating-star" data-value="1">★</span>
@@ -777,8 +777,8 @@
     <div class="rating-modal">
       <div class="rating-title">New game coming soon</div>
       <div class="rating-subtitle">
-        Yuvraj ek naya game bana raha hai – maybe racing, puzzle ya koi secret idea 🤫
-        Agar tumhare paas koi idea ho to Instagram pe DM karo:
+        Yuvraj is working on a new game – maybe racing, puzzle or a secret idea 🤫<br>
+        If you have any cool ideas, send them on Instagram:
         <br><strong>@_yuvraj_x_clusive_</strong>
       </div>
       <div class="rating-buttons">
@@ -834,7 +834,7 @@
 
       btnSubmit.addEventListener("click", () => {
         if (!currentRating) {
-          msg.textContent = "Please select star rating pehle 🙂";
+          msg.textContent = "Please select a star rating first 🙂";
           return;
         }
         markRatingDone(currentRating);
@@ -871,7 +871,7 @@
       }
       function ensureBgm() {
         if (!bgm) {
-          bgm = new Audio("bgm.mp3");
+          bgm = new Audio("bgm.mp3"); // you need to upload bgm.mp3
           bgm.loop = true;
           bgm.volume = 0.4;
         }
@@ -953,7 +953,7 @@
           } else {
             try {
               await navigator.clipboard.writeText(shareData.url);
-              alert("Link copied! WhatsApp / Instagram me paste karke share karo.");
+              alert("Link copied! Paste it into WhatsApp / Instagram to share.");
             } catch (err) {
               alert("Share this link: " + shareData.url);
             }
