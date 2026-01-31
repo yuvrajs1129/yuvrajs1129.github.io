@@ -462,7 +462,7 @@
       text-align:center;
     }
 
-    /* Rating + generic popup overlay/modal */
+     /* Rating + generic popup overlay/modal */
     .rating-overlay {
       position:fixed;
       inset:0;
@@ -471,6 +471,7 @@
       align-items:center;
       justify-content:center;
       z-index:1000;
+      animation: ratingOverlayFade 0.22s ease-out;
     }
     .rating-overlay.hidden { display:none; }
 
@@ -484,6 +485,22 @@
       max-width:320px;
       text-align:center;
       backdrop-filter:blur(18px);
+      animation: ratingModalIn 0.25s ease-out;
+    }
+
+    @keyframes ratingOverlayFade {
+      from { background: rgba(15,23,42,0); }
+      to   { background: rgba(15,23,42,0.88); }
+    }
+    @keyframes ratingModalIn {
+      from {
+        transform: translateY(14px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
     }
     .rating-title { font-size:17px; margin-bottom:4px; color:#e5e7eb; }
     .rating-subtitle { font-size:12px; color:#fee2e2; margin-bottom:10px; }
