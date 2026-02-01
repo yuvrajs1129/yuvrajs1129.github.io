@@ -5,7 +5,7 @@
   <title>Neon Drift Racer 3D – by Yuvraj</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="description" content="Neon Drift Racer 3D – a high-graphics 3D highway racing game by Yuvraj. Dodge traffic in a neon city highway and reach the highest distance.">
+  <meta name="description" content="Neon Drift Racer 3D – a 3D highway racing game by Yuvraj. Dodge traffic in a neon city highway and reach the highest distance.">
 
   <style>
     * { box-sizing: border-box; }
@@ -311,7 +311,7 @@
     </div>
     <div class="hint-overlay">
       <div class="hint-box" id="hintText">
-        Loading 3D cars & trucks…
+        Choose difficulty and start the race.
       </div>
     </div>
     <div id="centerMsg"></div>
@@ -322,7 +322,7 @@
   </div>
 
   <!-- Difficulty popup -->
-  <div id="setupOverlay" class="overlay hidden">
+  <div id="setupOverlay" class="overlay">
     <div class="modal">
       <div class="modal-title">Start race</div>
       <div class="modal-text">
@@ -356,9 +356,8 @@
     </div>
   </div>
 
-  <!-- Three.js 0.146 + GLTFLoader -->
+  <!-- Three.js (no GLTF, simple 3D only) -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
     // ===== DOM / HUD =====
@@ -451,7 +450,7 @@
       hudBest.textContent     = "Best: " + Math.floor(bestDist) + "m";
     }
 
-    // ===== THREE CORE VARS =====
+    // ===== THREE CORE =====
     let scene, camera, renderer, clock;
     const obstacles = [];
     const laneLineSegments = [];
@@ -467,27 +466,27 @@
       ROAD_WIDTH/2 - LANE_WIDTH*0.5
     ];
 
-    const CAR_TARGET_WIDTH  = 1.6;
-    const CAR_TARGET_LENGTH = 3.8;
+    const CAR_WIDTH  = 1.4;
+    const CAR_LENGTH = 3.2;
 
     const car = {
       mesh: null,
-      width: CAR_TARGET_WIDTH,
-      length: CAR_TARGET_LENGTH
+      width: CAR_WIDTH,
+      length: CAR_LENGTH
     };
 
     let explosion = null;
 
     // ===== GAME STATE =====
-    let gameState = "loading"; // "loading", "ready", "running", "over"
+    let gameState = "ready"; // "ready", "running", "over"
     let speed     = 40;
     let baseSpeed = 40;
-    let maxSpeed  = 120;
+    let maxSpeed  = 130;
     let spawnTimer = 0;
     let baseSpawnInterval = 1.0;
 
     const DIFF_CONFIG = {
-      easy:   { label:"Easy",   speedBase:40, speedMax:110, spawnBase:1.2, laneFactor:0.22 },
+      easy:   { label:"Easy",   speedBase:40, speedMax:110, spawnBase:1.3, laneFactor:0.22 },
       medium: { label:"Medium", speedBase:55, speedMax:140, spawnBase:0.9, laneFactor:0.30 },
       hard:   { label:"Hard",   speedBase:70, speedMax:170, spawnBase:0.6, laneFactor:0.38 }
     };
@@ -497,38 +496,23 @@
     let pointerStartX = 0;
     let carStartX     = 0;
 
-    // ===== MODEL GLOBALS =====
-    let playerCarBase     = null;
-    let trafficCarBase    = null;
-    let trafficTruckBase  = null;
-    let trafficCarSize    = null;
-    let trafficTruckSize  = null;
-    let modelsLoaded      = false;
-
-    // ===== HELPERS =====
     function isOverlayVisible(el) {
       return el && !el.classList.contains("hidden");
     }
 
     function openSetupOverlay() {
-      if (!modelsLoaded) return;
       setupOverlay.classList.remove("hidden");
     }
     function closeSetupOverlay() {
       setupOverlay.classList.add("hidden");
     }
-
     function openResultOverlay() {
       const cfg = DIFF_CONFIG[difficulty];
       const dist  = Math.floor(distance);
       const best  = Math.floor(bestDist);
-
       resultTitle.textContent = "You crashed";
-      resultMessage.textContent =
-        "Difficulty: " + cfg.label + ". Your endless run ended in traffic.";
-      resultStats.textContent =
-        "Distance: " + dist + "m · Best: " + best + "m";
-
+      resultMessage.textContent = "Difficulty: " + cfg.label + ". Your endless run ended in traffic.";
+      resultStats.textContent = "Distance: " + dist + "m · Best: " + best + "m";
       resultOverlay.classList.remove("hidden");
     }
     function closeResultOverlay() {
@@ -542,204 +526,261 @@
       btnDiffHard.classList.toggle("active",   diff === "hard");
     }
 
-    // ===== NORMALIZE MODEL =====
-    // Scale model to target width/length, and height at least minHeight
-    function normalizeModel(root, targetWidth, targetLength, minHeight) {
-      const box   = new THREE.Box3().setFromObject(root);
-      const center= new THREE.Vector3();
-      const size  = new THREE.Vector3();
-      box.getCenter(center);
-      box.getSize(size);
+    // ===== THREE INIT =====
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+      scene.fog = new THREE.Fog(0x020617, 20, 130);
 
-      root.position.sub(center);
+      const aspect = container.clientWidth / container.clientHeight;
+      camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 200);
+      camera.position.set(0, 6.3, 12);
+      camera.lookAt(0, 2, -10);
 
-      const scaleXZ = Math.min(
-        targetWidth  / size.x,
-        targetLength / size.z
-      );
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(renderer.domElement);
 
-      let scaleY = scaleXZ;
-      if (size.y * scaleY < minHeight) {
-        scaleY = minHeight / size.y;
+      clock = new THREE.Clock();
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambient);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+      dirLight.position.set(10, 20, 10);
+      scene.add(dirLight);
+
+      const hemi = new THREE.HemisphereLight(0x2563eb, 0x020617, 0.35);
+      scene.add(hemi);
+
+      const roadGeom = new THREE.BoxGeometry(ROAD_WIDTH, 0.2, ROAD_LENGTH);
+      const roadMat  = new THREE.MeshStandardMaterial({
+        color: 0x111827,
+        metalness: 0.4,
+        roughness: 0.8
+      });
+      const road = new THREE.Mesh(roadGeom, roadMat);
+      road.position.set(0, 0, -ROAD_LENGTH/2 + 20);
+      scene.add(road);
+
+      const lineGeom = new THREE.BoxGeometry(0.12, 0.04, 2.2);
+      const lineMat  = new THREE.MeshBasicMaterial({ color: 0x9ca3af });
+      const SEG_COUNT = 18;
+      const SEG_SPACING = 6;
+
+      for (let laneIndex = 1; laneIndex < LANE_COUNT; laneIndex++) {
+        const x = -ROAD_WIDTH/2 + LANE_WIDTH * laneIndex;
+        for (let i = 0; i < SEG_COUNT; i++) {
+          const m = new THREE.Mesh(lineGeom, lineMat);
+          m.position.set(x, 0.12, -i * SEG_SPACING);
+          laneLineSegments.push(m);
+          scene.add(m);
+        }
       }
 
-      root.scale.set(scaleXZ, scaleY, scaleXZ);
-
-      const newBox = new THREE.Box3().setFromObject(root);
-      const newSize= new THREE.Vector3();
-      newBox.getSize(newSize);
-
-      return {
-        width:  newSize.x,
-        height: newSize.y,
-        length: newSize.z
-      };
-    }
-
-    // ===== FALLBACK =====
-    function makeFallbackModels() {
-      const carGroup = new THREE.Group();
-      const bodyGeom = new THREE.BoxGeometry(CAR_TARGET_WIDTH, 0.8, CAR_TARGET_LENGTH);
-      const bodyMat  = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, metalness:0.4, roughness:0.4 });
-      const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
-      bodyMesh.position.y = 0.4;
-      carGroup.add(bodyMesh);
-      playerCarBase = carGroup;
-      car.width  = CAR_TARGET_WIDTH;
-      car.length = CAR_TARGET_LENGTH;
-
-      const tcGroup = new THREE.Group();
-      const tcGeom  = new THREE.BoxGeometry(1.4, 0.9, 3.0);
-      const tcMat   = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness:0.3, roughness:0.4 });
-      const tcMesh  = new THREE.Mesh(tcGeom, tcMat);
-      tcMesh.position.y = 0.45;
-      tcGroup.add(tcMesh);
-      trafficCarBase = tcGroup;
-      trafficCarSize = { width:1.4, length:3.0 };
-
-      const ttGroup = new THREE.Group();
-      const ttGeom  = new THREE.BoxGeometry(1.8, 1.5, 6.0);
-      const ttMat   = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness:0.3, roughness:0.4 });
-      const ttMesh  = new THREE.Mesh(ttGeom, ttMat);
-      ttMesh.position.y = 0.75;
-      ttGroup.add(ttMesh);
-      trafficTruckBase = ttGroup;
-      trafficTruckSize = { width:1.8, length:6.0 };
-
-      modelsLoaded = true;
+      initSideObjects();
       createPlayerCar();
-      if (hintEl) {
-        hintEl.textContent = "Tap / Press Space to start. Swipe / drag to steer.";
-      }
-      centerMsgEl.textContent = "";
-      hudMsg.textContent = "(Using simple cars – 3D models not found)";
-      gameState = "ready";
-      openSetupOverlay();
+
+      onWindowResize();
+      window.addEventListener("resize", onWindowResize);
     }
 
-    // ===== MODEL LOADING =====
-    function loadModelsOrFallback() {
-      if (!THREE || typeof THREE.GLTFLoader !== "function") {
-        console.warn("GLTFLoader not available, using fallback.");
-        makeFallbackModels();
-        return;
+    function initSideObjects() {
+      const poleGeom = new THREE.CylinderGeometry(0.06, 0.08, 2.2, 8);
+      const poleMat  = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness:0.4, roughness:0.6});
+      const lampGeom = new THREE.SphereGeometry(0.16, 12, 12);
+      const lampMat  = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+      const sideCount = 10;
+      const zSpacing  = 18;
+
+      for (let i=0; i<sideCount; i++) {
+        const baseZ = -i * zSpacing - 10;
+
+        const leftGroup = new THREE.Group();
+        const lp = new THREE.Mesh(poleGeom, poleMat);
+        lp.position.set(-ROAD_WIDTH/2 - 1.5, 1.1, baseZ);
+        const ll = new THREE.Mesh(lampGeom, lampMat);
+        ll.position.set(-ROAD_WIDTH/2 - 1.5, 2.2, baseZ);
+        leftGroup.add(lp, ll);
+        scene.add(leftGroup);
+        sideObjects.push(leftGroup);
+
+        const rightGroup = new THREE.Group();
+        const rp = lp.clone();
+        rp.position.x = ROAD_WIDTH/2 + 1.5;
+        const rl = ll.clone();
+        rl.position.x = ROAD_WIDTH/2 + 1.5;
+        rightGroup.add(rp, rl);
+        scene.add(rightGroup);
+        sideObjects.push(rightGroup);
+
+        const bLeft  = createBuilding(-ROAD_WIDTH/2 - 6, baseZ - 4);
+        const bRight = createBuilding( ROAD_WIDTH/2 + 6, baseZ - 10);
+        scene.add(bLeft, bRight);
+        sideObjects.push(bLeft, bRight);
+      }
+    }
+
+    function createBuilding(x, z) {
+      const width  = 3 + Math.random()*3;
+      const height = 6 + Math.random()*10;
+      const depth  = 5 + Math.random()*4;
+
+      const group = new THREE.Group();
+
+      const baseGeom = new THREE.BoxGeometry(width, height, depth);
+      const baseMat  = new THREE.MeshStandardMaterial({
+        color: 0x020617,
+        metalness: 0.3,
+        roughness: 0.8
+      });
+      const base = new THREE.Mesh(baseGeom, baseMat);
+      base.position.set(0, height/2, 0);
+      group.add(base);
+
+      const winGeom = new THREE.PlaneGeometry(0.3, 0.4);
+      const litColor  = 0xfacc15;
+      const darkColor = 0x111827;
+
+      const rows = Math.floor(height / 1.2);
+      const cols = Math.floor(width  / 0.8);
+
+      for (let i=0; i<rows; i++) {
+        for (let j=0; j<cols; j++) {
+          if (Math.random() < 0.4) continue;
+
+          const mat = new THREE.MeshBasicMaterial({
+            color: (Math.random()<0.7) ? litColor : darkColor,
+            side: THREE.FrontSide
+          });
+          const w = new THREE.Mesh(winGeom, mat);
+          const wx = -width/2  + 0.5 + j * 0.7;
+          const wy = 0.8 + i * 0.9;
+          const wz = depth/2 + 0.01;
+          w.position.set(wx, wy, wz);
+          group.add(w);
+        }
       }
 
-      const loader = new THREE.GLTFLoader();
-      let toLoad = 3;
+      group.position.set(x, 0, z);
+      return group;
+    }
 
-      function doneOne() {
-        toLoad--;
-        if (toLoad <= 0) {
-          if (!playerCarBase || !trafficCarBase || !trafficTruckBase ||
-              !trafficCarSize || !trafficTruckSize) {
-            console.warn("Some models missing, fallback.");
-            makeFallbackModels();
-            return;
-          }
-          modelsLoaded = true;
-          createPlayerCar();
-          if (hintEl) hintEl.textContent = "Tap / Press Space to start. Swipe / drag to steer.";
-          centerMsgEl.textContent = "";
-          hudMsg.textContent = "";
-          gameState = "ready";
-          openSetupOverlay();
-        }
-      }
-
-      // Player car (Lambo)
-      loader.load("player-car.glb",
-        (gltf) => {
-          const root = gltf.scene;
-          const size = normalizeModel(root, CAR_TARGET_WIDTH, CAR_TARGET_LENGTH, 0.9);
-          // Lambo ulta na lage: Y-axis pe 180°
-          root.rotation.y = Math.PI;
-          playerCarBase = root;
-          car.width  = size.width;
-          car.length = size.length;
-          doneOne();
-        },
-        undefined,
-        (err) => {
-          console.error("player-car.glb failed", err);
-          playerCarBase = null;
-          doneOne();
-        }
-      );
-
-      // Traffic car (normal car)
-      loader.load("traffic-car.glb",
-        (gltf) => {
-          const root = gltf.scene;
-          // Face player ki taraf (agar model ka front opposite ho)
-          root.rotation.y = Math.PI;
-          trafficCarSize = normalizeModel(root, 1.4, 3.0, 1.4); // minHeight 1.4
-          trafficCarBase = root;
-          doneOne();
-        },
-        undefined,
-        (err) => {
-          console.error("traffic-car.glb failed", err);
-          trafficCarBase = null;
-          doneOne();
-        }
-      );
-
-      // Traffic truck
-      loader.load("traffic-truck.glb",
-        (gltf) => {
-          const root = gltf.scene;
-          // Truck ko bhi player ki taraf face kar do
-          root.rotation.y = Math.PI;
-          trafficTruckSize = normalizeModel(root, 1.8, 6.0, 2.0); // tall
-          trafficTruckBase = root;
-          doneOne();
-        },
-        undefined,
-        (err) => {
-          console.error("traffic-truck.glb failed", err);
-          trafficTruckBase = null;
-          doneOne();
-        }
-      );
+    function onWindowResize() {
+      if (!renderer || !camera) return;
+      const width  = container.clientWidth || 400;
+      const height = container.clientHeight || 600;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
     }
 
     function createPlayerCar() {
-      if (!playerCarBase) return;
-      if (car.mesh) scene.remove(car.mesh);
-      const clone = playerCarBase.clone(true);
-      clone.position.set(0, 0, 4);
-      scene.add(clone);
-      car.mesh = clone;
+      const carGroup = new THREE.Group();
+
+      const bodyGeom = new THREE.BoxGeometry(CAR_WIDTH, 0.6, CAR_LENGTH);
+      const bodyMat  = new THREE.MeshStandardMaterial({
+        color: 0x1d4ed8,
+        metalness: 0.5,
+        roughness: 0.3,
+        emissive: 0x0f172a,
+        emissiveIntensity: 0.6
+      });
+      const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+      bodyMesh.position.y = 0.6;
+      carGroup.add(bodyMesh);
+
+      const cabinGeom = new THREE.BoxGeometry(1.0, 0.6, 1.6);
+      const cabinMat  = new THREE.MeshStandardMaterial({
+        color: 0x020617,
+        metalness: 0.2,
+        roughness: 0.7
+      });
+      const cabinMesh = new THREE.Mesh(cabinGeom, cabinMat);
+      cabinMesh.position.set(0, 1.0, -0.4);
+      carGroup.add(cabinMesh);
+
+      const wheelGeom = new THREE.CylinderGeometry(0.35, 0.35, 0.28, 16);
+      const wheelMat  = new THREE.MeshStandardMaterial({
+        color: 0x020617,
+        metalness: 0.4,
+        roughness: 0.4
+      });
+
+      function makeWheel(x,z) {
+        const w = new THREE.Mesh(wheelGeom, wheelMat);
+        w.rotation.z = Math.PI/2;
+        w.position.set(x, 0.35, z);
+        return w;
+      }
+
+      const w1 = makeWheel(-CAR_WIDTH/2+0.25,  CAR_LENGTH/2 - 0.6);
+      const w2 = makeWheel( CAR_WIDTH/2-0.25,  CAR_LENGTH/2 - 0.6);
+      const w3 = makeWheel(-CAR_WIDTH/2+0.25, -CAR_LENGTH/2 + 0.6);
+      const w4 = makeWheel( CAR_WIDTH/2-0.25, -CAR_LENGTH/2 + 0.6);
+      carGroup.add(w1,w2,w3,w4);
+
+      const headGeom = new THREE.BoxGeometry(0.25, 0.12, 0.25);
+      const headMat  = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
+      const h1 = new THREE.Mesh(headGeom, headMat);
+      h1.position.set(-0.4, 0.75, CAR_LENGTH/2 - 0.15);
+      const h2 = h1.clone();
+      h2.position.x = 0.4;
+      carGroup.add(h1, h2);
+
+      const tailGeom = new THREE.BoxGeometry(0.3, 0.12, 0.18);
+      const tailMat  = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+      const t1 = new THREE.Mesh(tailGeom, tailMat);
+      t1.position.set(-0.45, 0.75, -CAR_LENGTH/2 + 0.1);
+      const t2 = t1.clone();
+      t2.position.x = 0.45;
+      carGroup.add(t1,t2);
+
+      carGroup.position.set(0, 0, 4);
+      scene.add(carGroup);
+      car.mesh = carGroup;
     }
 
-    // ===== OBSTACLES =====
+    // ===== OBSTACLES (boxes) =====
     function createObstacle() {
-      if (!trafficCarBase || !trafficTruckBase || !trafficCarSize || !trafficTruckSize) return;
-
       const laneIndex = Math.floor(Math.random() * LANE_COUNT);
       const laneX     = LANE_X[laneIndex];
 
       const isTruck = Math.random() < 0.35;
-      let base, size;
 
+      let width, height, length, color;
       if (isTruck) {
-        base = trafficTruckBase;
-        size = trafficTruckSize;
+        width  = 1.5;
+        height = 1.4;
+        length = 3.6;
+        color  = 0x38bdf8;
       } else {
-        base = trafficCarBase;
-        size = trafficCarSize;
+        width  = 1.1;
+        height = 0.9;
+        length = 2.4;
+        color  = 0xf97316;
       }
 
-      const clone = base.clone(true);
-      clone.position.set(laneX, 0, -80 - Math.random()*40);
-      scene.add(clone);
+      const geom = new THREE.BoxGeometry(width, height, length);
+      const mat  = new THREE.MeshStandardMaterial({
+        color,
+        metalness: 0.45,
+        roughness: 0.35,
+        emissive: isTruck ? 0x0ea5e9 : 0x7f1d1d,
+        emissiveIntensity: 0.4
+      });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.set(laneX, height/2 + 0.05, -80 - Math.random()*40);
+
+      scene.add(mesh);
 
       obstacles.push({
-        mesh: clone,
+        mesh,
         isTruck,
-        width: size.width,
-        length: size.length
+        width,
+        length
       });
     }
 
@@ -778,7 +819,7 @@
       }
     }
 
-    // ===== SIDE OBJECTS MOVE =====
+    // ===== SIDE OBJECTS =====
     function updateSideObjects(dt) {
       const loopZ = 18 * 10;
       for (const obj of sideObjects) {
@@ -847,12 +888,11 @@
         explosion = null;
       }
 
-      gameState = modelsLoaded ? "ready" : "loading";
+      gameState = "ready";
       updateDistanceHUD();
     }
 
     function startGame() {
-      if (!modelsLoaded) return;
       resetGameState();
       gameState = "running";
       startEngine();
@@ -879,8 +919,6 @@
 
     // ===== MAIN UPDATE =====
     function updateGame(dt) {
-      if (gameState === "loading") return;
-
       if (gameState !== "running") {
         updateExplosion(dt);
         return;
@@ -952,21 +990,19 @@
           return;
         }
       }
-      if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") {
+      if ((e.code === "ArrowLeft" || e.key === "a" || e.key === "A")
+        && gameState === "running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)) {
         unlockAudio();
-        if (gameState === "running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)) {
-          const minX = -ROAD_WIDTH/2 + car.width*0.7;
-          const maxX =  ROAD_WIDTH/2 - car.width*0.7;
-          car.mesh.position.x = Math.max(minX, car.mesh.position.x - 0.6);
-        }
+        const minX = -ROAD_WIDTH/2 + car.width*0.7;
+        const maxX =  ROAD_WIDTH/2 - car.width*0.7;
+        car.mesh.position.x = Math.max(minX, car.mesh.position.x - 0.6);
       }
-      if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") {
+      if ((e.code === "ArrowRight" || e.key === "d" || e.key === "D")
+        && gameState === "running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)) {
         unlockAudio();
-        if (gameState === "running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)) {
-          const minX = -ROAD_WIDTH/2 + car.width*0.7;
-          const maxX =  ROAD_WIDTH/2 - car.width*0.7;
-          car.mesh.position.x = Math.min(maxX, car.mesh.position.x + 0.6);
-        }
+        const minX = -ROAD_WIDTH/2 + car.width*0.7;
+        const maxX =  ROAD_WIDTH/2 - car.width*0.7;
+        car.mesh.position.x = Math.min(maxX, car.mesh.position.x + 0.6);
       }
     });
 
