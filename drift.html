@@ -133,6 +133,159 @@
       text-shadow:0 0 12px rgba(0,0,0,0.9);
       pointer-events:none;
     }
+
+    /* Overlays (difficulty & result) */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: overlayFade 0.22s ease-out;
+    }
+    .overlay.hidden {
+      display: none;
+    }
+    @keyframes overlayFade {
+      from { background: rgba(15,23,42,0); }
+      to   { background: rgba(15,23,42,0.9); }
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 320px;
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      background:
+        radial-gradient(circle at top, rgba(79,70,229,0.6), rgba(15,23,42,0.98));
+      border: 1px solid rgba(129,140,248,0.9);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.95);
+      text-align: center;
+      backdrop-filter: blur(18px);
+      animation: modalIn 0.25s ease-out;
+    }
+    @keyframes modalIn {
+      from {
+        transform: translateY(14px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #e5e7eb;
+      margin-bottom: 6px;
+    }
+
+    .modal-text {
+      font-size: 12px;
+      color: #c7d2fe;
+      margin-bottom: 10px;
+    }
+
+    .choice-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+
+    .choice-row {
+      display:flex;
+      gap:8px;
+      justify-content:center;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+
+    .choice-btn {
+      flex:1;
+      min-width:0;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.6);
+      background:rgba(15,23,42,0.95);
+      color:#e5e7eb;
+      font-size:13px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      transition:background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+    }
+    .choice-btn.active {
+      border-color:#22c55e;
+      background:linear-gradient(135deg,#22c55e,#a3e635);
+      color:#020617;
+      box-shadow:0 10px 24px rgba(34,197,94,0.45);
+      font-weight:600;
+    }
+    .choice-btn:hover {
+      transform:translateY(-1px);
+    }
+
+    .primary-btn-row {
+      display:flex;
+      gap:8px;
+      margin-top:6px;
+    }
+    .primary-btn {
+      flex:1;
+      padding:7px 12px;
+      border-radius:999px;
+      border:1px solid #22c55e;
+      background:linear-gradient(135deg,#22c55e,#a3e635);
+      color:#020617;
+      font-size:13px;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 12px 26px rgba(34,197,94,0.5);
+      transition:transform 0.08s ease, filter 0.08s ease;
+    }
+    .primary-btn:hover {
+      transform:translateY(-1px);
+      filter:brightness(1.05);
+    }
+    .secondary-btn {
+      flex:1;
+      padding:7px 12px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.7);
+      background:rgba(15,23,42,0.98);
+      color:#e5e7eb;
+      font-size:13px;
+      cursor:pointer;
+      transition:transform 0.08s ease, border-color 0.08s ease;
+    }
+    .secondary-btn:hover {
+      transform:translateY(-1px);
+      border-color:rgba(248,250,252,0.7);
+    }
+
+    .result-title {
+      font-size:18px;
+      font-weight:600;
+      color:#e5e7eb;
+      margin-bottom:4px;
+    }
+    .result-message {
+      font-size:13px;
+      color:#e5e7eb;
+      margin-bottom:6px;
+    }
+    .result-stats {
+      font-size:12px;
+      color:#a5b4fc;
+      margin-bottom:8px;
+    }
   </style>
 </head>
 <body>
@@ -168,7 +321,42 @@
     Game owner: <strong>Yuvraj</strong>
   </div>
 
-  <!-- Three.js 0.146 + GLTFLoader (this version has working loader) -->
+  <!-- Difficulty popup -->
+  <div id="setupOverlay" class="overlay hidden">
+    <div class="modal">
+      <div class="modal-title">Start race</div>
+      <div class="modal-text">
+        Choose difficulty and start your endless neon highway run.
+      </div>
+
+      <div class="choice-label">Difficulty</div>
+      <div class="choice-row">
+        <button class="choice-btn active" data-diff="easy"   id="btnDiffEasy">Easy</button>
+        <button class="choice-btn"        data-diff="medium" id="btnDiffMedium">Medium</button>
+        <button class="choice-btn"        data-diff="hard"   id="btnDiffHard">Hard</button>
+      </div>
+
+      <div class="primary-btn-row">
+        <button class="primary-btn" id="btnStartRace" type="button">Start race</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result popup -->
+  <div id="resultOverlay" class="overlay hidden">
+    <div class="modal">
+      <div id="resultTitle" class="result-title">You crashed</div>
+      <div id="resultMessage" class="result-message"></div>
+      <div id="resultStats" class="result-stats"></div>
+
+      <div class="primary-btn-row">
+        <button class="primary-btn" id="btnResultAgain" type="button">Race again</button>
+        <button class="secondary-btn" id="btnResultChange" type="button">Change difficulty</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js 0.146 + GLTFLoader -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
@@ -180,6 +368,18 @@
     const hudBest     = document.getElementById("hud-best");
     const hudMsg      = document.getElementById("hud-msg");
     const centerMsgEl = document.getElementById("centerMsg");
+
+    const setupOverlay   = document.getElementById("setupOverlay");
+    const resultOverlay  = document.getElementById("resultOverlay");
+    const btnDiffEasy    = document.getElementById("btnDiffEasy");
+    const btnDiffMedium  = document.getElementById("btnDiffMedium");
+    const btnDiffHard    = document.getElementById("btnDiffHard");
+    const btnStartRace   = document.getElementById("btnStartRace");
+    const btnResultAgain = document.getElementById("btnResultAgain");
+    const btnResultChange= document.getElementById("btnResultChange");
+    const resultTitle    = document.getElementById("resultTitle");
+    const resultMessage  = document.getElementById("resultMessage");
+    const resultStats    = document.getElementById("resultStats");
 
     // ===== SOUNDS =====
     const engineSound = new Audio("drift-engine.mp3");
@@ -288,8 +488,8 @@
 
     const DIFF_CONFIG = {
       easy:   { label:"Easy",   speedBase:40, speedMax:110, spawnBase:1.2, laneFactor:0.22 },
-      medium: { label:"Medium", speedBase:50, speedMax:130, spawnBase:0.9, laneFactor:0.30 },
-      hard:   { label:"Hard",   speedBase:60, speedMax:150, spawnBase:0.7, laneFactor:0.38 }
+      medium: { label:"Medium", speedBase:55, speedMax:140, spawnBase:0.9, laneFactor:0.30 },
+      hard:   { label:"Hard",   speedBase:70, speedMax:170, spawnBase:0.6, laneFactor:0.38 }
     };
     let difficulty = "easy";
 
@@ -305,7 +505,44 @@
     let trafficTruckSize  = null;
     let modelsLoaded      = false;
 
-    // ===== INIT THREE =====
+    // ===== HELPERS =====
+    function isOverlayVisible(el) {
+      return el && !el.classList.contains("hidden");
+    }
+
+    function openSetupOverlay() {
+      if (!modelsLoaded) return;
+      setupOverlay.classList.remove("hidden");
+    }
+    function closeSetupOverlay() {
+      setupOverlay.classList.add("hidden");
+    }
+
+    function openResultOverlay() {
+      const cfg = DIFF_CONFIG[difficulty];
+      const dist  = Math.floor(distance);
+      const best  = Math.floor(bestDist);
+
+      resultTitle.textContent = "You crashed";
+      resultMessage.textContent =
+        "Difficulty: " + cfg.label + ". Your endless run ended in traffic.";
+      resultStats.textContent =
+        "Distance: " + dist + "m · Best: " + best + "m";
+
+      resultOverlay.classList.remove("hidden");
+    }
+    function closeResultOverlay() {
+      resultOverlay.classList.add("hidden");
+    }
+
+    function setDifficulty(diff) {
+      difficulty = diff;
+      btnDiffEasy.classList.toggle("active",   diff === "easy");
+      btnDiffMedium.classList.toggle("active", diff === "medium");
+      btnDiffHard.classList.toggle("active",   diff === "hard");
+    }
+
+    // ===== THREE INIT =====
     function initThree() {
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x020617);
@@ -526,6 +763,7 @@
       centerMsgEl.textContent = "Press Space / Tap to start";
       hudMsg.textContent = "(Using simple cars – 3D models not found)";
       gameState = "ready";
+      openSetupOverlay();
     }
 
     function loadModelsOrFallback() {
@@ -550,18 +788,18 @@
           modelsLoaded = true;
           createPlayerCar();
           if (hintEl) hintEl.textContent = "Tap / Press Space to start. Swipe / drag to steer.";
-          centerMsgEl.textContent = "Press Space / Tap to start";
+          centerMsgEl.textContent = "";
           hudMsg.textContent = "";
           gameState = "ready";
+          openSetupOverlay();
         }
       }
 
-      // Player car (Lamborghini)
       loader.load("player-car.glb",
         (gltf) => {
           const root = gltf.scene;
           const size = normalizeModel(root, CAR_TARGET_WIDTH, CAR_TARGET_LENGTH, 0.9);
-          // Lamborghini ulta na lage, front road ki taraf:
+          // Player car ko ulta se seedha: Y-axis pe 180°
           root.rotation.y = Math.PI;
           playerCarBase = root;
           car.width  = size.width;
@@ -576,11 +814,10 @@
         }
       );
 
-      // Traffic car
       loader.load("traffic-car.glb",
         (gltf) => {
           const root = gltf.scene;
-          trafficCarSize = normalizeModel(root, 1.4, 3.0, 0.9);
+          trafficCarSize = normalizeModel(root, 1.4, 3.0, 1.2); // minHeight 1.2 → paper nahi lagega
           trafficCarBase = root;
           doneOne();
         },
@@ -592,11 +829,10 @@
         }
       );
 
-      // Traffic truck
       loader.load("traffic-truck.glb",
         (gltf) => {
           const root = gltf.scene;
-          trafficTruckSize = normalizeModel(root, 1.8, 6.0, 1.2);
+          trafficTruckSize = normalizeModel(root, 1.8, 6.0, 1.8); // trucks and high
           trafficTruckBase = root;
           doneOne();
         },
@@ -753,7 +989,7 @@
       }
 
       gameState = modelsLoaded ? "ready" : "loading";
-      centerMsgEl.textContent = modelsLoaded ? "Press Space / Tap to start" : "Loading 3D cars & trucks…";
+      centerMsgEl.textContent = "";
       if (hintEl && modelsLoaded) {
         hintEl.textContent = "Swipe / drag to steer · Avoid all traffic · Try to beat your best distance.";
       }
@@ -766,11 +1002,8 @@
       resetGameState();
       gameState = "running";
       startEngine();
-      centerMsgEl.textContent = "";
-      if (hintEl) {
-        hintEl.textContent = "";
-      }
-      hudMsg.textContent = "";
+      closeSetupOverlay();
+      closeResultOverlay();
     }
 
     function handleCrash() {
@@ -785,8 +1018,7 @@
       }
       updateDistanceHUD();
 
-      centerMsgEl.textContent = "Crashed! Tap / Space to retry";
-      hudMsg.textContent = "Endless run ended. Try again to beat your best distance.";
+      openResultOverlay();
     }
 
     // ===== MAIN UPDATE =====
@@ -855,13 +1087,19 @@
       if (e.code === "Space") {
         e.preventDefault();
         unlockAudio();
-        if (gameState === "ready" || gameState === "over") {
+        if (isOverlayVisible(setupOverlay)) {
           startGame();
+          return;
+        }
+        if (isOverlayVisible(resultOverlay)) {
+          startGame();
+          return;
         }
       }
       if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") {
         unlockAudio();
-        if (gameState === "running" && car.mesh) {
+        if (gameState === "running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)) {
+          const cfg = DIFF_CONFIG[difficulty];
           const minX = -ROAD_WIDTH/2 + car.width*0.7;
           const maxX =  ROAD_WIDTH/2 - car.width*0.7;
           car.mesh.position.x = Math.max(minX, car.mesh.position.x - 0.6);
@@ -869,7 +1107,7 @@
       }
       if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") {
         unlockAudio();
-        if (gameState === "running" && car.mesh) {
+        if (gameState === "running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)) {
           const minX = -ROAD_WIDTH/2 + car.width*0.7;
           const maxX =  ROAD_WIDTH/2 - car.width*0.7;
           car.mesh.position.x = Math.min(maxX, car.mesh.position.x + 0.6);
@@ -878,10 +1116,8 @@
     });
 
     function startPointerDrag(clientX) {
+      if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) return;
       unlockAudio();
-      if (gameState === "ready" || gameState === "over") {
-        startGame();
-      }
       if (gameState !== "running" || !car.mesh) return;
       const rect = container.getBoundingClientRect();
       pointerDown   = true;
@@ -934,6 +1170,14 @@
     document.addEventListener("touchend", () => {
       endPointerDrag();
     });
+
+    // Difficulty buttons
+    btnDiffEasy.addEventListener("click",   () => setDifficulty("easy"));
+    btnDiffMedium.addEventListener("click", () => setDifficulty("medium"));
+    btnDiffHard.addEventListener("click",   () => setDifficulty("hard"));
+    btnStartRace.addEventListener("click",  () => { unlockAudio(); startGame(); });
+    btnResultAgain.addEventListener("click",() => { unlockAudio(); startGame(); });
+    btnResultChange.addEventListener("click",() => { openSetupOverlay(); });
 
     // ===== INIT =====
     loadProgress();
