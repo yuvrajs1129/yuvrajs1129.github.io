@@ -151,7 +151,7 @@
           <div id="hud-best">Best: 0m</div>
         </div>
         <div id="hud-right">
-          Neon Drift Racer 3D
+          Made by Yuvraj
         </div>
       </div>
       <div id="hud-msg"></div>
@@ -192,7 +192,7 @@
 
     let audioUnlocked = false;
 
-    // Sirf crash sound prime; engine sirf startGame ke time (user gesture) se
+    // Only crash sound unlock; engine direct user gesture se
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
@@ -258,7 +258,7 @@
     let scene, camera, renderer, clock;
     const obstacles = [];
     const laneLineSegments = [];
-    const sideObjects = [];   // street lights + buildings groups
+    const sideObjects = [];
 
     const ROAD_WIDTH  = 8;
     const ROAD_LENGTH = 200;
@@ -270,24 +270,23 @@
       ROAD_WIDTH/2 - LANE_WIDTH*0.5
     ];
 
-    const CAR_WIDTH  = 1.2;
-    const CAR_LENGTH = 2.4;
+    const CAR_WIDTH  = 1.4;
+    const CAR_LENGTH = 3.2;
 
     const car = {
       mesh: null
     };
 
-    let explosion = null; // { mesh, radius, alpha }
+    let explosion = null;
 
     // ===== GAME STATE =====
     let gameState = "ready"; // "ready", "running", "over"
-    let speed     = 40;      // world units / second
+    let speed     = 40;
     let baseSpeed = 40;
     let maxSpeed  = 120;
     let spawnTimer = 0;
     let baseSpawnInterval = 1.0;
 
-    // Difficulty (sirf feel ke liye)
     const DIFF_CONFIG = {
       easy:   { label:"Easy",   speedBase:40, speedMax:110, spawnBase:1.2, laneFactor:0.22 },
       medium: { label:"Medium", speedBase:50, speedMax:130, spawnBase:0.9, laneFactor:0.30 },
@@ -307,7 +306,7 @@
 
       const aspect = container.clientWidth / container.clientHeight;
       camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 200);
-      camera.position.set(0, 6, 12);
+      camera.position.set(0, 6.3, 12);
       camera.lookAt(0, 2, -10);
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -355,40 +354,71 @@
         }
       }
 
-      // Player car (box-based but more “car-ish”)
+      // Player car – more detailed
       const carGroup = new THREE.Group();
 
-      const bodyGeom = new THREE.BoxGeometry(CAR_WIDTH, 0.5, CAR_LENGTH);
+      const bodyGeom = new THREE.BoxGeometry(CAR_WIDTH, 0.6, CAR_LENGTH);
       const bodyMat  = new THREE.MeshStandardMaterial({
-        color: 0x38bdf8,
-        metalness: 0.5,
-        roughness: 0.35,
+        color: 0x1d4ed8,
+        metalness: 0.6,
+        roughness: 0.3,
         emissive: 0x0f172a,
-        emissiveIntensity: 0.6
+        emissiveIntensity: 0.7
       });
       const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
-      bodyMesh.position.y = 0.4;
+      bodyMesh.position.y = 0.65;
       carGroup.add(bodyMesh);
 
-      const cabinGeom = new THREE.BoxGeometry(0.8, 0.45, 1.0);
+      const cabinGeom = new THREE.BoxGeometry(1.0, 0.6, 1.6);
       const cabinMat  = new THREE.MeshStandardMaterial({
         color: 0x020617,
         metalness: 0.1,
         roughness: 0.6
       });
       const cabinMesh = new THREE.Mesh(cabinGeom, cabinMat);
-      cabinMesh.position.set(0, 0.8, -0.2);
+      cabinMesh.position.set(0, 1.1, -0.3);
       carGroup.add(cabinMesh);
 
-      const headGeom = new THREE.BoxGeometry(0.2, 0.1, 0.25);
+      // Wheels
+      const wheelGeom = new THREE.CylinderGeometry(0.35, 0.35, 0.28, 16);
+      const wheelMat  = new THREE.MeshStandardMaterial({
+        color: 0x020617,
+        metalness: 0.4,
+        roughness: 0.4
+      });
+
+      function makeWheel(x,z) {
+        const w = new THREE.Mesh(wheelGeom, wheelMat);
+        w.rotation.z = Math.PI/2;
+        w.position.set(x, 0.35, z);
+        return w;
+      }
+
+      const w1 = makeWheel(-CAR_WIDTH/2+0.25,  CAR_LENGTH/2 - 0.6);
+      const w2 = makeWheel( CAR_WIDTH/2-0.25,  CAR_LENGTH/2 - 0.6);
+      const w3 = makeWheel(-CAR_WIDTH/2+0.25, -CAR_LENGTH/2 + 0.6);
+      const w4 = makeWheel( CAR_WIDTH/2-0.25, -CAR_LENGTH/2 + 0.6);
+      carGroup.add(w1,w2,w3,w4);
+
+      // Headlights
+      const headGeom = new THREE.BoxGeometry(0.25, 0.12, 0.25);
       const headMat  = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
       const h1 = new THREE.Mesh(headGeom, headMat);
-      h1.position.set(-0.3, 0.55, CAR_LENGTH/2 - 0.3);
+      h1.position.set(-0.4, 0.7, CAR_LENGTH/2 - 0.15);
       const h2 = h1.clone();
-      h2.position.x = 0.3;
+      h2.position.x = 0.4;
       carGroup.add(h1, h2);
 
-      carGroup.position.set(0, 0.4, 4);
+      // Tail lights
+      const tailGeom = new THREE.BoxGeometry(0.3, 0.12, 0.18);
+      const tailMat  = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+      const t1 = new THREE.Mesh(tailGeom, tailMat);
+      t1.position.set(-0.45, 0.7, -CAR_LENGTH/2 + 0.1);
+      const t2 = t1.clone();
+      t2.position.x = 0.45;
+      carGroup.add(t1,t2);
+
+      carGroup.position.set(0, 0, 4);
       scene.add(carGroup);
       car.mesh = carGroup;
 
@@ -405,15 +435,13 @@
       const lampGeom = new THREE.SphereGeometry(0.16, 12, 12);
       const lampMat  = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
 
-      const buildingGeom = new THREE.BoxGeometry(4, 6, 6);
-
       const sideCount = 10;
-      const zSpacing  = 16;
+      const zSpacing  = 18;
 
       for (let i=0; i<sideCount; i++) {
         const baseZ = -i * zSpacing - 10;
 
-        // Left light group
+        // Left light
         const leftGroup = new THREE.Group();
         const lp = new THREE.Mesh(poleGeom, poleMat);
         lp.position.set(-ROAD_WIDTH/2 - 1.5, 1.1, baseZ);
@@ -423,7 +451,7 @@
         scene.add(leftGroup);
         sideObjects.push(leftGroup);
 
-        // Right light group
+        // Right light
         const rightGroup = new THREE.Group();
         const rp = lp.clone();
         rp.position.x = ROAD_WIDTH/2 + 1.5;
@@ -455,7 +483,7 @@
         metalness: 0.3,
         roughness: 0.7,
         emissive: emissiveColor,
-        emissiveIntensity: 0.2
+        emissiveIntensity: 0.25
       });
 
       const mesh = new THREE.Mesh(geom, mat);
@@ -472,7 +500,7 @@
       camera.updateProjectionMatrix();
     }
 
-    // ===== OBSTACLES =====
+    // ===== OBSTACLES (CARS + TRUCKS) =====
     function createObstacle() {
       const laneIndex = Math.floor(Math.random() * LANE_COUNT);
       const laneX     = LANE_X[laneIndex];
@@ -481,22 +509,22 @@
 
       let width, height, length, color;
       if (isTruck) {
-        width  = 1.4;
-        height = 1.3;
-        length = 3.4;
+        width  = 1.5;
+        height = 1.4;
+        length = 3.6;
         color  = 0x38bdf8;
       } else {
-        width  = 1.0;
-        height = 0.8;
-        length = 2.2;
+        width  = 1.1;
+        height = 0.9;
+        length = 2.4;
         color  = 0xf97316;
       }
 
       const geom = new THREE.BoxGeometry(width, height, length);
       const mat  = new THREE.MeshStandardMaterial({
         color,
-        metalness: 0.4,
-        roughness: 0.4,
+        metalness: 0.45,
+        roughness: 0.35,
         emissive: isTruck ? 0x0ea5e9 : 0x7f1d1d,
         emissiveIntensity: 0.5
       });
@@ -527,7 +555,7 @@
     function checkCollisions() {
       const cx = car.mesh.position.x;
       const cz = car.mesh.position.z;
-      const cHalfW = CAR_WIDTH * 0.5;
+      const cHalfW = CAR_WIDTH  * 0.5;
       const cHalfL = CAR_LENGTH * 0.5;
 
       for (const o of obstacles) {
@@ -546,12 +574,12 @@
       }
     }
 
-    // ===== SIDE OBJECTS (lights + buildings) MOVE =====
+    // ===== SIDE OBJECTS MOVE =====
     function updateSideObjects(dt) {
-      const loopZ = 16 * 10; // spacing * count
+      const loopZ = 18 * 10;
       for (const obj of sideObjects) {
-        obj.position.z += speed * dt * 0.4;
-        if (obj.position.z > 20) {
+        obj.position.z += speed * 0.4 * dt;
+        if (obj.position.z > 24) {
           obj.position.z -= loopZ;
         }
       }
@@ -594,8 +622,8 @@
 
     // ===== GAME CONTROL =====
     function resetGameState() {
-      distance = 0;
       const cfg = DIFF_CONFIG[difficulty];
+      distance  = 0;
       baseSpeed = cfg.speedBase;
       speed     = baseSpeed;
       baseSpawnInterval = cfg.spawnBase;
@@ -606,7 +634,7 @@
       }
       obstacles.length = 0;
 
-      car.mesh.position.set(0, 0.4, 4);
+      car.mesh.position.set(0, 0, 4);
 
       if (explosion) {
         scene.remove(explosion.mesh);
@@ -667,18 +695,15 @@
       const targetSpeed = cfg.speedBase + distance * 0.01;
       speed = Math.min(targetSpeed, cfg.speedMax);
 
-      // lane lines move
       for (const seg of laneLineSegments) {
         seg.position.z += speed * cfg.laneFactor * dt;
         if (seg.position.z > 10) {
-          seg.position.z -= 6 * 18; // spacing * count
+          seg.position.z -= 6 * 18;
         }
       }
 
-      // side lights + buildings
       updateSideObjects(dt);
 
-      // obstacles
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
         createObstacle();
@@ -691,10 +716,11 @@
       checkCollisions();
       updateExplosion(dt);
 
-      // light camera shake at high speed
-      const shakeAmount = Math.min((speed - cfg.speedBase) / 200, 0.05);
-      camera.position.x = Math.sin(performance.now() * 0.002) * shakeAmount;
-      camera.position.y = 6 + Math.sin(performance.now() * 0.0015) * shakeAmount * 0.5;
+      // Camera motion / subtle shake
+      const speedFactor = (speed - cfg.speedBase) / (cfg.speedMax - cfg.speedBase);
+      const shakeAmp = Math.max(0, Math.min(speedFactor, 1)) * 0.08;
+      camera.position.x = car.mesh.position.x * 0.25 + Math.sin(performance.now()*0.003)*shakeAmp;
+      camera.position.y = 6.3 + Math.sin(performance.now()*0.002)*shakeAmp*0.7;
       camera.lookAt(0, 2, -10);
     }
 
@@ -799,7 +825,7 @@
       endPointerDrag();
     });
 
-    // Difficulty change (agar future me chaho UI add karna)
+    // Agar future me difficulty UI add karni ho
     function setDifficulty(diff) {
       difficulty = diff;
     }
@@ -808,6 +834,7 @@
     loadProgress();
     initThree();
     resetGameState();
+    clock = new THREE.Clock();
     clock.start();
     animate();
   </script>
