@@ -42,7 +42,7 @@
       position: relative;
       width: 100%;
       max-width: 480px;
-      aspect-ratio: 2 / 3; /* 400x600 style */
+      aspect-ratio: 2 / 3;
     }
 
     #threeContainer {
@@ -173,15 +173,13 @@
   <script src="https://unpkg.com/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
-    // ===== BASIC DOM / HUD =====
+    // ===== DOM / HUD =====
     const container   = document.getElementById("threeContainer");
     const hintEl      = document.getElementById("hintText");
     const hudDistance = document.getElementById("hud-distance");
     const hudBest     = document.getElementById("hud-best");
     const hudMsg      = document.getElementById("hud-msg");
     const centerMsgEl = document.getElementById("centerMsg");
-
-    const OWNER_NAME = "Yuvraj";
 
     // ===== SOUNDS =====
     const engineSound = new Audio("drift-engine.mp3");
@@ -229,10 +227,9 @@
       } catch (e) {}
     }
 
-    // ===== SCORE / BEST (localStorage) =====
+    // ===== SCORE / BEST =====
     let distance = 0;
     let bestDist = 0;
-
     const LS_DRIFT3D_BEST = "drift3d_best_distance_v1";
 
     function loadProgress() {
@@ -254,7 +251,7 @@
       hudBest.textContent     = "Best: " + Math.floor(bestDist) + "m";
     }
 
-    // ===== THREE.JS SETUP =====
+    // ===== THREE CORE VARS =====
     let scene, camera, renderer, clock;
     const obstacles = [];
     const laneLineSegments = [];
@@ -300,15 +297,15 @@
     let pointerStartX = 0;
     let carStartX     = 0;
 
-    // GLTF models
+    // ===== MODEL GLOBALS (declare once) =====
     let playerCarBase     = null;
     let trafficCarBase    = null;
     let trafficTruckBase  = null;
     let trafficCarSize    = null;
     let trafficTruckSize  = null;
+    let modelsLoaded      = false;
 
-    let modelsLoaded = false;
-
+    // ===== INIT THREE =====
     function initThree() {
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x020617);
@@ -405,7 +402,6 @@
       }
     }
 
-    // Buildings with window lights
     function createBuilding(x, z) {
       const width  = 3 + Math.random()*3;
       const height = 6 + Math.random()*10;
@@ -460,7 +456,7 @@
       camera.updateProjectionMatrix();
     }
 
-    // ===== MODEL LOADING (with fallback) =====
+    // ===== MODEL LOADING =====
     function normalizeModel(root, targetWidth, targetLength) {
       const box   = new THREE.Box3().setFromObject(root);
       const center= new THREE.Vector3();
@@ -487,18 +483,18 @@
     }
 
     function makeFallbackModels() {
-      // Player car fallback
+      // Player car:
       const carGroup = new THREE.Group();
       const bodyGeom = new THREE.BoxGeometry(CAR_TARGET_WIDTH, 0.8, CAR_TARGET_LENGTH);
       const bodyMat  = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, metalness:0.4, roughness:0.4 });
       const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
       bodyMesh.position.y = 0.4;
       carGroup.add(bodyMesh);
+      playerCarBase = carGroup;
       car.width  = CAR_TARGET_WIDTH;
       car.length = CAR_TARGET_LENGTH;
-      playerCarBase = carGroup;
 
-      // Traffic car fallback
+      // Traffic car:
       const tcGroup = new THREE.Group();
       const tcGeom  = new THREE.BoxGeometry(1.4, 0.9, 3.0);
       const tcMat   = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness:0.3, roughness:0.4 });
@@ -508,7 +504,7 @@
       trafficCarBase = tcGroup;
       trafficCarSize = { width:1.4, length:3.0 };
 
-      // Truck fallback
+      // Truck:
       const ttGroup = new THREE.Group();
       const ttGeom  = new THREE.BoxGeometry(1.8, 1.5, 6.0);
       const ttMat   = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness:0.3, roughness:0.4 });
@@ -524,20 +520,13 @@
         hintEl.textContent = "Tap / Press Space to start. Swipe / drag to steer.";
       }
       centerMsgEl.textContent = "Press Space / Tap to start";
-      hudMsg.textContent = "(Using simple 3D cars – model loading failed)";
+      hudMsg.textContent = "(Using simple cars – 3D models not found)";
       gameState = "ready";
     }
 
-    let playerCarBase = null;
-    let trafficCarBase= null;
-    let trafficTruckBase=null;
-    let trafficCarSize = null;
-    let trafficTruckSize = null;
-
     function loadModelsOrFallback() {
-      // Check if GLTFLoader is available
       if (!THREE || typeof THREE.GLTFLoader !== "function") {
-        console.warn("GLTFLoader not available, using fallback box cars.");
+        console.warn("GLTFLoader not available, using fallback.");
         makeFallbackModels();
         return;
       }
@@ -548,20 +537,22 @@
       function doneOne() {
         toLoad--;
         if (toLoad <= 0) {
+          if (!playerCarBase || !trafficCarBase || !trafficTruckBase ||
+              !trafficCarSize || !trafficTruckSize) {
+            console.warn("Some models missing, fallback.");
+            makeFallbackModels();
+            return;
+          }
           modelsLoaded = true;
           createPlayerCar();
-          if (hintEl) {
-            hintEl.textContent = "Tap / Press Space to start. Swipe / drag to steer.";
-          }
+          if (hintEl) hintEl.textContent = "Tap / Press Space to start. Swipe / drag to steer.";
           centerMsgEl.textContent = "Press Space / Tap to start";
           hudMsg.textContent = "";
           gameState = "ready";
         }
       }
 
-      // Player car (Lamborghini)
-      loader.load(
-        "player-car.glb",
+      loader.load("player-car.glb",
         (gltf) => {
           const root = gltf.scene;
           const size = normalizeModel(root, CAR_TARGET_WIDTH, CAR_TARGET_LENGTH);
@@ -578,9 +569,7 @@
         }
       );
 
-      // Traffic car
-      loader.load(
-        "traffic-car.glb",
+      loader.load("traffic-car.glb",
         (gltf) => {
           const root = gltf.scene;
           trafficCarSize = normalizeModel(root, 1.4, 3.0);
@@ -595,9 +584,7 @@
         }
       );
 
-      // Traffic truck
-      loader.load(
-        "traffic-truck.glb",
+      loader.load("traffic-truck.glb",
         (gltf) => {
           const root = gltf.scene;
           trafficTruckSize = normalizeModel(root, 1.8, 6.0);
@@ -611,21 +598,10 @@
           doneOne();
         }
       );
-
-      // Safety timeout – agar 8 seconds me load nahi hua toh fallback pe aa jao
-      setTimeout(() => {
-        if (!modelsLoaded) {
-          console.warn("Model load timeout, using fallback box cars.");
-          makeFallbackModels();
-        }
-      }, 8000);
     }
 
     function createPlayerCar() {
-      if (!playerCarBase) {
-        // fallback already handle karega
-        return;
-      }
+      if (!playerCarBase) return;
       if (car.mesh) scene.remove(car.mesh);
       const clone = playerCarBase.clone(true);
       clone.position.set(0, 0, 4);
@@ -635,10 +611,7 @@
 
     // ===== OBSTACLES =====
     function createObstacle() {
-      if (!trafficCarBase || !trafficTruckBase || !trafficCarSize || !trafficTruckSize) {
-        // fallback if needed (box cars)
-        if (!trafficCarBase || !trafficCarSize) return;
-      }
+      if (!trafficCarBase || !trafficTruckBase || !trafficCarSize || !trafficTruckSize) return;
 
       const laneIndex = Math.floor(Math.random() * LANE_COUNT);
       const laneX     = LANE_X[laneIndex];
@@ -646,7 +619,7 @@
       const isTruck = Math.random() < 0.35;
       let base, size;
 
-      if (isTruck && trafficTruckBase && trafficTruckSize) {
+      if (isTruck) {
         base = trafficTruckBase;
         size = trafficTruckSize;
       } else {
@@ -868,7 +841,7 @@
       render();
     }
 
-    // ===== INPUT =====
+    // ===== INPUT + CONTROLS =====
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
         e.preventDefault();
@@ -955,7 +928,6 @@
 
     // ===== INIT =====
     loadProgress();
-    scene = null;
     initThree();
     clock = new THREE.Clock();
     clock.start();
