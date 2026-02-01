@@ -2,20 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Neon Drift Racer – by Yuvraj</title>
+  <title>Neon Drift Racer 3D – by Yuvraj</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="description" content="Neon Drift Racer, a high-graphics 3-lane highway racing game by Yuvraj. Dodge traffic, drift between lanes and reach the highest distance.">
+  <meta name="description" content="Neon Drift Racer 3D – a high-graphics 3D highway racing game by Yuvraj. Dodge traffic in a realistic neon city highway and reach the highest distance.">
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       padding: 16px;
-      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000 100%);
+      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000000 100%);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #e5e7eb;
       display: flex;
@@ -29,7 +27,7 @@
       font-size: 24px;
       text-align: center;
       color: #f97316;
-      text-shadow: 0 0 14px rgba(249, 115, 22, 0.9);
+      text-shadow: 0 0 16px rgba(249,115,22,0.9);
     }
 
     #subtitle {
@@ -43,18 +41,23 @@
     .canvas-wrapper {
       position: relative;
       width: 100%;
-      max-width: 420px;
+      max-width: 480px;
+      aspect-ratio: 2 / 3; /* 400x600 */
+    }
+
+    #threeContainer {
+      position: absolute;
+      inset: 0;
     }
 
     canvas {
-      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000000 100%);
+      display: block;
+      width: 100%;
+      height: 100%;
       border-radius: 18px;
       border: 2px solid #0f172a;
       box-shadow: 0 20px 40px rgba(0,0,0,0.9);
-      width: 100%;
-      height: auto;
-      display: block;
-      touch-action: none;
+      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000000 100%);
     }
 
     .hint-overlay {
@@ -85,279 +88,104 @@
       text-align: center;
     }
 
-    /* Overlays (setup + result) */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15,23,42,0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      animation: overlayFade 0.22s ease-out;
-    }
-    .overlay.hidden {
-      display: none;
-    }
-
-    @keyframes overlayFade {
-      from { background: rgba(15,23,42,0); }
-      to   { background: rgba(15,23,42,0.9); }
-    }
-
-    .modal {
+    /* HUD */
+    #hud {
+      position: absolute;
+      left: 0;
+      top: 0;
       width: 100%;
-      max-width: 320px;
-      border-radius: 18px;
-      padding: 16px 16px 14px;
-      background:
-        radial-gradient(circle at top, rgba(79,70,229,0.6), rgba(15,23,42,0.98));
-      border: 1px solid rgba(129,140,248,0.9);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.95);
-      text-align: center;
-      backdrop-filter: blur(18px);
-      animation: modalIn 0.25s ease-out;
-    }
-
-    @keyframes modalIn {
-      from {
-        transform: translateY(14px) scale(0.96);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-      }
-    }
-
-    .modal-title {
-      font-size: 17px;
-      font-weight: 600;
-      color: #e5e7eb;
-      margin-bottom: 6px;
-    }
-
-    .modal-text {
-      font-size: 12px;
-      color: #c7d2fe;
-      margin-bottom: 10px;
-    }
-
-    .choice-row {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-
-    .choice-label {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-bottom: 4px;
-      text-align: left;
-    }
-
-    .choice-btn {
-      flex: 1;
-      min-width: 0;
       padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.6);
-      background: rgba(15,23,42,0.95);
-      color: #e5e7eb;
-      font-size: 13px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
-    }
-
-    .choice-btn.active {
-      border-color: #22c55e;
-      background: linear-gradient(135deg, #22c55e, #a3e635);
-      color: #020617;
-      box-shadow: 0 10px 24px rgba(34,197,94,0.45);
-      font-weight: 600;
-    }
-
-    .choice-btn:hover {
-      transform: translateY(-1px);
-    }
-
-    .primary-btn-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-    }
-
-    .primary-btn {
-      flex: 1;
-      padding: 7px 12px;
-      border-radius: 999px;
-      border: 1px solid #22c55e;
-      background: linear-gradient(135deg, #22c55e, #a3e635);
-      color: #020617;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 12px 26px rgba(34,197,94,0.5);
-      transition: transform 0.08s ease, filter 0.08s ease;
-    }
-
-    .primary-btn:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
-
-    .secondary-btn {
-      flex: 1;
-      padding: 7px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      background: rgba(15,23,42,0.98);
-      color: #e5e7eb;
-      font-size: 13px;
-      cursor: pointer;
-      transition: transform 0.08s ease, border-color 0.08s ease;
-    }
-
-    .secondary-btn:hover {
-      transform: translateY(-1px);
-      border-color: rgba(248,250,252,0.7);
-    }
-
-    .result-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: #e5e7eb;
-    }
-
-    .result-message {
-      font-size: 13px;
-      color: #e5e7eb;
-      margin-bottom: 6px;
-    }
-
-    .result-stats {
       font-size: 12px;
-      color: #a5b4fc;
-      margin-bottom: 8px;
+      pointer-events: none;
+    }
+    #hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      color: #e5e7eb;
+    }
+    #hud-left {
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    #hud-right {
+      text-align:right;
+      font-size:12px;
+      color:#9ca3af;
+    }
+    #hud-msg {
+      margin-top: 4px;
+      text-align: center;
+      font-size: 12px;
+      color: #facc15;
+      min-height: 16px;
+    }
+
+    /* Simple center message for ready/over */
+    #centerMsg {
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      text-align:center;
+      font-size:14px;
+      color:#e5e7eb;
+      text-shadow:0 0 12px rgba(0,0,0,0.9);
+      pointer-events:none;
     }
   </style>
 </head>
 <body>
-  <h1>Neon Drift Racer – by Yuvraj</h1>
+  <h1>Neon Drift Racer 3D – by Yuvraj</h1>
   <div id="subtitle">
-    3-lane neon highway racer. Move left/right to dodge traffic and survive as long as possible.<br>
+    3D neon highway racer. Move left/right to dodge traffic and survive as long as possible.<br>
     PC: <strong>← / →</strong> or <strong>A / D</strong> · Mobile: swipe/drag left-right on the road.
   </div>
 
   <div class="canvas-wrapper">
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="threeContainer"></div>
+    <div id="hud">
+      <div id="hud-top">
+        <div id="hud-left">
+          <div id="hud-distance">Distance: 0m</div>
+          <div id="hud-best">Best: 0m</div>
+        </div>
+        <div id="hud-right">
+          Neon Drift Racer 3D
+        </div>
+      </div>
+      <div id="hud-msg"></div>
+    </div>
     <div class="hint-overlay">
       <div class="hint-box" id="hintText">
-        Choose difficulty, then start the race. Swipe / drag to steer the car smoothly.
+        Tap / Press Space to start. Swipe / drag to steer, avoid all traffic.
       </div>
     </div>
+    <div id="centerMsg"></div>
   </div>
 
   <div id="footerName">
     Game owner: <strong>Yuvraj</strong>
   </div>
 
-  <!-- SETUP OVERLAY (difficulty) -->
-  <div id="setupOverlay" class="overlay">
-    <div class="modal">
-      <div class="modal-title">Start race</div>
-      <div class="modal-text">
-        Choose the traffic difficulty and start your endless neon highway run.
-      </div>
-
-      <div class="choice-label">Difficulty</div>
-      <div class="choice-row">
-        <button class="choice-btn active" data-diff="easy"   id="btnDiffEasy">Easy</button>
-        <button class="choice-btn"        data-diff="medium" id="btnDiffMedium">Medium</button>
-        <button class="choice-btn"        data-diff="hard"   id="btnDiffHard">Hard</button>
-      </div>
-
-      <div class="primary-btn-row">
-        <button class="primary-btn" id="btnStartRace" type="button">Start race</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RESULT OVERLAY (only crash) -->
-  <div id="resultOverlay" class="overlay hidden">
-    <div class="modal">
-      <div id="resultTitle" class="result-title">You crashed</div>
-      <div id="resultMessage" class="result-message"></div>
-      <div id="resultStats" class="result-stats"></div>
-
-      <div class="primary-btn-row">
-        <button class="primary-btn" id="btnResultAgain" type="button">
-          Race again
-        </button>
-        <button class="secondary-btn" id="btnResultChange" type="button">
-          Change difficulty
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- Three.js CDN -->
+  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
 
   <script>
-    // ===== BASIC SETUP =====
-    const canvas = document.getElementById("gameCanvas");
-    const ctx    = canvas.getContext("2d");
-    const hintEl = document.getElementById("hintText");
-
-    const setupOverlay   = document.getElementById("setupOverlay");
-    const resultOverlay  = document.getElementById("resultOverlay");
-    const btnDiffEasy    = document.getElementById("btnDiffEasy");
-    const btnDiffMedium  = document.getElementById("btnDiffMedium");
-    const btnDiffHard    = document.getElementById("btnDiffHard");
-    const btnStartRace   = document.getElementById("btnStartRace");
-    const btnResultAgain = document.getElementById("btnResultAgain");
-    const btnResultChange= document.getElementById("btnResultChange");
-    const resultTitle    = document.getElementById("resultTitle");
-    const resultMessage  = document.getElementById("resultMessage");
-    const resultStats    = document.getElementById("resultStats");
+    // ===== BASIC DOM / HUD =====
+    const container   = document.getElementById("threeContainer");
+    const hintEl      = document.getElementById("hintText");
+    const hudDistance = document.getElementById("hud-distance");
+    const hudBest     = document.getElementById("hud-best");
+    const hudMsg      = document.getElementById("hud-msg");
+    const centerMsgEl = document.getElementById("centerMsg");
 
     const OWNER_NAME = "Yuvraj";
 
-    // ===== DIFFICULTY CONFIG (lane lines faster on higher modes) =====
-    const DIFF_CONFIG = {
-      easy: {
-        label: "Easy",
-        speedBase: 170,
-        speedMax: 320,
-        spawnBase: 1.1,
-        laneFactor: 0.22
-      },
-      medium: {
-        label: "Medium",
-        speedBase: 220,
-        speedMax: 380,
-        spawnBase: 0.8,
-        laneFactor: 0.30
-      },
-      hard: {
-        label: "Hard",
-        speedBase: 270,
-        speedMax: 430,
-        spawnBase: 0.6,
-        laneFactor: 0.38
-      }
-    };
-
-    let difficulty = "easy";
-
     // ===== SOUNDS =====
     const engineSound = new Audio("drift-engine.mp3");
-    const crashSound  = new Audio("explosion.mp3"); // reuse rocket explosion
+    const crashSound  = new Audio("explosion.mp3");
 
     engineSound.loop   = true;
     engineSound.volume = 0.5;
@@ -365,7 +193,8 @@
 
     let audioUnlocked = false;
 
-    // NOTE: yahan sirf crash sound ko prime kar rahe hain, engine ko nahi
+    // Sirf crash sound ko prime karenge (engine ko nahi),
+    // taaki engine ko direct user action se hi play karein.
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
@@ -402,575 +231,407 @@
       } catch (e) {}
     }
 
-    // ===== SCORE + ACHIEVEMENTS (LOCALSTORAGE) =====
-    let distance   = 0;
-    let bestDist   = 0;
+    // ===== SCORE / BEST (localStorage) =====
+    let distance = 0;
+    let bestDist = 0;
 
-    const LS_DRIFT_BEST = "drift_best_distance_v1";
-    const LS_DRIFT_ACH  = "drift_achievements_v1";
+    const LS_DRIFT3D_BEST = "drift3d_best_distance_v1";
 
-    const DRIFT_THRESHOLDS = {
-      noob:   5000,
-      pro:    20000,
-      legend: 50000,
-      hacker: 100000
-    };
-
-    let driftAchievements = {
-      noob:   false,
-      pro:    false,
-      legend: false,
-      hacker: false
-    };
-
-    let achievementMessage = "";
-    let achievementTimer   = 0; // frames
-
-    function loadDriftProgress() {
+    function loadProgress() {
       try {
-        const savedBest = localStorage.getItem(LS_DRIFT_BEST);
-        if (savedBest !== null) {
-          bestDist = parseInt(savedBest, 10) || 0;
-        }
-        const savedAch = localStorage.getItem(LS_DRIFT_ACH);
-        if (savedAch) {
-          const obj = JSON.parse(savedAch);
-          driftAchievements = Object.assign(driftAchievements, obj);
-        }
-      } catch (e) {}
+        const saved = localStorage.getItem(LS_DRIFT3D_BEST);
+        if (saved !== null) bestDist = parseInt(saved, 10) || 0;
+      } catch(e){}
+      hudBest.textContent = "Best: " + Math.floor(bestDist) + "m";
     }
 
-    function saveDriftProgress() {
+    function saveProgress() {
       try {
-        localStorage.setItem(LS_DRIFT_BEST, String(bestDist));
-        localStorage.setItem(LS_DRIFT_ACH, JSON.stringify(driftAchievements));
-      } catch (e) {}
+        localStorage.setItem(LS_DRIFT3D_BEST, String(bestDist));
+      } catch(e){}
     }
 
-    function showAchievement(text) {
-      achievementMessage = text;
-      achievementTimer   = 180; // ~3 seconds
+    function updateDistanceHUD() {
+      hudDistance.textContent = "Distance: " + Math.floor(distance) + "m";
+      hudBest.textContent     = "Best: " + Math.floor(bestDist) + "m";
     }
 
-    function updateDriftAchievements() {
-      let changed = false;
+    // ===== THREE.JS SETUP =====
+    let scene, camera, renderer, clock;
+    let road;
+    const obstacles = [];
+    const laneLineSegments = [];
 
-      if (distance >= DRIFT_THRESHOLDS.noob && !driftAchievements.noob) {
-        driftAchievements.noob = true;
-        showAchievement("Drift badge unlocked: Noob (5000m+)");
-        changed = true;
-      }
-      if (distance >= DRIFT_THRESHOLDS.pro && !driftAchievements.pro) {
-        driftAchievements.pro = true;
-        showAchievement("Drift badge unlocked: Pro (20000m+)");
-        changed = true;
-      }
-      if (distance >= DRIFT_THRESHOLDS.legend && !driftAchievements.legend) {
-        driftAchievements.legend = true;
-        showAchievement("Drift badge unlocked: Legend (50000m+)");
-        changed = true;
-      }
-      if (distance >= DRIFT_THRESHOLDS.hacker && !driftAchievements.hacker) {
-        driftAchievements.hacker = true;
-        showAchievement("Drift badge unlocked: Hacker (100000m+)");
-        changed = true;
-      }
-
-      if (changed) {
-        saveDriftProgress();
-      }
-    }
-
-    // ===== GAME STATE =====
-    let gameState = "ready"; // "ready", "running", "over"
-    let lastTime  = null;
-
-    const LANES_COUNT = 3;
-    const road = {
-      top: 40,
-      bottom: canvas.height - 40,
-      left: canvas.width * 0.1,
-      right: canvas.width * 0.9
-    };
-    const laneWidth = (road.right - road.left) / LANES_COUNT;
-    const laneCenters = [
-      road.left + laneWidth * 0.5,
-      road.left + laneWidth * 1.5,
-      road.left + laneWidth * 2.5
+    const ROAD_WIDTH  = 8;
+    const ROAD_LENGTH = 200;
+    const LANE_COUNT  = 3;
+    const LANE_WIDTH  = ROAD_WIDTH / LANE_COUNT;
+    const LANE_X = [
+      -ROAD_WIDTH/2 + LANE_WIDTH*0.5,
+      0,
+      ROAD_WIDTH/2 - LANE_WIDTH*0.5
     ];
 
     const car = {
-      x: laneCenters[1],
-      y: canvas.height * 0.78,
-      width: 32,
-      height: 58
+      mesh: null,
+      x: 0,
+      z: 0,
+      y: 0.4
     };
 
-    const enemies = []; // { type, lane, x, y, width, height, speed, color, glow }
-    let speed      = 180; // vertical speed
+    let explosion = null; // { mesh, radius, alpha }
+
+    // ===== GAME STATE =====
+    let gameState = "ready"; // "ready", "running", "over"
+    let speed     = 40;      // world units / second (forward)
+    let baseSpeed = 40;
+    let maxSpeed  = 120;
     let spawnTimer = 0;
-    let baseSpawnInterval = 1.0; // seconds
-    let laneDashOffset = 0;
+    let baseSpawnInterval = 1.0;
 
-    let explosion = null; // { x, y, radius, alpha }
-
-    // Pointer drag state (for smooth steering)
-    let pointerDown = false;
+    // Pointer drag
+    let pointerDown   = false;
     let pointerStartX = 0;
     let carStartX     = 0;
 
-    // ===== DIFFICULTY HELPERS =====
-    function applyDifficultyBase() {
-      const cfg = DIFF_CONFIG[difficulty];
-      speed = cfg.speedBase;
-      baseSpawnInterval = cfg.spawnBase;
-    }
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+      scene.fog = new THREE.Fog(0x020617, 20, 120);
 
-    function capitalize(str) {
-      if (!str) return str;
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
+      const aspect = container.clientWidth / container.clientHeight;
+      camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 200);
+      camera.position.set(0, 6, 12);
+      camera.lookAt(0, 1, -10);
 
-    // ===== GAME FUNCTIONS =====
-    function resetGameStateOnly() {
-      distance   = 0;
-      applyDifficultyBase();
-      spawnTimer = 0;
-      laneDashOffset = 0;
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(renderer.domElement);
 
-      enemies.length = 0;
-      explosion = null;
+      clock = new THREE.Clock();
 
-      car.x = laneCenters[1];
+      // Lights
+      const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambient);
 
-      achievementMessage = "";
-      achievementTimer   = 0;
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 15, 10);
+      scene.add(dirLight);
 
-      gameState = "ready";
-      lastTime  = null;
-    }
+      const hemi = new THREE.HemisphereLight(0x1e40af, 0x020617, 0.35);
+      scene.add(hemi);
 
-    function resetGame() {
-      resetGameStateOnly();
-      stopEngine();
-      if (hintEl) {
-        hintEl.textContent = "Swipe / drag on the road or use arrow keys to steer.";
-      }
-    }
+      // Road
+      const roadGeom = new THREE.BoxGeometry(ROAD_WIDTH, 0.2, ROAD_LENGTH);
+      const roadMat  = new THREE.MeshStandardMaterial({
+        color: 0x111827,
+        metalness: 0.2,
+        roughness: 0.9
+      });
+      road = new THREE.Mesh(roadGeom, roadMat);
+      road.position.set(0, 0, -ROAD_LENGTH/2 + 20);
+      scene.add(road);
 
-    function startGame() {
-      resetGameStateOnly();
-      gameState = "running";
-      startEngine();
-      if (hintEl) {
-        hintEl.textContent = "Endless race: dodge every car and go as far as you can.";
-      }
-    }
+      // Lane line segments
+      const lineGeom = new THREE.BoxGeometry(0.12, 0.04, 2.2);
+      const lineMat  = new THREE.MeshBasicMaterial({ color: 0x9ca3af });
+      const SEG_COUNT = 18;
+      const SEG_SPACING = 6;
 
-    function handleCrash() {
-      if (gameState === "over") return;
-      gameState = "over";
-      stopEngine();
-      playSound(crashSound);
-      triggerExplosion(car.x, car.y - 5);
-
-      if (distance > bestDist) {
-        bestDist = distance;
-        saveDriftProgress();
+      for (let laneIndex = 1; laneIndex < LANE_COUNT; laneIndex++) {
+        const x = -ROAD_WIDTH/2 + LANE_WIDTH * laneIndex;
+        for (let i = 0; i < SEG_COUNT; i++) {
+          const m = new THREE.Mesh(lineGeom, lineMat);
+          m.position.set(x, 0.12, -i * SEG_SPACING);
+          laneLineSegments.push(m);
+          scene.add(m);
+        }
       }
 
-      openResultOverlay();
+      // Car
+      const carGroup = new THREE.Group();
+
+      const bodyGeom = new THREE.BoxGeometry(1.2, 0.5, 2.4);
+      const bodyMat  = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        metalness: 0.4,
+        roughness: 0.3,
+        emissive: 0x0f172a,
+        emissiveIntensity: 0.4
+      });
+      const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+      bodyMesh.position.y = 0.4;
+      carGroup.add(bodyMesh);
+
+      const cabinGeom = new THREE.BoxGeometry(0.8, 0.45, 1.0);
+      const cabinMat  = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        metalness: 0.1,
+        roughness: 0.5
+      });
+      const cabinMesh = new THREE.Mesh(cabinGeom, cabinMat);
+      cabinMesh.position.set(0, 0.8, -0.2);
+      carGroup.add(cabinMesh);
+
+      const headGeom = new THREE.BoxGeometry(0.2, 0.1, 0.25);
+      const headMat  = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
+      const h1 = new THREE.Mesh(headGeom, headMat);
+      h1.position.set(-0.3, 0.55, 1.2);
+      const h2 = h1.clone();
+      h2.position.x = 0.3;
+      carGroup.add(h1, h2);
+
+      carGroup.position.set(0, car.y, 4);
+      scene.add(carGroup);
+      car.mesh = carGroup;
+
+      // ground-side lights (poles)
+      const poleGeom = new THREE.CylinderGeometry(0.06, 0.08, 2.2, 8);
+      const poleMat  = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness:0.3, roughness:0.6});
+      const lampGeom = new THREE.SphereGeometry(0.16, 12, 12);
+      const lampMat  = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+      for (let i=0; i<8; i++) {
+        const z = -i*14 - 10;
+        const leftPole = new THREE.Mesh(poleGeom, poleMat);
+        leftPole.position.set(-ROAD_WIDTH/2 - 1.4, 1.1, z);
+        const leftLamp = new THREE.Mesh(lampGeom, lampMat);
+        leftLamp.position.set(-ROAD_WIDTH/2 - 1.4, 2.2, z);
+
+        const rightPole = leftPole.clone();
+        rightPole.position.x = ROAD_WIDTH/2 + 1.4;
+        const rightLamp = leftLamp.clone();
+        rightLamp.position.x = ROAD_WIDTH/2 + 1.4;
+
+        scene.add(leftPole, leftLamp, rightPole, rightLamp);
+      }
+
+      window.addEventListener("resize", onWindowResize);
+      onWindowResize();
     }
 
-    function triggerExplosion(x, y) {
-      explosion = {
-        x,
-        y,
-        radius: 0,
-        alpha: 1
-      };
+    function onWindowResize() {
+      if (!renderer || !camera) return;
+      const width  = container.clientWidth || 400;
+      const height = container.clientHeight || 600;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
     }
 
-    function createEnemy() {
-      const lane = Math.floor(Math.random() * LANES_COUNT);
-      const laneX = laneCenters[lane];
+    // ===== OBSTACLES =====
+    function createObstacle() {
+      const laneIndex = Math.floor(Math.random() * LANE_COUNT);
+      const laneX     = LANE_X[laneIndex];
 
-      // random decide car or truck
-      const isTruck = Math.random() < 0.25; // 25% trucks
+      const isTruck = Math.random() < 0.35;
 
-      let width, height, speedMul;
-      let type;
-
+      let width, height, length, color;
       if (isTruck) {
-        type   = "truck";
-        width  = 32 + Math.random() * 6;    // a bit wider
-        height = 90 + Math.random() * 12;   // much taller
-        speedMul = 0.9 + Math.random() * 0.2; // slightly slower / same-ish
+        width  = 1.3;
+        height = 1.2;
+        length = 3.2;
+        color  = 0x38bdf8;
       } else {
-        type   = "car";
-        width  = 30 + Math.random() * 10;
-        height = 56 + Math.random() * 8;
-        speedMul = 0.9 + Math.random() * 0.3;
+        width  = 1.0;
+        height = 0.8;
+        length = 2.2;
+        color  = 0xf97316;
       }
 
-      const hue = isTruck
-        ? 200 + Math.random() * 40   // bluish trucks
-        : 20 + Math.random() * 50;   // orange/red cars
-
-      const color = `hsl(${hue}, 90%, 55%)`;
-      const glow  = isTruck
-        ? "rgba(59,130,246,0.8)"
-        : "rgba(248,113,113,0.8)";
-
-      const enemySpeed = speed * speedMul;
-
-      enemies.push({
-        type,
-        lane,
-        x: laneX,
-        y: road.top - height - 40,
-        width,
-        height,
-        speed: enemySpeed,
+      const geom = new THREE.BoxGeometry(width, height, length);
+      const mat  = new THREE.MeshStandardMaterial({
         color,
-        glow
+        metalness: 0.35,
+        roughness: 0.35,
+        emissive: isTruck ? 0x0ea5e9 : 0x7f1d1d,
+        emissiveIntensity: 0.5
+      });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.set(laneX, height/2 + 0.1, -80 - Math.random()*40);
+
+      scene.add(mesh);
+
+      obstacles.push({
+        mesh,
+        isTruck,
+        laneIndex
       });
     }
 
-    function updateEnemies(dt) {
-      for (const e of enemies) {
-        e.y += e.speed * dt;
-      }
-
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        if (enemies[i].y - enemies[i].height > canvas.height + 60) {
-          enemies.splice(i, 1);
+    function updateObstacles(dt) {
+      for (let i = obstacles.length-1; i >= 0; i--) {
+        const o = obstacles[i];
+        o.mesh.position.z += speed * dt;
+        if (o.mesh.position.z > 25) {
+          scene.remove(o.mesh);
+          obstacles.splice(i,1);
         }
       }
     }
 
     function checkCollisions() {
-      const cx = car.x;
-      const cy = car.y;
-      const cw = car.width;
-      const ch = car.height;
+      const cx = car.mesh.position.x;
+      const cz = car.mesh.position.z;
+      const cHalfW = car.width * 0.5;
+      const cHalfL = 1.1;
 
-      for (const e of enemies) {
-        const ex = e.x;
-        const ey = e.y;
-        const ew = e.width;
-        const eh = e.height;
+      for (const o of obstacles) {
+        const ox = o.mesh.position.x;
+        const oz = o.mesh.position.z;
+        const oHalfW = (o.isTruck ? 1.3 : 1.0) * 0.5;
+        const oHalfL = (o.isTruck ? 3.2 : 2.2) * 0.5;
 
-        if (Math.abs(cx - ex) < (cw + ew) * 0.5 &&
-            Math.abs(cy - ey) < (ch + eh) * 0.5) {
+        const dx = Math.abs(cx - ox);
+        const dz = Math.abs(cz - oz);
+
+        if (dx < (cHalfW + oHalfW) && dz < (cHalfL + oHalfL)) {
           handleCrash();
           return;
         }
       }
     }
 
-    function updateExplosion(dt) {
-      if (!explosion) return;
-      explosion.radius += 260 * dt;
-      explosion.alpha  -= 1.7 * dt;
-      if (explosion.alpha <= 0) {
-        explosion = null;
+    // ===== EXPLOSION (3D sphere glow) =====
+    function triggerExplosion() {
+      if (explosion && explosion.mesh) {
+        scene.remove(explosion.mesh);
       }
+      const geom = new THREE.SphereGeometry(0.5, 16, 16);
+      const mat  = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.copy(car.mesh.position);
+      scene.add(mesh);
+      explosion = {
+        mesh,
+        radius: 0.5,
+        alpha: 1
+      };
+      playSound(crashSound);
     }
 
+    function updateExplosion(dt) {
+      if (!explosion) return;
+      explosion.radius += 10 * dt;
+      explosion.alpha  -= 2.0 * dt;
+      if (explosion.alpha <= 0) {
+        scene.remove(explosion.mesh);
+        explosion = null;
+        return;
+      }
+      explosion.mesh.scale.setScalar(explosion.radius);
+      explosion.mesh.material.opacity = Math.max(0, explosion.alpha);
+      explosion.mesh.material.transparent = true;
+      explosion.mesh.material.color.setHSL(0.05, 0.9, 0.6);
+    }
+
+    // ===== GAME CONTROL =====
+    function resetGameState() {
+      distance = 0;
+      baseSpeed = 40;
+      speed = baseSpeed;
+      baseSpawnInterval = 1.0;
+      spawnTimer = 0;
+
+      // remove obstacles
+      for (const o of obstacles) {
+        scene.remove(o.mesh);
+      }
+      obstacles.length = 0;
+
+      // reset car position
+      car.mesh.position.set(0, car.y, 4);
+
+      if (explosion) {
+        scene.remove(explosion.mesh);
+        explosion = null;
+      }
+
+      gameState = "ready";
+      centerMsgEl.textContent = "Press Space / Tap to start";
+      if (hintEl) {
+        hintEl.textContent = "Swipe / drag to steer · Avoid all traffic · Try to beat your best distance.";
+      }
+      hudMsg.textContent = "";
+    }
+
+    function startGame() {
+      resetGameState();
+      gameState = "running";
+      startEngine();
+      centerMsgEl.textContent = "";
+      if (hintEl) {
+        hintEl.textContent = "";
+      }
+      hudMsg.textContent = "";
+    }
+
+    function handleCrash() {
+      if (gameState === "over") return;
+      gameState = "over";
+      stopEngine();
+      triggerExplosion();
+
+      if (distance > bestDist) {
+        bestDist = distance;
+        saveProgress();
+      }
+      updateDistanceHUD();
+
+      centerMsgEl.textContent = "Crashed! Tap / Space to retry";
+      hudMsg.textContent = "Endless run ended. Try again to beat your best distance.";
+    }
+
+    // ===== MAIN UPDATE LOOP =====
     function updateGame(dt) {
       if (gameState !== "running") {
         updateExplosion(dt);
-        if (achievementTimer > 0) achievementTimer--;
         return;
       }
 
-      const cfg = DIFF_CONFIG[difficulty];
-
-      // Distance
+      // Distance + speed scaling
       distance += speed * dt * 0.7;
       if (distance > bestDist) {
         bestDist = distance;
       }
-      updateDriftAchievements();
+      updateDistanceHUD();
 
-      // Speed based on distance
-      const targetSpeed = cfg.speedBase + distance * 0.06;
-      speed = Math.min(targetSpeed, cfg.speedMax);
+      // Increase speed gradually
+      const targetSpeed = baseSpeed + distance * 0.01;
+      speed = Math.min(targetSpeed, maxSpeed);
 
-      // Lane dash offset (for moving lane lines) – difficulty factor
-      laneDashOffset += speed * dt * cfg.laneFactor;
+      // Lane dashed lines movement
+      for (const seg of laneLineSegments) {
+        seg.position.z += speed * 0.4 * dt;
+        if (seg.position.z > 10) {
+          seg.position.z -= 6 * 18; // SEG_SPACING * SEG_COUNT
+        }
+      }
 
-      // Spawn interval lower with distance
-      baseSpawnInterval = cfg.spawnBase - Math.min(distance / 3000, 0.4);
-      if (baseSpawnInterval < 0.4) baseSpawnInterval = 0.4;
-
-      // Enemies
+      // Obstacles
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
-        createEnemy();
+        createObstacle();
         const minI = baseSpawnInterval * 0.6;
         const maxI = baseSpawnInterval * 1.2;
         spawnTimer = minI + Math.random() * (maxI - minI);
       }
 
-      updateEnemies(dt);
+      updateObstacles(dt);
       checkCollisions();
       updateExplosion(dt);
-
-      if (achievementTimer > 0) {
-        achievementTimer--;
-      }
     }
 
-    // ===== DRAW FUNCTIONS =====
-    function drawBackground() {
-      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      g.addColorStop(0, "#020617");
-      g.addColorStop(0.35, "#020617");
-      g.addColorStop(1, "#000000");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Road
-      const roadGradient = ctx.createLinearGradient(road.left, 0, road.right, 0);
-      roadGradient.addColorStop(0, "#020617");
-      roadGradient.addColorStop(0.5, "#111827");
-      roadGradient.addColorStop(1, "#020617");
-
-      ctx.fillStyle = roadGradient;
-      ctx.beginPath();
-      ctx.roundRect(road.left, road.top, road.right - road.left, road.bottom - road.top, 20);
-      ctx.fill();
-
-      // Lane lines with moving dash offset
-      ctx.save();
-      ctx.setLineDash([14, 12]);
-      ctx.lineDashOffset = -laneDashOffset;
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "rgba(156, 163, 175, 0.7)";
-      for (let i = 1; i < LANES_COUNT; i++) {
-        const x = road.left + laneWidth * i;
-        ctx.beginPath();
-        ctx.moveTo(x, road.top + 8);
-        ctx.lineTo(x, road.bottom - 8);
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // Road border glow
-      ctx.save();
-      ctx.strokeStyle = "rgba(59,130,246,0.6)";
-      ctx.lineWidth = 3;
-      ctx.shadowColor = "rgba(59,130,246,0.7)";
-      ctx.shadowBlur = 14;
-      ctx.beginPath();
-      ctx.roundRect(road.left, road.top, road.right - road.left, road.bottom - road.top, 20);
-      ctx.stroke();
-      ctx.restore();
+    function render() {
+      renderer.render(scene, camera);
     }
 
-    function drawEnemies() {
-      for (const e of enemies) {
-        ctx.save();
-        ctx.translate(e.x, e.y);
-        ctx.shadowColor = e.glow;
-        ctx.shadowBlur = 18;
-
-        if (e.type === "truck") {
-          // Truck: long body + cabin
-          const bodyH = e.height * 0.65;
-          const cabinH = e.height - bodyH;
-
-          const grdBody = ctx.createLinearGradient(0, -e.height/2, 0, e.height/2);
-          grdBody.addColorStop(0, "#dbeafe");
-          grdBody.addColorStop(0.4, e.color);
-          grdBody.addColorStop(1, "#111827");
-
-          ctx.fillStyle = grdBody;
-          ctx.beginPath();
-          ctx.roundRect(-e.width/2, -e.height/2, e.width, bodyH, 10);
-          ctx.fill();
-
-          // Cabin
-          ctx.shadowBlur = 10;
-          ctx.fillStyle = "#0f172a";
-          ctx.beginPath();
-          ctx.roundRect(-e.width/2, -e.height/2 + bodyH - 4, e.width, cabinH + 4, 10);
-          ctx.fill();
-
-          // Windows
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = "rgba(15,23,42,0.9)";
-          ctx.beginPath();
-          ctx.roundRect(-e.width*0.35, -e.height/2 + bodyH + 2, e.width*0.7, cabinH*0.5, 6);
-          ctx.fill();
-        } else {
-          // Car
-          const grd = ctx.createLinearGradient(0, -e.height/2, 0, e.height/2);
-          grd.addColorStop(0, "#fee2e2");
-          grd.addColorStop(0.4, e.color);
-          grd.addColorStop(1, "#7f1d1d");
-
-          ctx.fillStyle = grd;
-          ctx.beginPath();
-          ctx.roundRect(-e.width/2, -e.height/2, e.width, e.height, 10);
-          ctx.fill();
-
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = "rgba(15,23,42,0.9)";
-          ctx.beginPath();
-          ctx.roundRect(-e.width*0.38, -e.height*0.2, e.width*0.76, e.height*0.26, 6);
-          ctx.fill();
-        }
-
-        ctx.restore();
-      }
-    }
-
-    function drawCar() {
-      ctx.save();
-      ctx.translate(car.x, car.y);
-      ctx.shadowColor = "#22c55e";
-      ctx.shadowBlur = 18;
-
-      const grd = ctx.createLinearGradient(0, -car.height/2, 0, car.height/2);
-      grd.addColorStop(0, "#e0f2fe");
-      grd.addColorStop(0.4, "#38bdf8");
-      grd.addColorStop(1, "#0f172a");
-      ctx.fillStyle = grd;
-
-      ctx.beginPath();
-      ctx.roundRect(-car.width/2, -car.height/2, car.width, car.height, 10);
-      ctx.fill();
-
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(15,23,42,0.9)";
-      ctx.beginPath();
-      ctx.roundRect(-car.width*0.35, -car.height*0.2, car.width*0.7, car.height*0.28, 6);
-      ctx.fill();
-
-      ctx.fillStyle = "#fef9c3";
-      ctx.beginPath();
-      ctx.roundRect(-car.width*0.4, -car.height*0.52, car.width*0.26, car.height*0.14, 4);
-      ctx.roundRect(car.width*0.14, -car.height*0.52, car.width*0.26, car.height*0.14, 4);
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    function drawExplosion() {
-      if (!explosion) return;
-
-      ctx.save();
-      ctx.translate(explosion.x, explosion.y - 10);
-      const r = explosion.radius;
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-      g.addColorStop(0, `rgba(248, 250, 252, ${explosion.alpha})`);
-      g.addColorStop(0.3, `rgba(252, 211, 77, ${explosion.alpha})`);
-      g.addColorStop(0.7, `rgba(248, 113, 113, ${explosion.alpha * 0.9})`);
-      g.addColorStop(1, `rgba(15, 23, 42, 0)`);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function drawUI() {
-      ctx.textBaseline = "top";
-      ctx.textAlign = "left";
-
-      const cfg = DIFF_CONFIG[difficulty];
-
-      ctx.fillStyle = "#e5e7eb";
-      ctx.font = "18px system-ui, sans-serif";
-      ctx.fillText("Distance: " + Math.floor(distance) + "m", 14, 12);
-
-      ctx.font = "13px system-ui, sans-serif";
-      ctx.fillStyle = "#9ca3af";
-      ctx.fillText("Best: " + Math.floor(bestDist) + "m", 14, 32);
-
-      ctx.fillText("Mode: " + cfg.label, 14, 48);
-
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#e5e7eb";
-      ctx.font = "13px system-ui, sans-serif";
-      ctx.fillText("Game by " + OWNER_NAME, canvas.width - 10, 12);
-
-      if (achievementTimer > 0 && achievementMessage) {
-        ctx.save();
-        ctx.textAlign = "center";
-        ctx.font = "13px system-ui, sans-serif";
-        ctx.fillStyle = "#facc15";
-        ctx.globalAlpha = Math.min(1, achievementTimer / 40);
-        ctx.fillText(achievementMessage, canvas.width / 2, 40);
-        ctx.restore();
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBackground();
-      drawEnemies();
-      drawCar();
-      drawExplosion();
-      drawUI();
-    }
-
-    // ===== OVERLAYS =====
-    function openSetupOverlay() {
-      setupOverlay.classList.remove("hidden");
-    }
-    function closeSetupOverlay() {
-      setupOverlay.classList.add("hidden");
-    }
-
-    function openResultOverlay() {
-      const cfg = DIFF_CONFIG[difficulty];
-      const dist  = Math.floor(distance);
-      const best  = Math.floor(bestDist);
-
-      resultTitle.textContent = "You crashed";
-      resultMessage.textContent =
-        "Difficulty: " + cfg.label + ". Your endless run ended in traffic.";
-      resultStats.textContent =
-        "Distance: " + dist + "m · Best: " + best + "m";
-
-      resultOverlay.classList.remove("hidden");
-    }
-    function closeResultOverlay() {
-      resultOverlay.classList.add("hidden");
-    }
-
-    function startRaceFromSetup() {
-      closeSetupOverlay();
-      unlockAudio();
-      startGame();
-    }
-
-    function raceAgain() {
-      closeResultOverlay();
-      unlockAudio();
-      startGame();
-    }
-
-    function changeDifficulty() {
-      closeResultOverlay();
-      openSetupOverlay();
-    }
-
-    // ===== LOOP =====
-    function loop(timestamp) {
-      if (!lastTime) lastTime = timestamp;
-      let dt = (timestamp - lastTime) / 1000;
-      lastTime = timestamp;
-
-      if (dt > 0.05) dt = 0.05;
-
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
       updateGame(dt);
-      draw();
-      requestAnimationFrame(loop);
+      render();
     }
 
     // ===== INPUT & CONTROLS =====
@@ -978,65 +639,70 @@
       return el && !el.classList.contains("hidden");
     }
 
+    // Keyboard: smooth nudge left/right
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
         e.preventDefault();
-        if (isOverlayVisible(setupOverlay)) {
-          startRaceFromSetup();
-          return;
-        }
-        if (isOverlayVisible(resultOverlay)) {
-          raceAgain();
-          return;
+        unlockAudio();
+        if (gameState === "ready" || gameState === "over") {
+          startGame();
         }
       }
+
       if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") {
         unlockAudio();
         if (gameState === "running") {
-          const minX = road.left + 18;
-          const maxX = road.right - 18;
-          car.x = Math.max(minX, car.x - 18);
+          const minX = -ROAD_WIDTH/2 + 0.7;
+          const maxX =  ROAD_WIDTH/2 - 0.7;
+          car.mesh.position.x = Math.max(minX, car.mesh.position.x - 0.6);
         }
       }
+
       if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") {
         unlockAudio();
         if (gameState === "running") {
-          const minX = road.left + 18;
-          const maxX = road.right - 18;
-          car.x = Math.min(maxX, car.x + 18);
+          const minX = -ROAD_WIDTH/2 + 0.7;
+          const maxX =  ROAD_WIDTH/2 - 0.7;
+          car.mesh.position.x = Math.min(maxX, car.mesh.position.x + 0.6);
         }
       }
     });
 
+    // Drag / swipe steering
     function startPointerDrag(clientX) {
-      if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) return;
+      if (gameState !== "running") {
+        // also allow starting game by tap
+        unlockAudio();
+        if (gameState === "ready" || gameState === "over") {
+          startGame();
+        }
+      }
       if (gameState !== "running") return;
-      const rect = canvas.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       pointerDown   = true;
       pointerStartX = clientX - rect.left;
-      carStartX     = car.x;
+      carStartX     = car.mesh.position.x;
     }
 
     function updatePointerDrag(clientX) {
       if (!pointerDown) return;
       if (gameState !== "running") return;
-      const rect = canvas.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       const xCanvas = clientX - rect.left;
       const dx = xCanvas - pointerStartX;
-      let newX = carStartX + dx;
-      const minX = road.left + 18;
-      const maxX = road.right - 18;
+      let newX = carStartX + dx * (ROAD_WIDTH / rect.width); // scale drag to world
+      const minX = -ROAD_WIDTH/2 + 0.7;
+      const maxX =  ROAD_WIDTH/2 - 0.7;
       if (newX < minX) newX = minX;
       if (newX > maxX) newX = maxX;
-      car.x = newX;
+      car.mesh.position.x = newX;
     }
 
     function endPointerDrag() {
       pointerDown = false;
     }
 
-    canvas.addEventListener("mousedown", (e) => {
-      unlockAudio();
+    container.addEventListener("mousedown", (e) => {
       startPointerDrag(e.clientX);
     });
 
@@ -1048,9 +714,8 @@
       endPointerDrag();
     });
 
-    canvas.addEventListener("touchstart", (e) => {
+    container.addEventListener("touchstart", (e) => {
       e.preventDefault();
-      unlockAudio();
       const touch = e.touches[0];
       startPointerDrag(touch.clientX);
     }, { passive: false });
@@ -1066,27 +731,12 @@
       endPointerDrag();
     });
 
-    function setDifficulty(diff) {
-      difficulty = diff;
-      btnDiffEasy.classList.toggle("active",   diff === "easy");
-      btnDiffMedium.classList.toggle("active", diff === "medium");
-      btnDiffHard.classList.toggle("active",   diff === "hard");
-    }
-
-    btnDiffEasy.addEventListener("click",   () => setDifficulty("easy"));
-    btnDiffMedium.addEventListener("click", () => setDifficulty("medium"));
-    btnDiffHard.addEventListener("click",   () => setDifficulty("hard"));
-
-    btnStartRace.addEventListener("click",  () => startRaceFromSetup());
-    btnResultAgain.addEventListener("click",() => raceAgain());
-    btnResultChange.addEventListener("click",() => changeDifficulty());
-
     // ===== INIT =====
-    loadDriftProgress();
-    applyDifficultyBase();
-    resetGameStateOnly();
-    openSetupOverlay();
-    requestAnimationFrame(loop);
+    loadProgress();
+    initThree();
+    resetGameState();
+    clock.start();
+    animate();
   </script>
 </body>
 </html>
