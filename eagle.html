@@ -72,17 +72,15 @@
   </div>
 
   <script>
-    // ===== BASIC SETUP =====
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
     const OWNER_NAME = "Yuvraj Soni";
 
-    // ===== SOUNDS =====
     const flapSound      = new Audio("flap.mp3");
     const scoreSound     = new Audio("score.mp3");
-    const hitSound       = new Audio("hit.mp3");         // optional
-    const explosionSound = new Audio("explosion.mp3");   // same as space game
+    const hitSound       = new Audio("hit.mp3");
+    const explosionSound = new Audio("explosion.mp3");
 
     flapSound.volume      = 0.7;
     scoreSound.volume     = 0.7;
@@ -93,11 +91,10 @@
       if (!sound) return;
       try {
         sound.currentTime = 0;
-        sound.play();
+        sound.play().catch(() => {});
       } catch (e) {}
     }
 
-    // ===== IMAGE ASSETS =====
     const eagleImg  = new Image();
     const pillarImg = new Image();
 
@@ -107,15 +104,13 @@
     eagleImg.src  = "eagle-bird.png";
     pillarImg.src = "eagle-pillar.png";
 
-    // ===== CONSTANTS =====
     const GRAVITY       = 0.35;
     const FLAP_STRENGTH = -7;
-    const PIPE_GAP      = 190;    // bigger vertical gap
-    const PIPE_WIDTH    = 140;    // thick pillars
+    const PIPE_GAP      = 190;
+    const PIPE_WIDTH    = 140;
     const PIPE_SPEED    = 2.4;
-    const PIPE_INTERVAL = 95;     // frames
+    const PIPE_INTERVAL = 95;
 
-    // ===== SCORE + ACHIEVEMENTS (LOCALSTORAGE) =====
     let score     = 0;
     let bestScore = 0;
 
@@ -123,13 +118,13 @@
     const LS_KEY_EAGLE_ACH  = "eagle_achievements_v1";
 
     let eagleAchievements = {
-      noob:   false,  // 15+
-      pro:    false,  // 30+
-      legend: false   // 60+
+      noob:   false,
+      pro:    false,
+      legend: false
     };
 
     let achievementMessage = "";
-    let achievementTimer   = 0;  // frames
+    let achievementTimer   = 0;
 
     function loadProgress() {
       try {
@@ -154,21 +149,18 @@
 
     function showAchievement(text) {
       achievementMessage = text;
-      achievementTimer   = 120; // ~2 seconds at 60fps
+      achievementTimer = 120;
     }
 
     function handleScoreIncrease() {
-      // 15 - Noob
       if (score >= 15 && !eagleAchievements.noob) {
         eagleAchievements.noob = true;
         showAchievement("Achievement unlocked: Noob (Score 15+)");
       }
-      // 30 - Pro
       if (score >= 30 && !eagleAchievements.pro) {
         eagleAchievements.pro = true;
         showAchievement("Achievement unlocked: Pro (Score 30+)");
       }
-      // 60 - Legend
       if (score >= 60 && !eagleAchievements.legend) {
         eagleAchievements.legend = true;
         showAchievement("Achievement unlocked: Legend (Score 60+)");
@@ -176,30 +168,35 @@
       saveProgress();
     }
 
-    // ===== GAME STATE =====
-    let gameState  = "ready";   // "ready", "running", "over"
+    let gameState  = "ready";
     let frameCount = 0;
+    let flapPulse = 0;
+    let idleTime = 0;
+    let eagleTrail = [];
 
     const eagle = {
       x: canvas.width * 0.28,
       y: canvas.height / 2,
       radius: 22,
-      velocity: 0
+      velocity: 0,
+      rotation: 0
     };
 
-    let pipes = [];      // { x, topHeight, bottomY, color, scored }
-    let explosion = null; // { x, y, radius, alpha }
+    let pipes = [];
+    let explosion = null;
 
-    // ===== GAME FUNCTIONS =====
     function resetGame() {
       score = 0;
       eagle.y = canvas.height / 2;
       eagle.velocity = 0;
+      eagle.rotation = 0;
       pipes = [];
       frameCount = 0;
       explosion = null;
       achievementMessage = "";
       achievementTimer = 0;
+      flapPulse = 0;
+      eagleTrail = [];
       gameState = "ready";
     }
 
@@ -207,11 +204,14 @@
       score = 0;
       eagle.y = canvas.height / 2;
       eagle.velocity = 0;
+      eagle.rotation = 0;
       pipes = [];
       frameCount = 0;
       explosion = null;
       achievementMessage = "";
       achievementTimer = 0;
+      flapPulse = 0;
+      eagleTrail = [];
       gameState = "running";
     }
 
@@ -219,9 +219,11 @@
       if (gameState === "ready") {
         startGame();
         eagle.velocity = FLAP_STRENGTH;
+        flapPulse = 1;
         playSound(flapSound);
       } else if (gameState === "running") {
         eagle.velocity = FLAP_STRENGTH;
+        flapPulse = 1;
         playSound(flapSound);
       } else if (gameState === "over") {
         resetGame();
@@ -259,47 +261,73 @@
     function updateExplosion() {
       if (!explosion) return;
       explosion.radius += 6;
-      explosion.alpha  -= 0.04;
+      explosion.alpha -= 0.04;
       if (explosion.alpha <= 0) {
         explosion = null;
       }
     }
 
+    function updateTrail() {
+      if (gameState === "running") {
+        eagleTrail.push({
+          x: eagle.x - 10,
+          y: eagle.y,
+          alpha: 0.28,
+          size: eagle.radius * 0.8
+        });
+
+        if (eagleTrail.length > 8) {
+          eagleTrail.shift();
+        }
+      }
+
+      eagleTrail.forEach(t => {
+        t.x -= 1.2;
+        t.alpha -= 0.035;
+      });
+
+      eagleTrail = eagleTrail.filter(t => t.alpha > 0);
+    }
+
     function update() {
+      idleTime += 0.05;
+
+      const targetRotation = Math.max(Math.min(eagle.velocity / 10, 1), -0.8);
+      eagle.rotation += (targetRotation - eagle.rotation) * 0.18;
+
+      if (flapPulse > 0) {
+        flapPulse -= 0.08;
+        if (flapPulse < 0) flapPulse = 0;
+      }
+
       if (gameState === "running") {
         frameCount++;
 
-        // Eagle physics
         eagle.velocity += GRAVITY;
         eagle.y += eagle.velocity;
 
-        // New pipes
         if (frameCount % PIPE_INTERVAL === 0) {
           createPipe();
         }
 
-        // Move pipes
         pipes.forEach(pipe => {
           pipe.x -= PIPE_SPEED;
         });
 
-        // Remove off-screen
         pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-        // ===== COLLISION CHECK (center-based, forgiving) =====
         const cx = eagle.x;
         const cy = eagle.y;
 
-        // Ground collision only
         if (cy >= canvas.height - 4) {
           gameOver();
         }
 
         pipes.forEach(pipe => {
-          const pipeLeft   = pipe.x;
-          const pipeRight  = pipe.x + PIPE_WIDTH;
-          const gapTop     = pipe.topHeight;
-          const gapBottom  = pipe.bottomY;
+          const pipeLeft = pipe.x;
+          const pipeRight = pipe.x + PIPE_WIDTH;
+          const gapTop = pipe.topHeight;
+          const gapBottom = pipe.bottomY;
 
           const horizontalCenterInside =
             cx > pipeLeft + 10 && cx < pipeRight - 10;
@@ -313,7 +341,6 @@
             }
           }
 
-          // Score when crossing
           if (!pipe.scored && pipe.x + PIPE_WIDTH < cx) {
             pipe.scored = true;
             score++;
@@ -326,9 +353,9 @@
         });
       }
 
+      updateTrail();
       updateExplosion();
 
-      // Achievement timer
       if (achievementTimer > 0) {
         achievementTimer--;
       }
@@ -337,13 +364,12 @@
     function gameOver() {
       if (gameState !== "over") {
         gameState = "over";
+        playSound(hitSound);
         triggerExplosionAt(eagle.x, eagle.y);
-        // optional: playSound(hitSound);
         saveProgress();
       }
     }
 
-    // ===== DRAW FUNCTIONS =====
     function drawBackground() {
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, "#0f172a");
@@ -362,13 +388,7 @@
         const x = pipe.x;
 
         if (pillarImg.complete && pillarImg.naturalWidth) {
-          ctx.drawImage(
-            pillarImg,
-            x,
-            0,
-            PIPE_WIDTH,
-            pipe.topHeight
-          );
+          ctx.drawImage(pillarImg, x, 0, PIPE_WIDTH, pipe.topHeight);
           ctx.drawImage(
             pillarImg,
             x,
@@ -384,21 +404,57 @@
       });
     }
 
+    function drawTrail() {
+      eagleTrail.forEach(t => {
+        ctx.save();
+        ctx.globalAlpha = t.alpha;
+        ctx.fillStyle = "#f97316";
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.size * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
     function drawEagle() {
       if (gameState === "over" && explosion) return;
-      if (!eagleSpriteLoaded) return;
 
       const x = eagle.x;
-      const y = eagle.y;
+      let drawY = eagle.y;
       const r = eagle.radius;
 
-      const angle = Math.max(Math.min(eagle.velocity / 8, 0.5), -0.8);
+      if (gameState === "ready") {
+        drawY += Math.sin(idleTime) * 6;
+      }
+
       const w = r * 2.8;
       const h = r * 2.4;
+      const flapScaleY = 1 + flapPulse * 0.12;
+      const flapScaleX = 1 - flapPulse * 0.06;
 
       ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle);
+      ctx.translate(x, drawY);
+      ctx.rotate(eagle.rotation);
+      ctx.scale(flapScaleX, flapScaleY);
+
+      if (!eagleSpriteLoaded) {
+        ctx.fillStyle = "#f97316";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 1.2, r * 0.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath();
+        ctx.moveTo(r * 0.8, 0);
+        ctx.lineTo(r * 1.5, -4);
+        ctx.lineTo(r * 1.5, 4);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+        return;
+      }
+
       ctx.drawImage(eagleImg, -w / 2, -h / 2, w, h);
       ctx.restore();
     }
@@ -431,7 +487,6 @@
       ctx.fillStyle = "#9ca3af";
       ctx.fillText(`Best: ${bestScore}`, canvas.width / 2, 74);
 
-      // Achievement message
       if (achievementTimer > 0 && achievementMessage) {
         ctx.save();
         ctx.globalAlpha = Math.min(1, achievementTimer / 30);
@@ -469,7 +524,8 @@
         ctx.fillStyle = "#cbd5f5";
         ctx.fillText(
           "Press Space / Tap to restart",
-          canvas.width / 2, canvas.height / 2 + 64
+          canvas.width / 2,
+          canvas.height / 2 + 64
         );
       }
     }
@@ -477,6 +533,7 @@
     function draw() {
       drawBackground();
       drawPipes();
+      drawTrail();
       drawEagle();
       drawExplosion();
       drawUI();
@@ -488,7 +545,6 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== INPUT HANDLERS =====
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space" || e.code === "ArrowUp") {
         e.preventDefault();
@@ -505,7 +561,6 @@
       flap();
     }, { passive: false });
 
-    // ===== START =====
     loadProgress();
     resetGame();
     requestAnimationFrame(loop);
