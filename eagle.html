@@ -110,7 +110,7 @@
     const PIPE_SPEED    = 2.4;
     const PIPE_INTERVAL = 95;
 
-    let score     = 0;
+    let score = 0;
     let bestScore = 0;
 
     const LS_KEY_EAGLE_BEST = "eagle_best_score_v1";
@@ -289,14 +289,19 @@
     }
 
     function checkPipeCollision(pipe) {
-      const hitboxRadiusX = eagle.radius * 0.62;
-      const hitboxRadiusY = eagle.radius * 0.52;
-      const forgiveness = 6;
+      // smaller custom hitbox than visible eagle
+      const hitboxWidth = 20;
+      const hitboxHeight = 18;
 
-      const birdLeft   = eagle.x - hitboxRadiusX + forgiveness;
-      const birdRight  = eagle.x + hitboxRadiusX - forgiveness;
-      const birdTop    = eagle.y - hitboxRadiusY + forgiveness;
-      const birdBottom = eagle.y + hitboxRadiusY - forgiveness;
+      // front side ko aur forgiving banaya
+      const frontTrim = 10;
+      const backTrim = 4;
+      const verticalTrim = 6;
+
+      const birdLeft   = eagle.x - hitboxWidth / 2 + backTrim;
+      const birdRight  = eagle.x + hitboxWidth / 2 - frontTrim;
+      const birdTop    = eagle.y - hitboxHeight / 2 + verticalTrim;
+      const birdBottom = eagle.y + hitboxHeight / 2 - verticalTrim;
 
       const pipeLeft  = pipe.x;
       const pipeRight = pipe.x + PIPE_WIDTH;
@@ -337,12 +342,12 @@
 
         pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-        if (eagle.y + eagle.radius * 0.55 >= canvas.height - 4) {
+        if (eagle.y + 10 >= canvas.height - 4) {
           gameOver();
         }
 
-        if (eagle.y - eagle.radius * 0.55 <= 0) {
-          eagle.y = eagle.radius * 0.55;
+        if (eagle.y - 10 <= 0) {
+          eagle.y = 10;
           eagle.velocity = 0;
         }
 
