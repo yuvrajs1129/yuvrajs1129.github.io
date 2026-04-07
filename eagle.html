@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Eagle Flight – Game by Yuvraj Soni</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <meta name="description" content="Eagle Flight, a flappy-style browser game created by Yuvraj Soni. Control a realistic flying eagle, dodge realistic pillars, and get the highest score.">
 
   <style>
@@ -118,13 +117,13 @@
     const LS_KEY_EAGLE_ACH  = "eagle_achievements_v1";
 
     let eagleAchievements = {
-      noob:   false,
-      pro:    false,
+      noob: false,
+      pro: false,
       legend: false
     };
 
     let achievementMessage = "";
-    let achievementTimer   = 0;
+    let achievementTimer = 0;
 
     function loadProgress() {
       try {
@@ -168,7 +167,7 @@
       saveProgress();
     }
 
-    let gameState  = "ready";
+    let gameState = "ready";
     let frameCount = 0;
     let flapPulse = 0;
     let idleTime = 0;
@@ -289,6 +288,28 @@
       eagleTrail = eagleTrail.filter(t => t.alpha > 0);
     }
 
+    function checkPipeCollision(pipe) {
+      const hitboxRadiusX = eagle.radius * 0.62;
+      const hitboxRadiusY = eagle.radius * 0.52;
+      const forgiveness = 6;
+
+      const birdLeft   = eagle.x - hitboxRadiusX + forgiveness;
+      const birdRight  = eagle.x + hitboxRadiusX - forgiveness;
+      const birdTop    = eagle.y - hitboxRadiusY + forgiveness;
+      const birdBottom = eagle.y + hitboxRadiusY - forgiveness;
+
+      const pipeLeft  = pipe.x;
+      const pipeRight = pipe.x + PIPE_WIDTH;
+
+      const overlapsX = birdRight > pipeLeft && birdLeft < pipeRight;
+      if (!overlapsX) return false;
+
+      const hitsTopPipe = birdTop < pipe.topHeight;
+      const hitsBottomPipe = birdBottom > pipe.bottomY;
+
+      return hitsTopPipe || hitsBottomPipe;
+    }
+
     function update() {
       idleTime += 0.05;
 
@@ -316,32 +337,22 @@
 
         pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > 0);
 
-        const cx = eagle.x;
-        const cy = eagle.y;
-
-        if (cy >= canvas.height - 4) {
+        if (eagle.y + eagle.radius * 0.55 >= canvas.height - 4) {
           gameOver();
         }
 
-        pipes.forEach(pipe => {
-          const pipeLeft = pipe.x;
-          const pipeRight = pipe.x + PIPE_WIDTH;
-          const gapTop = pipe.topHeight;
-          const gapBottom = pipe.bottomY;
+        if (eagle.y - eagle.radius * 0.55 <= 0) {
+          eagle.y = eagle.radius * 0.55;
+          eagle.velocity = 0;
+        }
 
-          const horizontalCenterInside =
-            cx > pipeLeft + 10 && cx < pipeRight - 10;
-
-          if (horizontalCenterInside) {
-            const verticalInsideGap =
-              cy > gapTop + 10 && cy < gapBottom - 10;
-
-            if (!verticalInsideGap) {
-              gameOver();
-            }
+        for (const pipe of pipes) {
+          if (checkPipeCollision(pipe)) {
+            gameOver();
+            break;
           }
 
-          if (!pipe.scored && pipe.x + PIPE_WIDTH < cx) {
+          if (!pipe.scored && pipe.x + PIPE_WIDTH < eagle.x) {
             pipe.scored = true;
             score++;
             playSound(scoreSound);
@@ -350,7 +361,7 @@
             }
             handleScoreIncrease();
           }
-        });
+        }
       }
 
       updateTrail();
