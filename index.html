@@ -2,216 +2,187 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yuvraj Arcade – Ultimate Gaming Hub</title>
+<title>Yuvraj Soni – Neon Gaming Platform</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 
-:root{
---bg:#020617;
---glass:rgba(15,23,42,0.85);
---border:#1f2937;
---orange:#f97316;
---blue:#38bdf8;
---purple:#a855f7;
---green:#22c55e;
-}
-
 body{
 font-family:system-ui;
-background:
-radial-gradient(circle at 20% 20%, rgba(56,189,248,0.15), transparent 40%),
-radial-gradient(circle at 80% 80%, rgba(168,85,247,0.15), transparent 40%),
-#020617;
+background:#020617;
 color:#e5e7eb;
-min-height:100vh;
 overflow-x:hidden;
+scroll-behavior:smooth;
 }
 
-/* FLOATING ORBS */
-body::before,body::after{
+/* Animated Background */
+body::before{
 content:"";
 position:fixed;
-width:300px;
-height:300px;
-border-radius:50%;
-filter:blur(100px);
-z-index:-1;
-animation:float 12s infinite alternate ease-in-out;
+inset:0;
+background:
+radial-gradient(circle at 20% 30%, rgba(56,189,248,0.15), transparent 40%),
+radial-gradient(circle at 80% 70%, rgba(168,85,247,0.15), transparent 40%);
+z-index:-2;
+animation:bgMove 12s infinite alternate ease-in-out;
 }
-body::before{
-background:#38bdf8;
-top:-100px;left:-100px;
-}
-body::after{
-background:#a855f7;
-bottom:-100px;right:-100px;
-animation-delay:3s;
-}
-
-@keyframes float{
+@keyframes bgMove{
 from{transform:translateY(0px)}
 to{transform:translateY(40px)}
 }
 
 /* NAV */
 .nav{
+position:fixed;
+top:0;
+width:100%;
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:16px 30px;
-background:var(--glass);
-backdrop-filter:blur(18px);
-border-bottom:1px solid var(--border);
-position:sticky;
-top:0;
-z-index:100;
+padding:18px 40px;
+background:rgba(15,23,42,0.85);
+backdrop-filter:blur(20px);
+border-bottom:1px solid #1f2937;
+z-index:1000;
 }
 
-.nav h2{
-background:linear-gradient(90deg,var(--orange),var(--purple));
+.logo{
+font-size:20px;
+font-weight:600;
+background:linear-gradient(90deg,#f97316,#a855f7,#38bdf8);
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
 }
 
 .nav-links{
 display:flex;
-gap:20px;
+gap:30px;
 font-size:14px;
+}
+
+.nav-links span{
+cursor:pointer;
 color:#9ca3af;
+transition:0.3s;
+}
+.nav-links span:hover{
+color:#f97316;
 }
 
 /* HERO */
 .hero{
-text-align:center;
-padding:80px 20px 40px;
-}
-
-.hero h1{
-font-size:42px;
-background:linear-gradient(90deg,#f97316,#a855f7,#38bdf8);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-margin-bottom:16px;
-animation:fadeIn 1.2s ease;
-}
-
-.hero p{
-color:#9ca3af;
-max-width:650px;
-margin:auto;
-font-size:15px;
-}
-
-.cta-btn{
-margin-top:28px;
-padding:14px 28px;
-border-radius:999px;
-border:none;
-font-size:15px;
-font-weight:600;
-cursor:pointer;
-background:linear-gradient(135deg,#f97316,#ffb347);
-color:#020617;
-box-shadow:0 10px 30px rgba(249,115,22,0.5);
-transition:0.3s;
-}
-.cta-btn:hover{
-transform:translateY(-4px);
-box-shadow:0 16px 45px rgba(249,115,22,0.7);
-}
-
-/* PLAYER PANEL */
-.player-panel{
-max-width:1000px;
-margin:40px auto;
-padding:20px;
-border-radius:20px;
-background:var(--glass);
-border:1px solid var(--border);
-backdrop-filter:blur(18px);
+height:100vh;
 display:flex;
-justify-content:space-between;
-flex-wrap:wrap;
-box-shadow:0 20px 50px rgba(0,0,0,0.6);
-}
-
-/* GAME GRID */
-.section-title{
+flex-direction:column;
+justify-content:center;
+align-items:center;
 text-align:center;
-font-size:22px;
-margin-bottom:20px;
-color:#e5e7eb;
-}
-
-.games{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:24px;
-max-width:1200px;
-margin:0 auto 80px;
 padding:0 20px;
 }
 
-.game-card{
-background:var(--glass);
-border:1px solid var(--border);
-border-radius:22px;
-padding:26px;
-text-align:center;
-transition:0.4s;
-transform-style:preserve-3d;
-position:relative;
-overflow:hidden;
+.hero h1{
+font-size:52px;
+background:linear-gradient(90deg,#f97316,#38bdf8,#a855f7);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+margin-bottom:20px;
 }
 
+.hero p{
+max-width:700px;
+color:#9ca3af;
+font-size:16px;
+}
+
+.hero button{
+margin-top:40px;
+padding:16px 40px;
+border:none;
+border-radius:999px;
+background:linear-gradient(135deg,#f97316,#ffb347);
+color:#020617;
+font-weight:600;
+cursor:pointer;
+box-shadow:0 15px 45px rgba(249,115,22,0.6);
+transition:0.3s;
+}
+.hero button:hover{
+transform:translateY(-6px);
+}
+
+/* SECTION */
+section{
+padding:120px 40px;
+max-width:1200px;
+margin:auto;
+}
+
+.section-title{
+font-size:26px;
+margin-bottom:30px;
+}
+
+/* GAME CARDS */
+.games{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:30px;
+}
+
+.game-card{
+padding:40px;
+border-radius:25px;
+background:rgba(15,23,42,0.85);
+border:1px solid #1f2937;
+transition:0.4s;
+cursor:pointer;
+text-align:center;
+}
 .game-card:hover{
-transform:translateY(-8px) rotateX(3deg);
-border-color:var(--orange);
+transform:translateY(-10px) scale(1.02);
+border-color:#f97316;
 box-shadow:0 25px 60px rgba(0,0,0,0.7);
 }
 
-.game-card::before{
-content:"";
-position:absolute;
-inset:0;
-background:radial-gradient(circle at top left,rgba(56,189,248,0.2),transparent 60%);
-opacity:0;
-transition:0.4s;
-}
-
-.game-card:hover::before{
-opacity:1;
-}
-
 .game-icon{
-font-size:48px;
+font-size:50px;
+margin-bottom:15px;
+}
+
+/* PLAYER PANEL */
+.profile-box{
+background:rgba(15,23,42,0.85);
+padding:30px;
+border-radius:25px;
+border:1px solid #1f2937;
+}
+
+.stat-row{
+display:flex;
+justify-content:space-between;
 margin-bottom:10px;
 }
 
-.game-card strong{
-display:block;
-margin-bottom:6px;
+/* XP BAR */
+.xp-bar{
+height:8px;
+background:#1f2937;
+border-radius:999px;
+overflow:hidden;
+margin-top:10px;
+}
+.xp-fill{
+height:100%;
+background:linear-gradient(90deg,#f97316,#38bdf8);
+width:0%;
+transition:0.6s;
 }
 
-.game-card span{
-font-size:12px;
-color:#9ca3af;
-}
-
-/* FOOTER */
 footer{
 text-align:center;
-padding:30px;
+padding:40px;
 color:#64748b;
-font-size:13px;
-}
-
-/* ANIMATION */
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(20px)}
-to{opacity:1;transform:translateY(0)}
 }
 </style>
 </head>
@@ -219,64 +190,67 @@ to{opacity:1;transform:translateY(0)}
 <body>
 
 <div class="nav">
-<h2>Yuvraj Arcade</h2>
+<div class="logo">Yuvraj Soni Arcade</div>
 <div class="nav-links">
-<span>Home</span>
-<span>Games</span>
-<span>Achievements</span>
-<span>Profile</span>
+<span onclick="goTo('home')">Home</span>
+<span onclick="goTo('games')">Games</span>
+<span onclick="goTo('profile')">Profile</span>
 </div>
 </div>
 
-<div class="hero">
-<h1>Experience Next‑Level Neon Gaming</h1>
-<p>Play high‑performance browser games with premium visuals, achievements, levels and evolving gameplay systems.</p>
-<button class="cta-btn" onclick="scrollToGames()">Start Playing</button>
+<div class="hero" id="home">
+<h1>Next‑Level Neon Gaming Experience</h1>
+<p>Built by Yuvraj Soni. Play immersive arcade games with leveling system, achievements and evolving gameplay mechanics.</p>
+<button onclick="goTo('games')">Start Playing</button>
 </div>
 
-<div class="player-panel">
-<div>
-👤 <strong id="playerName"></strong><br>
-⭐ Level <span id="playerLevel"></span>
-</div>
-<div>
-🪙 Coins: <span id="playerCoins"></span><br>
-⚡ XP: <span id="playerXP"></span>
-</div>
-</div>
-
-<h3 class="section-title">Featured Games</h3>
-
-<div class="games" id="gamesSection">
-
-<div class="game-card">
+<section id="games">
+<div class="section-title">🎮 Featured Games</div>
+<div class="games">
+<div class="game-card" onclick="location.href='eagle.html'">
 <div class="game-icon">🦅</div>
 <strong>Eagle Flight</strong>
-<span>Flappy‑style neon arcade</span>
+<p>Flappy neon arcade</p>
 </div>
 
-<div class="game-card">
+<div class="game-card" onclick="location.href='space.html'">
 <div class="game-icon">🚀</div>
 <strong>Space Runner</strong>
-<span>Laser combat dodge game</span>
+<p>Laser dodge combat</p>
 </div>
 
-<div class="game-card">
+<div class="game-card" onclick="location.href='drift.html'">
 <div class="game-icon">🚗</div>
 <strong>Neon Drift Racer</strong>
-<span>3D highway racing</span>
+<p>3D Highway racing</p>
 </div>
 
-<div class="game-card">
+<div class="game-card" onclick="location.href='xo.html'">
 <div class="game-icon">❌</div>
 <strong>X/O Bot Duel</strong>
-<span>Smart AI board battle</span>
+<p>AI Battle Mode</p>
+</div>
+</div>
+</section>
+
+<section id="profile">
+<div class="section-title">👤 Player Profile</div>
+<div class="profile-box">
+<div class="stat-row"><span>Name</span><strong id="playerName"></strong></div>
+<div class="stat-row"><span>Level</span><strong id="playerLevel"></strong></div>
+<div class="stat-row"><span>Coins</span><strong id="playerCoins"></strong></div>
+<div class="stat-row"><span>XP</span><strong id="playerXP"></strong></div>
+
+<div class="xp-bar">
+<div class="xp-fill" id="xpFill"></div>
 </div>
 
+<button style="margin-top:20px" onclick="changeName()">Change Name</button>
 </div>
+</section>
 
 <footer>
-Designed & Developed by Yuvraj
+Designed & Developed by Yuvraj Soni
 </footer>
 
 <script>
@@ -302,17 +276,28 @@ document.getElementById("playerName").textContent=playerData.name;
 document.getElementById("playerCoins").textContent=playerData.coins;
 document.getElementById("playerXP").textContent=playerData.xp;
 document.getElementById("playerLevel").textContent=playerData.level;
+
+const percent=(playerData.xp%100);
+document.getElementById("xpFill").style.width=percent+"%";
 }
 
-function scrollToGames(){
-document.getElementById("gamesSection").scrollIntoView({behavior:"smooth"});
+function goTo(id){
+document.getElementById(id).scrollIntoView({behavior:"smooth"});
+}
+
+function changeName(){
+const name=prompt("Enter new name:");
+if(name){
+playerData.name=name;
+savePlayerData();
+updateUI();
+}
 }
 
 loadPlayerData();
 
 if(!playerData.name){
-const name=prompt("Enter your player name:");
-playerData.name=name||"Player";
+playerData.name="Yuvraj Soni";
 savePlayerData();
 }
 
