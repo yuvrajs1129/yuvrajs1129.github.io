@@ -1,1226 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Games made by Yuvraj – Premium Arcade</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Yuvraj Games – Premium Arcade</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- PWA manifest + theme color -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#020617">
+<style>
+* { box-sizing: border-box; }
 
-  <meta name="description" content="Play premium browser games made by Yuvraj – Eagle Flight, Neon Space Runner and more. Free HTML5 games for phone and PC.">
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: system-ui, sans-serif;
+  background: radial-gradient(circle at top, #020617 0, #020617 60%, #000 100%);
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
 
-  <style>
-    * { box-sizing: border-box; }
+h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  color: #f97316;
+  text-shadow: 0 0 12px rgba(249,115,22,0.8);
+}
 
-    :root {
-      --bg-dark: #020617;
-      --accent-orange: #f97316;
-      --accent-blue: #38bdf8;
-      --accent-purple: #a855f7;
-      --accent-red: #ef4444;
-      --text-main: #e5e7eb;
-      --text-muted: #9ca3af;
-      --border-subtle: #1f2937;
-    }
+.subtitle {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-bottom: 16px;
+  text-align: center;
+}
 
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text-main);
-      background:
-        radial-gradient(circle at top left, #111827 0, #020617 40%, #000000 100%),
-        radial-gradient(circle at bottom right, rgba(127,29,29,0.7), #000000 70%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+.player-card {
+  width: 100%;
+  max-width: 500px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15,23,42,0.95);
+  border: 1px solid #1f2937;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
 
-    /* Background glows */
-    .bg-orb {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: -1;
-    }
-    .bg-orb::before,
-    .bg-orb::after {
-      content: "";
-      position: absolute;
-      border-radius: 999px;
-      filter: blur(80px);
-      opacity: 0.8;
-    }
-    .bg-orb::before {
-      width: 260px; height: 260px;
-      background: radial-gradient(circle, rgba(59,130,246,0.65), transparent 60%);
-      top: -40px; left: 8%;
-    }
-    .bg-orb::after {
-      width: 320px; height: 320px;
-      background: radial-gradient(circle, rgba(248,113,113,0.9), transparent 65%);
-      bottom: -80px; right: 0%;
-    }
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+}
 
-    .page {
-      width: 100%;
-      max-width: 1080px;
-      padding: 16px 16px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      opacity: 0;
-      transform: translateY(8px);
-      animation: pageFadeIn 0.6s ease-out forwards;
-    }
+.game-card {
+  background: rgba(15,23,42,0.95);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #1f2937;
+  transition: transform 0.15s ease;
+}
 
-    @keyframes pageFadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+.game-card:hover {
+  transform: translateY(-4px);
+  border-color: #f97316;
+}
 
-    /* NAV */
-    .nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(15,23,42,0.9);
-      background: radial-gradient(circle at top left,
-        rgba(148,163,184,0.2),
-        rgba(15,23,42,0.95));
-      box-shadow: 0 18px 40px rgba(0,0,0,0.75);
-      backdrop-filter: blur(14px);
-    }
-    .nav-brand { display:flex; align-items:center; gap:8px; }
-    .nav-logo {
-      width: 28px; height: 28px;
-      border-radius: 999px;
-      background: conic-gradient(from 220deg,
-        #f97316, #facc15, #22c55e, #38bdf8, #a855f7, #ef4444, #f97316);
-      display:flex; align-items:center; justify-content:center;
-      color:#020617; font-weight:800; font-size:16px;
-      box-shadow: 0 0 16px rgba(248,250,252,0.9);
-    }
-    .nav-title-main { font-size:16px; font-weight:600; }
-    .nav-title-sub { font-size:11px; color:var(--text-muted); }
-    .nav-right {
-      display:flex; align-items:center; gap:8px;
-      font-size:11px; color:var(--text-muted);
-    }
-    .nav-pill {
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,0.35);
-      background: rgba(15,23,42,0.9);
-      color:#e5e7eb;
-      display:inline-flex;
-      align-items:center;
-      gap:4px;
-      cursor: default;
-    }
-    .sound-toggle {
-      cursor:pointer;
-    }
-    .sound-toggle.muted {
-      border-color: #ef4444;
-      color:#9ca3af;
-    }
+.game-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
 
-    /* HERO */
-    .hero {
-      display:grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr);
-      gap:18px;
-      align-items:center;
-      margin-top:8px;
-      margin-bottom:4px;
-    }
-    @media (max-width:800px) {
-      .hero { grid-template-columns:minmax(0,1fr); margin-top:12px; }
-    }
-
-    .hero-left { padding:12px 6px; }
-    .hero-kicker {
-      display:inline-flex; align-items:center; gap:6px;
-      padding:3px 9px;
-      border-radius:999px;
-      background: rgba(15,23,42,0.9);
-      border:1px solid rgba(248,113,113,0.7);
-      font-size:11px; color:#fee2e2;
-      margin-bottom:8px;
-    }
-    .hero-kicker-dot {
-      width:8px; height:8px; border-radius:999px;
-      background: radial-gradient(circle, #f97316, #7f1d1d);
-      box-shadow:0 0 8px rgba(248,113,113,0.9);
-    }
-    .hero-title {
-      font-size:clamp(26px, 5vw, 32px);
-      font-weight:700;
-      line-height:1.2;
-      margin-bottom:8px;
-      color:#f9fafb;
-      text-shadow:0 0 18px rgba(0,0,0,0.9);
-    }
-    .hero-title span.highlight {
-      color: var(--accent-orange);
-      text-shadow: 0 0 18px rgba(248,113,113,0.95);
-    }
-    .hero-subtitle {
-      font-size:13px;
-      color:var(--text-muted);
-      max-width:440px;
-      margin-bottom:14px;
-    }
-    .hero-badges {
-      display:flex; flex-wrap:wrap; gap:8px;
-      margin-bottom:14px; font-size:11px;
-    }
-    .hero-badge {
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid rgba(31,41,55,0.95);
-      background: rgba(15,23,42,0.96);
-      display:inline-flex; align-items:center; gap:6px;
-      color:#e5e7eb;
-    }
-    .hero-badge-dot {
-      width:7px; height:7px; border-radius:999px;
-      background: radial-gradient(circle,#22c55e,#16a34a);
-    }
-    .hero-actions { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
-
-    .btn-primary,
-    .btn-ghost {
-      padding:8px 14px;
-      border-radius:999px;
-      font-size:13px;
-      cursor:pointer;
-      border:1px solid transparent;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      text-decoration:none;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #ef4444, #f97316);
-      color:#020617;
-      font-weight:600;
-      box-shadow:0 10px 25px rgba(248,113,113,0.3);
-    }
-    .btn-primary:hover {
-      filter:brightness(1.05);
-      box-shadow:0 12px 30px rgba(248,113,113,0.45);
-      transform: translateY(-1px);
-    }
-    .btn-ghost {
-      background: rgba(15,23,42,0.9);
-      border-color: rgba(148,163,184,0.4);
-      color:#e5e7eb;
-    }
-    .btn-ghost:hover {
-      border-color: rgba(248,250,252,0.6);
-      background: rgba(15,23,42,1);
-      transform: translateY(-1px);
-    }
-
-    .hero-note {
-      font-size:11px;
-      color:#9ca3af;
-    }
-
-    .hero-right {
-      position:relative;
-      padding:10px 4px;
-      display:flex;
-      justify-content:center;
-    }
-    .hero-card {
-      position:relative;
-      width:100%;
-      max-width:340px;
-      border-radius:22px;
-      padding:14px 14px 12px;
-      background: radial-gradient(circle at top left,
-        rgba(248,113,113,0.3),
-        rgba(15,23,42,0.98));
-      border:1px solid rgba(31,41,55,0.95);
-      box-shadow:0 22px 40px rgba(0,0,0,0.95);
-      backdrop-filter:blur(18px);
-      overflow:hidden;
-    }
-    .hero-card-glow {
-      position:absolute; inset:-40%;
-      background:
-        radial-gradient(circle at top left, rgba(248,113,113,0.35), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(56,189,248,0.32), transparent 55%);
-      opacity:0.9;
-      mix-blend-mode:screen;
-      pointer-events:none;
-    }
-    .hero-card-inner { position:relative; z-index:1; }
-    .hero-card-header {
-      display:flex; justify-content:space-between; align-items:center;
-      margin-bottom:10px; font-size:11px; color:#e5e7eb;
-    }
-    .hero-card-title { font-size:13px; font-weight:600; }
-    .hero-card-chip {
-      padding:3px 8px;
-      border-radius:999px;
-      background: rgba(15,23,42,0.9);
-      border:1px solid rgba(248,250,252,0.4);
-      color:#e5e7eb;
-    }
-    .hero-card-games {
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:8px; margin-bottom:10px; font-size:11px;
-    }
-    .mini-game {
-      border-radius:14px;
-      padding:8px 8px 7px;
-      background:rgba(15,23,42,0.96);
-      border:1px solid rgba(31,41,55,0.95);
-      box-shadow:inset 0 0 0 1px rgba(15,23,42,0.95);
-      display:flex; flex-direction:column; gap:4px;
-    }
-    .mini-game-header {
-      display:flex; justify-content:space-between; align-items:center;
-    }
-    .mini-avatar {
-      width:22px; height:22px; border-radius:999px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:13px; color:#020617;
-      box-shadow:0 0 10px rgba(248,250,252,0.8);
-    }
-    .mini-avatar.eagle { background:radial-gradient(circle,#fed7aa,#f97316); }
-    .mini-avatar.space { background:radial-gradient(circle,#e0f2fe,#38bdf8); }
-    .mini-game-name { font-size:11px; font-weight:600; color:#e5e7eb; }
-    .mini-tag { font-size:9px; color:#9ca3af; }
-    .mini-pill {
-      font-size:9px;
-      padding:2px 6px;
-      border-radius:999px;
-      background:rgba(15,23,42,0.95);
-      border:1px solid rgba(148,163,184,0.5);
-      color:#e5e7eb;
-    }
-    .hero-card-footer {
-      display:flex; justify-content:space-between; align-items:center;
-      font-size:11px; color:#9ca3af;
-    }
-    .hero-stat-label { font-size:10px; color:#6b7280; }
-    .hero-stat-value { font-size:12px; color:#e5e7eb; font-weight:500; }
-    .hero-card-cta {
-      font-size:11px;
-      color:#fee2e2;
-      text-decoration:underline;
-      cursor:pointer;
-    }
-
-    /* STATUS + BADGES + DAILY CHALLENGE */
-    .status-section {
-      margin-top: 4px;
-      margin-bottom: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .status-grid {
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-      gap:10px;
-    }
-    .status-card {
-      border-radius: 16px;
-      padding: 10px 12px;
-      background: rgba(15,23,42,0.95);
-      border: 1px solid rgba(31,41,55,0.95);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
-    }
-    .status-title {
-      font-size:13px;
-      font-weight:600;
-      margin-bottom:6px;
-    }
-    .badge-row {
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-    }
-    .badge {
-      font-size:11px;
-      padding:3px 9px;
-      border-radius:999px;
-      border:1px solid rgba(55,65,81,0.9);
-      background:rgba(15,23,42,0.9);
-      color:#6b7280;
-      text-transform:uppercase;
-      letter-spacing:0.03em;
-    }
-    .badge-unlocked {
-      border-color:#facc15;
-      background:rgba(250,204,21,0.1);
-      color:#facc15;
-      box-shadow:0 0 10px rgba(250,204,21,0.4);
-    }
-
-    .daily-card {
-      border-radius: 16px;
-      padding: 10px 12px;
-      background: radial-gradient(circle at top left, rgba(30,64,175,0.35), rgba(15,23,42,0.98));
-      border: 1px solid rgba(37,99,235,0.7);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.85);
-    }
-    .daily-title {
-      font-size:14px;
-      font-weight:600;
-      margin-bottom:4px;
-    }
-    .daily-text {
-      font-size:12px;
-      color:#e5e7eb;
-      margin-bottom:4px;
-    }
-    .daily-status {
-      font-size:12px;
-    }
-    .daily-status.done {
-      color:#22c55e;
-    }
-    .daily-status.todo {
-      color:#f97316;
-    }
-
-    /* GAMES SECTION */
-    .games-section {
-      margin-top:8px;
-    }
-    .games-section.hidden-games {
-      display:none;
-    }
-
-    .section-title {
-      margin-top:8px; margin-bottom:6px;
-      font-size:16px; font-weight:600; color:#e5e7eb;
-    }
-    .section-sub {
-      font-size:12px; color:#9ca3af; margin-bottom:10px;
-    }
-
-    #gamesGrid {
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
-      gap:16px;
-      width:100%;
-    }
-
-    .game-card {
-      background: linear-gradient(145deg, rgba(15,23,42,0.98), rgba(15,23,42,0.9));
-      border-radius:16px;
-      border:1px solid rgba(15,23,42,0.9);
-      padding:14px 10px;
-      text-align:center;
-      box-shadow:0 10px 25px rgba(0,0,0,0.7);
-      cursor:pointer;
-      text-decoration:none;
-      color:inherit;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
-    }
-    .game-card:hover {
-      transform:translateY(-4px);
-      box-shadow:0 16px 32px rgba(0,0,0,0.9);
-      border-color:#f97316;
-    }
-    .game-icon {
-      width:64px; height:64px;
-      border-radius:50%;
-      margin:0 auto 8px;
-      display:flex; align-items:center; justify-content:center;
-      background: radial-gradient(circle at 30% 20%, #fefce8, #facc15 40%, #b45309 100%);
-      box-shadow:0 0 18px rgba(250,204,21,0.8);
-      font-size:32px;
-    }
-    .game-title {
-      font-size:16px; font-weight:600; margin-bottom:4px; color:#e5e7eb;
-    }
-    .game-meta {
-      font-size:12px; color:#9ca3af;
-    }
-
-    #footerName {
-      margin-top:auto;
-      padding-top:16px;
-      font-size:13px;
-      color:#64748b;
-      text-align:center;
-    }
-
-    /* Rating + generic popup overlay/modal with animation */
-    .rating-overlay {
-      position:fixed;
-      inset:0;
-      background:rgba(15,23,42,0.88);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:1000;
-      animation: ratingOverlayFade 0.22s ease-out;
-    }
-    .rating-overlay.hidden { display:none; }
-
-    .rating-modal {
-      background: radial-gradient(circle at top, rgba(127,29,29,0.55), rgba(15,23,42,0.98));
-      border-radius:18px;
-      padding:18px 18px 14px;
-      border:1px solid rgba(248,113,113,0.8);
-      box-shadow:0 22px 40px rgba(0,0,0,0.95);
-      width:100%;
-      max-width:320px;
-      text-align:center;
-      backdrop-filter:blur(18px);
-      animation: ratingModalIn 0.25s ease-out;
-    }
-
-    @keyframes ratingOverlayFade {
-      from { background: rgba(15,23,42,0); }
-      to   { background: rgba(15,23,42,0.88); }
-    }
-    @keyframes ratingModalIn {
-      from {
-        transform: translateY(14px) scale(0.96);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-      }
-    }
-
-    .rating-title { font-size:17px; margin-bottom:4px; color:#e5e7eb; }
-    .rating-subtitle { font-size:12px; color:#fee2e2; margin-bottom:10px; }
-    .rating-stars {
-      display:flex; justify-content:center; gap:6px; margin-bottom:12px;
-    }
-    .rating-star {
-      font-size:24px; cursor:pointer;
-      color:#4b5563;
-      transition:color 0.12s ease, transform 0.12s ease;
-    }
-    .rating-star.active {
-      color:#facc15;
-      text-shadow:0 0 10px rgba(250,204,21,0.9);
-      transform:scale(1.1);
-    }
-    .rating-buttons {
-      display:flex; justify-content:space-between; gap:8px; margin-top:2px;
-    }
-    .btn {
-      flex:1; padding:6px 10px;
-      border-radius:999px;
-      border:1px solid #1f2937;
-      background:rgba(15,23,42,0.95);
-      color:#e5e7eb;
-      font-size:13px;
-      cursor:pointer;
-      transition:background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
-    }
-    .btn:hover { transform:translateY(-1px); }
-    .btn-cancel { background:rgba(15,23,42,0.95); color:#9ca3af; }
-    .btn-cancel:hover { border-color:#6b7280; }
-    .btn-submit {
-      background:linear-gradient(135deg, #22c55e, #a3e635);
-      border-color:#16a34a;
-      color:#020617;
-      font-weight:600;
-    }
-    .btn-submit:hover { filter:brightness(1.05); }
-    .rating-message {
-      margin-top:6px;
-      font-size:12px;
-      color:#a5b4fc;
-      min-height:16px;
-    }
-
-    @media (max-width:640px) {
-      .nav { padding-inline:10px; }
-      .nav-title-sub { display:none; }
-      .hero-actions { flex-direction:column; align-items:flex-start; }
-      .hero-card { max-width:100%; }
-      .page { padding-inline:12px; }
-    }
-  </style>
+footer {
+  margin-top: auto;
+  padding-top: 20px;
+  font-size: 13px;
+  color: #64748b;
+}
+</style>
 </head>
+
 <body>
-  <div class="bg-orb"></div>
 
-  <div class="page">
-    <!-- NAVBAR -->
-    <header class="nav">
-      <div class="nav-brand">
-        <div class="nav-logo">Y</div>
-        <div>
-          <div class="nav-title-main">Yuvraj Games</div>
-          <div class="nav-title-sub">Premium browser arcade</div>
-        </div>
-      </div>
-      <div class="nav-right">
-        <div class="nav-pill">No download · Play in browser</div>
-        <button id="btnSoundToggle" class="nav-pill sound-toggle" type="button">
-          🔊 Sound: On
-        </button>
-      </div>
-    </header>
+<h1>🎮 Yuvraj Games</h1>
+<div class="subtitle">
+  Play premium browser games. Earn XP, level up and unlock achievements.
+</div>
 
-    <!-- HERO -->
-    <section class="hero">
-      <div class="hero-left">
-        <div class="hero-kicker">
-          <span class="hero-kicker-dot"></span>
-          Created by Yuvraj Soni
-        </div>
-        <h1 class="hero-title">
-          Play <span class="highlight">premium browser games</span> built by Yuvraj.
-        </h1>
-        <p class="hero-subtitle">
-          High-quality HTML5 arcade games that run smoothly on both phone and PC.
-          Just open the link and start playing – no install, no signup.
-        </p>
-
-        <div class="hero-badges">
-          <div class="hero-badge">
-            <span class="hero-badge-dot"></span>
-            Optimized for mobile & desktop
-          </div>
-          <div class="hero-badge">
-            🎮 Eagle Flight · Neon Space Runner · X/O Bot Duel
-          </div>
-          <div class="hero-badge">
-            ⭐ Unlock badges & achievements
-          </div>
-        </div>
-
-        <div class="hero-actions">
-          <button id="btnPlayGames" class="btn-primary" type="button">
-            <span>Play games now</span>
-            <span>→</span>
-          </button>
-          <button id="btnShareSite" class="btn-ghost" type="button">
-            <span>Share these games</span>
-          </button>
-          <button id="btnOpenMain" class="btn-ghost" type="button">
-            <span>Refresh homepage</span>
-          </button>
-        </div>
-
-        <div class="hero-note">
-          Tip: Add this site to your home screen to make it feel like a real app.
-        </div>
-      </div>
-
-      <div class="hero-right">
-        <div class="hero-card">
-          <div class="hero-card-glow"></div>
-          <div class="hero-card-inner">
-            <div class="hero-card-header">
-              <div>
-                <div class="hero-card-title">Featured games</div>
-                <div class="hero-stat-label">By Yuvraj</div>
-              </div>
-              <div class="hero-card-chip">Live · HTML5</div>
-            </div>
-
-            <div class="hero-card-games">
-              <div class="mini-game">
-                <div class="mini-game-header">
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <div class="mini-avatar eagle">🦅</div>
-                    <div>
-                      <div class="mini-game-name">Eagle Flight</div>
-                      <div class="mini-tag">Flappy-style arcade</div>
-                    </div>
-                  </div>
-                  <div class="mini-pill">Tap to fly</div>
-                </div>
-                <div class="hero-stat-label" style="margin-top:4px;">
-                  Smooth on 60hz + 120hz displays
-                </div>
-              </div>
-
-              <div class="mini-game">
-                <div class="mini-game-header">
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <div class="mini-avatar space">🚀</div>
-                    <div>
-                      <div class="mini-game-name">Space Runner</div>
-                      <div class="mini-tag">High-graphics dodge</div>
-                    </div>
-                  </div>
-                  <div class="mini-pill">Swipe / Keys</div>
-                </div>
-                <div class="hero-stat-label" style="margin-top:4px;">
-                  Neon visuals & dynamic difficulty
-                </div>
-              </div>
-            </div>
-
-            <div class="hero-card-footer">
-              <div>
-                <div class="hero-stat-label">Best played on:</div>
-                <div class="hero-stat-value">Chrome · Safari · Edge</div>
-              </div>
-              <button id="btnBrowseGames" class="hero-card-cta" type="button">
-                Browse games →
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- STATUS + BADGES + DAILY CHALLENGE -->
-    <section id="statusSection" class="status-section">
-      <div class="status-grid">
-        <div class="status-card">
-          <div class="status-title">Your Eagle Flight badges</div>
-          <div class="badge-row">
-            <span class="badge badge-locked" id="eagleBadgeNoob">Noob</span>
-            <span class="badge badge-locked" id="eagleBadgePro">Pro</span>
-            <span class="badge badge-locked" id="eagleBadgeLegend">Legend</span>
-          </div>
-        </div>
-        <div class="status-card">
-          <div class="status-title">Your Space Runner badges</div>
-          <div class="badge-row">
-            <span class="badge badge-locked" id="spaceBadgeNoob">Noob</span>
-            <span class="badge badge-locked" id="spaceBadgePro">Pro</span>
-            <span class="badge badge-locked" id="spaceBadgeLegend">Legend</span>
-            <span class="badge badge-locked" id="spaceBadgeHacker">Hacker</span>
-          </div>
-        </div>
-        <div class="status-card">
-          <div class="status-title">Your X/O Bot Duel badges</div>
-          <div class="badge-row">
-            <span class="badge badge-locked" id="xoBadgeNoob">Noob (10 pts)</span>
-            <span class="badge badge-locked" id="xoBadgePro">Pro (20 pts)</span>
-            <span class="badge badge-locked" id="xoBadgeLegend">Legend (50 pts)</span>
-            <span class="badge badge-locked" id="xoBadgeHacker">Hacker (200 pts)</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="daily-card" id="dailyChallengeCard">
-        <div class="daily-title">🎯 Today's challenge</div>
-        <div class="daily-text" id="dailyChallengeText"></div>
-        <div class="daily-status" id="dailyChallengeStatus"></div>
-      </div>
-    </section>
-
-    <!-- GAMES SECTION -->
-    <section id="gamesSection" class="games-section hidden-games">
-      <div class="section-title">Available games</div>
-      <div class="section-sub">
-        Select a game card below to start playing instantly in your browser.
-      </div>
-
-      <div id="gamesGrid">
-        <!-- Eagle Flight game card -->
-        <a class="game-card" href="eagle.html">
-          <div class="game-icon">
-            🦅
-          </div>
-          <div class="game-title">Eagle Flight</div>
-          <div class="game-meta">
-            Neon flappy-style arcade game. Use Tap / Click / Space to fly the eagle between the pillars.
-          </div>
-        </a>
-
-        <!-- Neon Space Runner game card -->
-        <a class="game-card" href="space.html">
-          <div class="game-icon" style="
-            background: radial-gradient(circle at 30% 20%, #e0f2fe, #38bdf8 40%, #0f172a 100%);
-            box-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
-          ">
-            🚀
-          </div>
-          <div class="game-title">Neon Space Runner</div>
-          <div class="game-meta">
-            High-graphics space dodge game. Avoid asteroids and control the ship – difficulty slowly increases over time.
-          </div>
-        </a>
-
-        <!-- Neon Drift Racer game card -->
-        <a class="game-card" href="drift.html">
-          <div class="game-icon" style="
-            background: radial-gradient(circle at 30% 20%, #fee2e2, #f97316 40%, #0f172a 100%);
-            box-shadow: 0 0 18px rgba(249, 115, 22, 0.85);
-          ">
-            🚗
-          </div>
-          <div class="game-title">Neon Drift Racer</div>
-          <div class="game-meta">
-            Three-lane neon highway racing game. Drift between lanes, dodge traffic and reach the highest distance.
-          </div>
-        </a>
-
-        <!-- Neon X/O Bot Duel game card -->
-        <a class="game-card" href="xo.html">
-          <div class="game-icon" style="
-            background: radial-gradient(circle at 30% 20%, #f5f3ff, #a855f7 40%, #0f172a 100%);
-            box-shadow: 0 0 18px rgba(168, 85, 247, 0.85);
-          ">
-            ❌
-          </div>
-          <div class="game-title">Neon X/O Bot Duel</div>
-          <div class="game-meta">
-            Extreme high-graphics tic‑tac‑toe style game vs a smart robot. Choose X or O, pick difficulty and earn points.
-          </div>
-        </a>
-
-        <!-- Coming Soon game card -->
-        <button class="game-card" type="button" id="comingSoonCard">
-          <div class="game-icon" style="
-            background: radial-gradient(circle at 30% 20%, #e5e7eb, #a855f7 40%, #0f172a 100%);
-            box-shadow: 0 0 18px rgba(168, 85, 247, 0.8);
-          ">
-            🕹
-          </div>
-          <div class="game-title">New game – Coming soon</div>
-          <div class="game-meta">
-            Another game is in development by Yuvraj. It might be racing, puzzle or a secret idea 🤫
-            Coming soon on this website.
-          </div>
-        </button>
-      </div>
-    </section>
-
-    <footer id="footerName">
-      Website & games created with passion by <strong>Yuvraj</strong>
-    </footer>
+<!-- ✅ PLAYER CARD -->
+<div class="player-card">
+  <div>
+    👤 <strong id="playerName"></strong><br>
+    ⭐ Level <span id="playerLevel"></span>
   </div>
 
-  <!-- RATING POPUP -->
-  <div id="ratingOverlay" class="rating-overlay hidden">
-    <div class="rating-modal">
-      <div class="rating-title">Rate my website</div>
-      <div class="rating-subtitle">
-        Tell me how much you like Yuvraj's games ⭐
-      </div>
-      <div class="rating-stars">
-        <span class="rating-star" data-value="1">★</span>
-        <span class="rating-star" data-value="2">★</span>
-        <span class="rating-star" data-value="3">★</span>
-        <span class="rating-star" data-value="4">★</span>
-        <span class="rating-star" data-value="5">★</span>
-      </div>
-      <div class="rating-buttons">
-        <button id="ratingCancel" class="btn btn-cancel">Cancel</button>
-        <button id="ratingSubmit" class="btn btn-submit">Submit</button>
-      </div>
-      <div id="ratingMessage" class="rating-message"></div>
-    </div>
+  <div>
+    🪙 Coins: <span id="playerCoins"></span><br>
+    ⚡ XP: <span id="playerXP"></span>
   </div>
+</div>
 
-  <!-- COMING SOON POPUP -->
-  <div id="comingSoonOverlay" class="rating-overlay hidden">
-    <div class="rating-modal">
-      <div class="rating-title">New game coming soon</div>
-      <div class="rating-subtitle">
-        Yuvraj is working on a new game – maybe racing, puzzle or a secret idea 🤫<br>
-        If you have any cool ideas, send them on Instagram:
-        <br><strong>@_yuvraj_x_clusive_</strong>
-      </div>
-      <div class="rating-buttons">
-        <button id="comingSoonClose" class="btn btn-submit" type="button">
-          Okay, nice!
-        </button>
-      </div>
-    </div>
-  </div>
+<!-- ✅ GAMES -->
+<div class="games-grid">
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // ===== RATING POPUP =====
-      const overlay = document.getElementById("ratingOverlay");
-      const stars = document.querySelectorAll(".rating-star");
-      const btnCancel = document.getElementById("ratingCancel");
-      const btnSubmit = document.getElementById("ratingSubmit");
-      const msg = document.getElementById("ratingMessage");
-      const STORAGE_KEY_RATING = "yuvraj_site_rating_done_v2";
+  <a class="game-card" href="eagle.html">
+    <div class="game-icon">🦅</div>
+    Eagle Flight
+  </a>
 
-      let currentRating = 0;
+  <a class="game-card" href="space.html">
+    <div class="game-icon">🚀</div>
+    Space Runner
+  </a>
 
-      function showOverlay() { overlay.classList.remove("hidden"); }
-      function hideOverlay() { overlay.classList.add("hidden"); }
+  <a class="game-card" href="drift.html">
+    <div class="game-icon">🚗</div>
+    Neon Drift Racer 3D
+  </a>
 
-      function loadRatingShown() {
-        try { return !localStorage.getItem(STORAGE_KEY_RATING); }
-        catch { return true; }
-      }
-      function markRatingDone(value) {
-        try { localStorage.setItem(STORAGE_KEY_RATING, String(value)); }
-        catch {}
-      }
-      function updateStars() {
-        stars.forEach(star => {
-          const value = Number(star.dataset.value);
-          star.classList.toggle("active", value <= currentRating);
-        });
-      }
+  <a class="game-card" href="xo.html">
+    <div class="game-icon">❌</div>
+    X/O Bot Duel
+  </a>
 
-      stars.forEach(star => {
-        star.addEventListener("click", () => {
-          currentRating = Number(star.dataset.value);
-          updateStars();
-          msg.textContent = "";
-        });
-      });
+</div>
 
-      btnCancel.addEventListener("click", () => {
-        markRatingDone("canceled");
-        hideOverlay();
-      });
+<footer>
+  Website & Games created by <strong>Yuvraj</strong>
+</footer>
 
-      btnSubmit.addEventListener("click", () => {
-        if (!currentRating) {
-          msg.textContent = "Please select a star rating first 🙂";
-          return;
-        }
-        markRatingDone(currentRating);
-        msg.textContent = "Thanks for rating " + currentRating + "★!";
-        setTimeout(hideOverlay, 600);
-      });
+<script>
+/* ===============================
+   ✅ PLAYER SYSTEM
+================================= */
 
-      if (loadRatingShown()) {
-        setTimeout(showOverlay, 1500);
-      }
+const LS_PLAYER_DATA = "yuvraj_player_data_v1";
 
-      // ===== SOUND TOGGLE + BGM =====
-      const btnSoundToggle = document.getElementById("btnSoundToggle");
-      const LS_SOUND = "global_sound_enabled_v1";
-      let soundEnabled = true;
-      let bgm = null;
+let playerData = {
+  name: "",
+  coins: 0,
+  xp: 0,
+  level: 1
+};
 
-      function loadSoundSetting() {
-        try {
-          const v = localStorage.getItem(LS_SOUND);
-          if (v === "false") soundEnabled = false;
-          else soundEnabled = true;
-        } catch (e) {
-          soundEnabled = true;
-        }
-      }
-      function saveSoundSetting() {
-        try { localStorage.setItem(LS_SOUND, String(soundEnabled)); } catch(e){}
-      }
-      function updateSoundToggleUI() {
-        if (!btnSoundToggle) return;
-        btnSoundToggle.classList.toggle("muted", !soundEnabled);
-        btnSoundToggle.textContent = soundEnabled ? "🔊 Sound: On" : "🔇 Sound: Off";
-      }
-      function ensureBgm() {
-        if (!bgm) {
-          bgm = new Audio("bgm.mp3"); // make sure bgm.mp3 is in the root
-          bgm.loop = true;
-          bgm.volume = 0.4;
-        }
-      }
-      function tryPlayBgm() {
-        if (!soundEnabled) return;
-        ensureBgm();
-        try { bgm.play().catch(()=>{}); } catch(e){}
-      }
-      function stopBgm() {
-        if (!bgm) return;
-        try { bgm.pause(); } catch(e){}
-      }
+function loadPlayerData() {
+  try {
+    const saved = localStorage.getItem(LS_PLAYER_DATA);
+    if (saved) {
+      playerData = JSON.parse(saved);
+    }
+  } catch (e) {}
+}
 
-      // Auto-start logic: try once after load + on first user interaction
-      function setupBgmAutostart() {
-        // 1) Try once shortly after page load
-        setTimeout(() => {
-          if (soundEnabled) {
-            tryPlayBgm();
-          }
-        }, 700);
+function savePlayerData() {
+  try {
+    localStorage.setItem(LS_PLAYER_DATA, JSON.stringify(playerData));
+  } catch (e) {}
+}
 
-        // 2) Start on very first click/touch anywhere
-        function firstInteraction() {
-          if (soundEnabled) {
-            tryPlayBgm();
-          }
-          document.removeEventListener("click", firstInteraction);
-          document.removeEventListener("touchstart", firstInteraction);
-        }
+function calculateLevel() {
+  playerData.level = Math.floor(playerData.xp / 100) + 1;
+}
 
-        document.addEventListener("click", firstInteraction, { passive: true });
-        document.addEventListener("touchstart", firstInteraction, { passive: true });
-      }
+function updatePlayerUI() {
+  document.getElementById("playerName").textContent = playerData.name;
+  document.getElementById("playerCoins").textContent = playerData.coins;
+  document.getElementById("playerXP").textContent = playerData.xp;
+  document.getElementById("playerLevel").textContent = playerData.level;
+}
 
-      loadSoundSetting();
-      updateSoundToggleUI();
-      setupBgmAutostart();
+/* ===============================
+   ✅ INIT
+================================= */
 
-      if (btnSoundToggle) {
-        btnSoundToggle.addEventListener("click", () => {
-          soundEnabled = !soundEnabled;
-          saveSoundSetting();
-          updateSoundToggleUI();
-          if (soundEnabled) tryPlayBgm();
-          else stopBgm();
-        });
-      }
+loadPlayerData();
 
-      // ===== GAMES SECTION TOGGLE (buttons working) =====
-      const gamesSection   = document.getElementById("gamesSection");
-      const btnPlayGames   = document.getElementById("btnPlayGames");
-      const btnBrowseGames = document.getElementById("btnBrowseGames");
-      const btnOpenMain    = document.getElementById("btnOpenMain");
-      const btnShareSite   = document.getElementById("btnShareSite");
+if (!playerData.name) {
+  const name = prompt("Enter your player name:");
+  if (name && name.trim() !== "") {
+    playerData.name = name.trim();
+  } else {
+    playerData.name = "Player";
+  }
+  savePlayerData();
+}
 
-      function showGamesSection() {
-        if (!gamesSection) return;
-        gamesSection.classList.remove("hidden-games");
-        gamesSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+calculateLevel();
+updatePlayerUI();
+</script>
 
-      if (btnPlayGames) {
-        btnPlayGames.addEventListener("click", (e) => {
-          e.preventDefault();
-          tryPlayBgm();
-          showGamesSection();
-        });
-      }
-
-      if (btnBrowseGames) {
-        btnBrowseGames.addEventListener("click", (e) => {
-          e.preventDefault();
-          tryPlayBgm();
-          showGamesSection();
-        });
-      }
-
-      if (btnOpenMain) {
-        btnOpenMain.addEventListener("click", () => {
-          window.location.href = "/";
-        });
-      }
-
-      if (btnShareSite) {
-        btnShareSite.addEventListener("click", async () => {
-          const shareData = {
-            title: "Games made by Yuvraj Soni",
-            text: "Play Eagle Flight, Neon Space Runner & X/O Bot Duel (phone + PC):",
-            url: "https://yuvrajs1129.github.io/"
-          };
-
-          tryPlayBgm();
-
-          if (navigator.share) {
-            try {
-              await navigator.share(shareData);
-            } catch (err) {
-              // cancelled
-            }
-          } else {
-            try {
-              await navigator.clipboard.writeText(shareData.url);
-              alert("Link copied! Paste it into WhatsApp / Instagram to share.");
-            } catch (err) {
-              alert("Share this link: " + shareData.url);
-            }
-          }
-        });
-      }
-
-      // ===== COMING SOON POPUP =====
-      const comingSoonCard    = document.getElementById("comingSoonCard");
-      const comingSoonOverlay = document.getElementById("comingSoonOverlay");
-      const comingSoonClose   = document.getElementById("comingSoonClose");
-
-      function openComingSoon() {
-        if (!comingSoonOverlay) return;
-        comingSoonOverlay.classList.remove("hidden");
-      }
-
-      function closeComingSoon() {
-        if (!comingSoonOverlay) return;
-        comingSoonOverlay.classList.add("hidden");
-      }
-
-      if (comingSoonCard) {
-        comingSoonCard.addEventListener("click", () => {
-          tryPlayBgm();
-          openComingSoon();
-        });
-      }
-
-      if (comingSoonClose) {
-        comingSoonClose.addEventListener("click", () => {
-          closeComingSoon();
-        });
-      }
-
-      if (comingSoonOverlay) {
-        comingSoonOverlay.addEventListener("click", (e) => {
-          if (e.target === comingSoonOverlay) {
-            closeComingSoon();
-          }
-        });
-      }
-
-      // ===== BADGES UI (front page) =====
-      const LS_EAGLE_ACH = "eagle_achievements_v1";
-      const LS_SPACE_ACH = "space_achievements_v1";
-      const LS_XO_ACH    = "xo_achievements_v1";
-
-      function loadEagleAch() {
-        let ach = { noob:false, pro:false, legend:false };
-        try {
-          const saved = localStorage.getItem(LS_EAGLE_ACH);
-          if (saved) {
-            const obj = JSON.parse(saved);
-            ach = Object.assign(ach, obj);
-          }
-        } catch(e){}
-        return ach;
-      }
-
-      function loadSpaceAch() {
-        let ach = { noob:false, pro:false, legend:false, hacker:false };
-        try {
-          const saved = localStorage.getItem(LS_SPACE_ACH);
-          if (saved) {
-            const obj = JSON.parse(saved);
-            ach = Object.assign(ach, obj);
-          }
-        } catch(e){}
-        return ach;
-      }
-
-      function loadXoAch() {
-        let ach = { noob:false, pro:false, legend:false, hacker:false };
-        try {
-          const saved = localStorage.getItem(LS_XO_ACH);
-          if (saved) {
-            const obj = JSON.parse(saved);
-            ach = Object.assign(ach, obj);
-          }
-        } catch(e){}
-        return ach;
-      }
-
-      function setBadge(id, unlocked) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (unlocked) {
-          el.classList.add("badge-unlocked");
-          el.classList.remove("badge-locked");
-        } else {
-          el.classList.remove("badge-unlocked");
-          el.classList.add("badge-locked");
-        }
-      }
-
-      const eagleAch = loadEagleAch();
-      const spaceAch = loadSpaceAch();
-      const xoAch    = loadXoAch();
-
-      setBadge("eagleBadgeNoob",   eagleAch.noob);
-      setBadge("eagleBadgePro",    eagleAch.pro);
-      setBadge("eagleBadgeLegend", eagleAch.legend);
-
-      setBadge("spaceBadgeNoob",   spaceAch.noob);
-      setBadge("spaceBadgePro",    spaceAch.pro);
-      setBadge("spaceBadgeLegend", spaceAch.legend);
-      setBadge("spaceBadgeHacker", spaceAch.hacker);
-
-      setBadge("xoBadgeNoob",      xoAch.noob);
-      setBadge("xoBadgePro",       xoAch.pro);
-      setBadge("xoBadgeLegend",    xoAch.legend);
-      setBadge("xoBadgeHacker",    xoAch.hacker);
-
-      // ===== DAILY CHALLENGE =====
-      const dailyText   = document.getElementById("dailyChallengeText");
-      const dailyStatus = document.getElementById("dailyChallengeStatus");
-      const LS_DAILY    = "daily_challenge_v1";
-
-      const DAILY_CHALLENGES = [
-        { id: "eagle15", text: "Eagle Flight – reach score 15 (Noob badge).",   check: (e,s)=>e.noob },
-        { id: "eagle30", text: "Eagle Flight – reach score 30 (Pro badge).",    check: (e,s)=>e.pro },
-        { id: "eagle60", text: "Eagle Flight – reach score 60 (Legend badge).", check: (e,s)=>e.legend },
-        { id: "space150", text: "Space Runner – reach score 150 (Noob badge).",   check: (e,s)=>s.noob },
-        { id: "space350", text: "Space Runner – reach score 350 (Pro badge).",    check: (e,s)=>s.pro },
-        { id: "space600", text: "Space Runner – reach score 600 (Legend badge).", check: (e,s)=>s.legend },
-        { id: "space800", text: "Space Runner – reach score 800 (Hacker badge).", check: (e,s)=>s.hacker }
-      ];
-
-      function todayString() {
-        const d = new Date();
-        const y = d.getFullYear();
-        const m = String(d.getMonth()+1).padStart(2,"0");
-        const dd= String(d.getDate()).padStart(2,"0");
-        return `${y}-${m}-${dd}`;
-      }
-
-      function loadDaily() {
-        try {
-          const saved = localStorage.getItem(LS_DAILY);
-          if (!saved) return null;
-          return JSON.parse(saved);
-        } catch(e){ return null; }
-      }
-      function saveDaily(obj) {
-        try { localStorage.setItem(LS_DAILY, JSON.stringify(obj)); } catch(e){}
-      }
-
-      function pickRandomChallenge() {
-        const idx = Math.floor(Math.random() * DAILY_CHALLENGES.length);
-        return DAILY_CHALLENGES[idx];
-      }
-
-      function initDaily() {
-        let stored = loadDaily();
-        const today = todayString();
-        let challenge;
-        if (!stored || stored.date !== today) {
-          challenge = pickRandomChallenge();
-          saveDaily({ id: challenge.id, date: today });
-        } else {
-          challenge = DAILY_CHALLENGES.find(c => c.id === stored.id) || pickRandomChallenge();
-        }
-
-        dailyText.textContent = challenge.text;
-        const completed = challenge.check(eagleAch, spaceAch);
-        if (completed) {
-          dailyStatus.textContent = "✅ Completed (badge already unlocked)";
-          dailyStatus.classList.add("done");
-          dailyStatus.classList.remove("todo");
-        } else {
-          dailyStatus.textContent = "❌ Not completed yet – play the game to complete it.";
-          dailyStatus.classList.add("todo");
-          dailyStatus.classList.remove("done");
-        }
-      }
-
-      initDaily();
-
-      // ===== SERVICE WORKER REGISTRATION (PWA) =====
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/service-worker.js")
-            .catch((err) => {
-              console.log("Service worker registration failed:", err);
-            });
-        });
-      }
-    });
-  </script>
 </body>
 </html>
