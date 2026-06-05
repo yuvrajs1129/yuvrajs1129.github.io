@@ -2,243 +2,318 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yuvraj Games – Premium Arcade</title>
+<title>Yuvraj Arcade – Ultimate Gaming Hub</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-* { box-sizing: border-box; }
+*{margin:0;padding:0;box-sizing:border-box}
 
 :root{
-  --bg:#020617;
-  --glass:rgba(15,23,42,0.85);
-  --border:#1f2937;
-  --orange:#f97316;
-  --blue:#38bdf8;
-  --purple:#a855f7;
+--bg:#020617;
+--glass:rgba(15,23,42,0.85);
+--border:#1f2937;
+--orange:#f97316;
+--blue:#38bdf8;
+--purple:#a855f7;
+--green:#22c55e;
 }
 
 body{
-  margin:0;
-  padding:20px;
-  font-family:system-ui;
-  background:
-    radial-gradient(circle at top left, #111827 0%, #020617 60%),
-    radial-gradient(circle at bottom right, rgba(168,85,247,0.2), #000 80%);
-  color:#e5e7eb;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  min-height:100vh;
-  overflow-x:hidden;
+font-family:system-ui;
+background:
+radial-gradient(circle at 20% 20%, rgba(56,189,248,0.15), transparent 40%),
+radial-gradient(circle at 80% 80%, rgba(168,85,247,0.15), transparent 40%),
+#020617;
+color:#e5e7eb;
+min-height:100vh;
+overflow-x:hidden;
+}
+
+/* FLOATING ORBS */
+body::before,body::after{
+content:"";
+position:fixed;
+width:300px;
+height:300px;
+border-radius:50%;
+filter:blur(100px);
+z-index:-1;
+animation:float 12s infinite alternate ease-in-out;
+}
+body::before{
+background:#38bdf8;
+top:-100px;left:-100px;
+}
+body::after{
+background:#a855f7;
+bottom:-100px;right:-100px;
+animation-delay:3s;
+}
+
+@keyframes float{
+from{transform:translateY(0px)}
+to{transform:translateY(40px)}
+}
+
+/* NAV */
+.nav{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:16px 30px;
+background:var(--glass);
+backdrop-filter:blur(18px);
+border-bottom:1px solid var(--border);
+position:sticky;
+top:0;
+z-index:100;
+}
+
+.nav h2{
+background:linear-gradient(90deg,var(--orange),var(--purple));
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.nav-links{
+display:flex;
+gap:20px;
+font-size:14px;
+color:#9ca3af;
 }
 
 /* HERO */
 .hero{
-  text-align:center;
-  margin-bottom:30px;
-  animation:fadeIn 1s ease;
+text-align:center;
+padding:80px 20px 40px;
 }
 
 .hero h1{
-  font-size:34px;
-  margin-bottom:10px;
-  background:linear-gradient(90deg,var(--orange),var(--purple));
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+font-size:42px;
+background:linear-gradient(90deg,#f97316,#a855f7,#38bdf8);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+margin-bottom:16px;
+animation:fadeIn 1.2s ease;
 }
 
 .hero p{
-  color:#9ca3af;
-  font-size:14px;
-  max-width:600px;
-  margin:auto;
+color:#9ca3af;
+max-width:650px;
+margin:auto;
+font-size:15px;
 }
 
-/* PLAY BUTTON */
-.play-btn{
-  margin-top:20px;
-  padding:12px 24px;
-  border-radius:999px;
-  border:none;
-  font-size:15px;
-  cursor:pointer;
-  background:linear-gradient(135deg,var(--orange),#ffb347);
-  color:#020617;
-  font-weight:600;
-  box-shadow:0 10px 30px rgba(249,115,22,0.4);
-  transition:0.2s;
+.cta-btn{
+margin-top:28px;
+padding:14px 28px;
+border-radius:999px;
+border:none;
+font-size:15px;
+font-weight:600;
+cursor:pointer;
+background:linear-gradient(135deg,#f97316,#ffb347);
+color:#020617;
+box-shadow:0 10px 30px rgba(249,115,22,0.5);
+transition:0.3s;
 }
-.play-btn:hover{
-  transform:translateY(-3px);
-  box-shadow:0 14px 40px rgba(249,115,22,0.6);
-}
-
-/* PLAYER CARD */
-.player-card{
-  width:100%;
-  max-width:600px;
-  background:var(--glass);
-  backdrop-filter:blur(18px);
-  border:1px solid var(--border);
-  border-radius:20px;
-  padding:16px 20px;
-  margin-bottom:30px;
-  display:flex;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  box-shadow:0 20px 40px rgba(0,0,0,0.7);
+.cta-btn:hover{
+transform:translateY(-4px);
+box-shadow:0 16px 45px rgba(249,115,22,0.7);
 }
 
-/* GAMES */
+/* PLAYER PANEL */
+.player-panel{
+max-width:1000px;
+margin:40px auto;
+padding:20px;
+border-radius:20px;
+background:var(--glass);
+border:1px solid var(--border);
+backdrop-filter:blur(18px);
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+box-shadow:0 20px 50px rgba(0,0,0,0.6);
+}
+
+/* GAME GRID */
+.section-title{
+text-align:center;
+font-size:22px;
+margin-bottom:20px;
+color:#e5e7eb;
+}
+
 .games{
-  width:100%;
-  max-width:900px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:20px;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:24px;
+max-width:1200px;
+margin:0 auto 80px;
+padding:0 20px;
 }
 
 .game-card{
-  background:var(--glass);
-  border:1px solid var(--border);
-  border-radius:20px;
-  padding:20px;
-  text-align:center;
-  text-decoration:none;
-  color:inherit;
-  transition:0.25s;
-  position:relative;
-  overflow:hidden;
-}
-
-.game-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:radial-gradient(circle at top left,rgba(56,189,248,0.2),transparent 60%);
-  opacity:0;
-  transition:0.3s;
+background:var(--glass);
+border:1px solid var(--border);
+border-radius:22px;
+padding:26px;
+text-align:center;
+transition:0.4s;
+transform-style:preserve-3d;
+position:relative;
+overflow:hidden;
 }
 
 .game-card:hover{
-  transform:translateY(-6px);
-  border-color:var(--orange);
+transform:translateY(-8px) rotateX(3deg);
+border-color:var(--orange);
+box-shadow:0 25px 60px rgba(0,0,0,0.7);
 }
+
+.game-card::before{
+content:"";
+position:absolute;
+inset:0;
+background:radial-gradient(circle at top left,rgba(56,189,248,0.2),transparent 60%);
+opacity:0;
+transition:0.4s;
+}
+
 .game-card:hover::before{
-  opacity:1;
+opacity:1;
 }
 
 .game-icon{
-  font-size:40px;
-  margin-bottom:8px;
+font-size:48px;
+margin-bottom:10px;
 }
 
+.game-card strong{
+display:block;
+margin-bottom:6px;
+}
+
+.game-card span{
+font-size:12px;
+color:#9ca3af;
+}
+
+/* FOOTER */
 footer{
-  margin-top:auto;
-  padding-top:40px;
-  font-size:13px;
-  color:#64748b;
+text-align:center;
+padding:30px;
+color:#64748b;
+font-size:13px;
 }
 
 /* ANIMATION */
 @keyframes fadeIn{
-  from{opacity:0;transform:translateY(10px);}
-  to{opacity:1;transform:translateY(0);}
+from{opacity:0;transform:translateY(20px)}
+to{opacity:1;transform:translateY(0)}
 }
 </style>
 </head>
 
 <body>
 
-<div class="hero">
-  <h1>Yuvraj Premium Arcade</h1>
-  <p>High‑quality neon browser games. Level up, unlock rewards, and experience next‑level arcade gameplay.</p>
-  <button class="play-btn" onclick="scrollToGames()">🎮 Play Games Now</button>
+<div class="nav">
+<h2>Yuvraj Arcade</h2>
+<div class="nav-links">
+<span>Home</span>
+<span>Games</span>
+<span>Achievements</span>
+<span>Profile</span>
+</div>
 </div>
 
-<div class="player-card">
-  <div>
-    👤 <strong id="playerName"></strong><br>
-    ⭐ Level <span id="playerLevel"></span>
-  </div>
-  <div>
-    🪙 Coins: <span id="playerCoins"></span><br>
-    ⚡ XP: <span id="playerXP"></span>
-  </div>
+<div class="hero">
+<h1>Experience Next‑Level Neon Gaming</h1>
+<p>Play high‑performance browser games with premium visuals, achievements, levels and evolving gameplay systems.</p>
+<button class="cta-btn" onclick="scrollToGames()">Start Playing</button>
 </div>
+
+<div class="player-panel">
+<div>
+👤 <strong id="playerName"></strong><br>
+⭐ Level <span id="playerLevel"></span>
+</div>
+<div>
+🪙 Coins: <span id="playerCoins"></span><br>
+⚡ XP: <span id="playerXP"></span>
+</div>
+</div>
+
+<h3 class="section-title">Featured Games</h3>
 
 <div class="games" id="gamesSection">
 
-  <a class="game-card" href="eagle.html">
-    <div class="game-icon">🦅</div>
-    <strong>Eagle Flight</strong>
-  </a>
+<div class="game-card">
+<div class="game-icon">🦅</div>
+<strong>Eagle Flight</strong>
+<span>Flappy‑style neon arcade</span>
+</div>
 
-  <a class="game-card" href="space.html">
-    <div class="game-icon">🚀</div>
-    <strong>Neon Space Runner</strong>
-  </a>
+<div class="game-card">
+<div class="game-icon">🚀</div>
+<strong>Space Runner</strong>
+<span>Laser combat dodge game</span>
+</div>
 
-  <a class="game-card" href="drift.html">
-    <div class="game-icon">🚗</div>
-    <strong>Neon Drift Racer 3D</strong>
-  </a>
+<div class="game-card">
+<div class="game-icon">🚗</div>
+<strong>Neon Drift Racer</strong>
+<span>3D highway racing</span>
+</div>
 
-  <a class="game-card" href="xo.html">
-    <div class="game-icon">❌</div>
-    <strong>X/O Bot Duel</strong>
-  </a>
+<div class="game-card">
+<div class="game-icon">❌</div>
+<strong>X/O Bot Duel</strong>
+<span>Smart AI board battle</span>
+</div>
 
 </div>
 
 <footer>
-  Designed & Developed by <strong>Yuvraj</strong>
+Designed & Developed by Yuvraj
 </footer>
 
 <script>
 const LS_PLAYER_DATA="yuvraj_player_data_v1";
 
-let playerData={
-  name:"",
-  coins:0,
-  xp:0,
-  level:1
-};
+let playerData={name:"",coins:0,xp:0,level:1};
 
 function loadPlayerData(){
-  try{
-    const saved=localStorage.getItem(LS_PLAYER_DATA);
-    if(saved){
-      playerData=JSON.parse(saved);
-    }
-  }catch(e){}
+const saved=localStorage.getItem(LS_PLAYER_DATA);
+if(saved){playerData=JSON.parse(saved);}
 }
 
 function savePlayerData(){
-  localStorage.setItem(LS_PLAYER_DATA,JSON.stringify(playerData));
+localStorage.setItem(LS_PLAYER_DATA,JSON.stringify(playerData));
 }
 
 function calculateLevel(){
-  playerData.level=Math.floor(playerData.xp/100)+1;
+playerData.level=Math.floor(playerData.xp/100)+1;
 }
 
 function updateUI(){
-  document.getElementById("playerName").textContent=playerData.name;
-  document.getElementById("playerCoins").textContent=playerData.coins;
-  document.getElementById("playerXP").textContent=playerData.xp;
-  document.getElementById("playerLevel").textContent=playerData.level;
+document.getElementById("playerName").textContent=playerData.name;
+document.getElementById("playerCoins").textContent=playerData.coins;
+document.getElementById("playerXP").textContent=playerData.xp;
+document.getElementById("playerLevel").textContent=playerData.level;
 }
 
 function scrollToGames(){
-  document.getElementById("gamesSection").scrollIntoView({behavior:"smooth"});
+document.getElementById("gamesSection").scrollIntoView({behavior:"smooth"});
 }
 
 loadPlayerData();
 
 if(!playerData.name){
-  const name=prompt("Enter your player name:");
-  playerData.name=name||"Player";
-  savePlayerData();
+const name=prompt("Enter your player name:");
+playerData.name=name||"Player";
+savePlayerData();
 }
 
 calculateLevel();
