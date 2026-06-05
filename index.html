@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yuvraj Soni – Neon Gaming Platform</title>
+<title>Yuvraj Soni Arcade</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -16,23 +16,46 @@ overflow-x:hidden;
 scroll-behavior:smooth;
 }
 
-/* Animated Background */
+/* ===== CINEMATIC ANIMATED BACKGROUND ===== */
 body::before{
 content:"";
 position:fixed;
 inset:0;
-background:
-radial-gradient(circle at 20% 30%, rgba(56,189,248,0.15), transparent 40%),
-radial-gradient(circle at 80% 70%, rgba(168,85,247,0.15), transparent 40%);
+background:linear-gradient(
+-45deg,
+#0f172a,
+#111827,
+#1e293b,
+#020617
+);
+background-size:400% 400%;
+animation:bgMove 18s ease infinite;
 z-index:-2;
-animation:bgMove 12s infinite alternate ease-in-out;
-}
-@keyframes bgMove{
-from{transform:translateY(0px)}
-to{transform:translateY(40px)}
 }
 
-/* NAV */
+@keyframes bgMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+body::after{
+content:"";
+position:fixed;
+inset:0;
+background:
+radial-gradient(circle at 20% 30%, rgba(56,189,248,0.18), transparent 50%),
+radial-gradient(circle at 80% 70%, rgba(168,85,247,0.18), transparent 50%);
+animation:glowFloat 10s ease-in-out infinite alternate;
+z-index:-1;
+}
+
+@keyframes glowFloat{
+from{transform:translateY(0px);}
+to{transform:translateY(40px);}
+}
+
+/* ===== NAVBAR ===== */
 .nav{
 position:fixed;
 top:0;
@@ -41,7 +64,7 @@ display:flex;
 justify-content:space-between;
 align-items:center;
 padding:18px 40px;
-background:rgba(15,23,42,0.85);
+background:rgba(15,23,42,0.9);
 backdrop-filter:blur(20px);
 border-bottom:1px solid #1f2937;
 z-index:1000;
@@ -50,7 +73,7 @@ z-index:1000;
 .logo{
 font-size:20px;
 font-weight:600;
-background:linear-gradient(90deg,#f97316,#a855f7,#38bdf8);
+background:linear-gradient(90deg,#f97316,#38bdf8,#a855f7);
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
 }
@@ -66,11 +89,12 @@ cursor:pointer;
 color:#9ca3af;
 transition:0.3s;
 }
+
 .nav-links span:hover{
 color:#f97316;
 }
 
-/* HERO */
+/* ===== HERO ===== */
 .hero{
 height:100vh;
 display:flex;
@@ -83,14 +107,14 @@ padding:0 20px;
 
 .hero h1{
 font-size:52px;
+margin-bottom:20px;
 background:linear-gradient(90deg,#f97316,#38bdf8,#a855f7);
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
-margin-bottom:20px;
 }
 
 .hero p{
-max-width:700px;
+max-width:650px;
 color:#9ca3af;
 font-size:16px;
 }
@@ -107,11 +131,12 @@ cursor:pointer;
 box-shadow:0 15px 45px rgba(249,115,22,0.6);
 transition:0.3s;
 }
+
 .hero button:hover{
 transform:translateY(-6px);
 }
 
-/* SECTION */
+/* ===== SECTION ===== */
 section{
 padding:120px 40px;
 max-width:1200px;
@@ -123,10 +148,10 @@ font-size:26px;
 margin-bottom:30px;
 }
 
-/* GAME CARDS */
+/* ===== GAME CARDS ===== */
 .games{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
 gap:30px;
 }
 
@@ -139,6 +164,7 @@ transition:0.4s;
 cursor:pointer;
 text-align:center;
 }
+
 .game-card:hover{
 transform:translateY(-10px) scale(1.02);
 border-color:#f97316;
@@ -150,7 +176,7 @@ font-size:50px;
 margin-bottom:15px;
 }
 
-/* PLAYER PANEL */
+/* ===== PROFILE ===== */
 .profile-box{
 background:rgba(15,23,42,0.85);
 padding:30px;
@@ -161,10 +187,9 @@ border:1px solid #1f2937;
 .stat-row{
 display:flex;
 justify-content:space-between;
-margin-bottom:10px;
+margin-bottom:12px;
 }
 
-/* XP BAR */
 .xp-bar{
 height:8px;
 background:#1f2937;
@@ -172,6 +197,7 @@ border-radius:999px;
 overflow:hidden;
 margin-top:10px;
 }
+
 .xp-fill{
 height:100%;
 background:linear-gradient(90deg,#f97316,#38bdf8);
@@ -200,7 +226,7 @@ color:#64748b;
 
 <div class="hero" id="home">
 <h1>Next‑Level Neon Gaming Experience</h1>
-<p>Built by Yuvraj Soni. Play immersive arcade games with leveling system, achievements and evolving gameplay mechanics.</p>
+<p>Designed & Developed by Yuvraj Soni. Play immersive arcade games with achievements, leveling and evolving gameplay systems.</p>
 <button onclick="goTo('games')">Start Playing</button>
 </div>
 
@@ -210,25 +236,21 @@ color:#64748b;
 <div class="game-card" onclick="location.href='eagle.html'">
 <div class="game-icon">🦅</div>
 <strong>Eagle Flight</strong>
-<p>Flappy neon arcade</p>
 </div>
 
 <div class="game-card" onclick="location.href='space.html'">
 <div class="game-icon">🚀</div>
 <strong>Space Runner</strong>
-<p>Laser dodge combat</p>
 </div>
 
 <div class="game-card" onclick="location.href='drift.html'">
 <div class="game-icon">🚗</div>
 <strong>Neon Drift Racer</strong>
-<p>3D Highway racing</p>
 </div>
 
 <div class="game-card" onclick="location.href='xo.html'">
 <div class="game-icon">❌</div>
 <strong>X/O Bot Duel</strong>
-<p>AI Battle Mode</p>
 </div>
 </div>
 </section>
@@ -240,22 +262,34 @@ color:#64748b;
 <div class="stat-row"><span>Level</span><strong id="playerLevel"></strong></div>
 <div class="stat-row"><span>Coins</span><strong id="playerCoins"></strong></div>
 <div class="stat-row"><span>XP</span><strong id="playerXP"></strong></div>
-
 <div class="xp-bar">
 <div class="xp-fill" id="xpFill"></div>
 </div>
-
 <button style="margin-top:20px" onclick="changeName()">Change Name</button>
 </div>
 </section>
 
 <footer>
-Designed & Developed by Yuvraj Soni
+© 2026 Yuvraj Soni Arcade
 </footer>
 
 <script>
-const LS_PLAYER_DATA="yuvraj_player_data_v1";
+// ===== MUSIC SYSTEM =====
+const bgm=new Audio("bgm.mp3");
+bgm.loop=true;
+bgm.volume=0.4;
+let musicStarted=false;
 
+function startMusic(){
+if(musicStarted)return;
+musicStarted=true;
+bgm.play().catch(()=>{});
+}
+document.addEventListener("click",startMusic);
+document.addEventListener("touchstart",startMusic);
+
+// ===== PLAYER SYSTEM =====
+const LS_PLAYER_DATA="yuvraj_player_data_v1";
 let playerData={name:"",coins:0,xp:0,level:1};
 
 function loadPlayerData(){
@@ -276,9 +310,7 @@ document.getElementById("playerName").textContent=playerData.name;
 document.getElementById("playerCoins").textContent=playerData.coins;
 document.getElementById("playerXP").textContent=playerData.xp;
 document.getElementById("playerLevel").textContent=playerData.level;
-
-const percent=(playerData.xp%100);
-document.getElementById("xpFill").style.width=percent+"%";
+document.getElementById("xpFill").style.width=(playerData.xp%100)+"%";
 }
 
 function goTo(id){
