@@ -8,192 +8,241 @@
 <style>
 * { box-sizing: border-box; }
 
-body {
-  margin: 0;
-  padding: 16px;
-  font-family: system-ui, sans-serif;
-  background: radial-gradient(circle at top, #020617 0, #020617 60%, #000 100%);
-  color: #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
+:root{
+  --bg:#020617;
+  --glass:rgba(15,23,42,0.85);
+  --border:#1f2937;
+  --orange:#f97316;
+  --blue:#38bdf8;
+  --purple:#a855f7;
 }
 
-h1 {
-  margin: 0 0 8px;
-  font-size: 26px;
-  color: #f97316;
-  text-shadow: 0 0 12px rgba(249,115,22,0.8);
+body{
+  margin:0;
+  padding:20px;
+  font-family:system-ui;
+  background:
+    radial-gradient(circle at top left, #111827 0%, #020617 60%),
+    radial-gradient(circle at bottom right, rgba(168,85,247,0.2), #000 80%);
+  color:#e5e7eb;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:100vh;
+  overflow-x:hidden;
 }
 
-.subtitle {
-  font-size: 14px;
-  color: #9ca3af;
-  margin-bottom: 16px;
-  text-align: center;
+/* HERO */
+.hero{
+  text-align:center;
+  margin-bottom:30px;
+  animation:fadeIn 1s ease;
 }
 
-.player-card {
-  width: 100%;
-  max-width: 500px;
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(15,23,42,0.95);
-  border: 1px solid #1f2937;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.7);
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  font-size: 14px;
+.hero h1{
+  font-size:34px;
+  margin-bottom:10px;
+  background:linear-gradient(90deg,var(--orange),var(--purple));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
 
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
-  width: 100%;
-  max-width: 800px;
+.hero p{
+  color:#9ca3af;
+  font-size:14px;
+  max-width:600px;
+  margin:auto;
 }
 
-.game-card {
-  background: rgba(15,23,42,0.95);
-  border-radius: 14px;
-  padding: 16px;
-  text-align: center;
-  text-decoration: none;
-  color: inherit;
-  border: 1px solid #1f2937;
-  transition: transform 0.15s ease;
+/* PLAY BUTTON */
+.play-btn{
+  margin-top:20px;
+  padding:12px 24px;
+  border-radius:999px;
+  border:none;
+  font-size:15px;
+  cursor:pointer;
+  background:linear-gradient(135deg,var(--orange),#ffb347);
+  color:#020617;
+  font-weight:600;
+  box-shadow:0 10px 30px rgba(249,115,22,0.4);
+  transition:0.2s;
+}
+.play-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 14px 40px rgba(249,115,22,0.6);
 }
 
-.game-card:hover {
-  transform: translateY(-4px);
-  border-color: #f97316;
+/* PLAYER CARD */
+.player-card{
+  width:100%;
+  max-width:600px;
+  background:var(--glass);
+  backdrop-filter:blur(18px);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:16px 20px;
+  margin-bottom:30px;
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  box-shadow:0 20px 40px rgba(0,0,0,0.7);
 }
 
-.game-icon {
-  font-size: 36px;
-  margin-bottom: 8px;
+/* GAMES */
+.games{
+  width:100%;
+  max-width:900px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:20px;
 }
 
-footer {
-  margin-top: auto;
-  padding-top: 20px;
-  font-size: 13px;
-  color: #64748b;
+.game-card{
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:20px;
+  text-align:center;
+  text-decoration:none;
+  color:inherit;
+  transition:0.25s;
+  position:relative;
+  overflow:hidden;
+}
+
+.game-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at top left,rgba(56,189,248,0.2),transparent 60%);
+  opacity:0;
+  transition:0.3s;
+}
+
+.game-card:hover{
+  transform:translateY(-6px);
+  border-color:var(--orange);
+}
+.game-card:hover::before{
+  opacity:1;
+}
+
+.game-icon{
+  font-size:40px;
+  margin-bottom:8px;
+}
+
+footer{
+  margin-top:auto;
+  padding-top:40px;
+  font-size:13px;
+  color:#64748b;
+}
+
+/* ANIMATION */
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎮 Yuvraj Games</h1>
-<div class="subtitle">
-  Play premium browser games. Earn XP, level up and unlock achievements.
+<div class="hero">
+  <h1>Yuvraj Premium Arcade</h1>
+  <p>High‑quality neon browser games. Level up, unlock rewards, and experience next‑level arcade gameplay.</p>
+  <button class="play-btn" onclick="scrollToGames()">🎮 Play Games Now</button>
 </div>
 
-<!-- ✅ PLAYER CARD -->
 <div class="player-card">
   <div>
     👤 <strong id="playerName"></strong><br>
     ⭐ Level <span id="playerLevel"></span>
   </div>
-
   <div>
     🪙 Coins: <span id="playerCoins"></span><br>
     ⚡ XP: <span id="playerXP"></span>
   </div>
 </div>
 
-<!-- ✅ GAMES -->
-<div class="games-grid">
+<div class="games" id="gamesSection">
 
   <a class="game-card" href="eagle.html">
     <div class="game-icon">🦅</div>
-    Eagle Flight
+    <strong>Eagle Flight</strong>
   </a>
 
   <a class="game-card" href="space.html">
     <div class="game-icon">🚀</div>
-    Space Runner
+    <strong>Neon Space Runner</strong>
   </a>
 
   <a class="game-card" href="drift.html">
     <div class="game-icon">🚗</div>
-    Neon Drift Racer 3D
+    <strong>Neon Drift Racer 3D</strong>
   </a>
 
   <a class="game-card" href="xo.html">
     <div class="game-icon">❌</div>
-    X/O Bot Duel
+    <strong>X/O Bot Duel</strong>
   </a>
 
 </div>
 
 <footer>
-  Website & Games created by <strong>Yuvraj</strong>
+  Designed & Developed by <strong>Yuvraj</strong>
 </footer>
 
 <script>
-/* ===============================
-   ✅ PLAYER SYSTEM
-================================= */
+const LS_PLAYER_DATA="yuvraj_player_data_v1";
 
-const LS_PLAYER_DATA = "yuvraj_player_data_v1";
-
-let playerData = {
-  name: "",
-  coins: 0,
-  xp: 0,
-  level: 1
+let playerData={
+  name:"",
+  coins:0,
+  xp:0,
+  level:1
 };
 
-function loadPlayerData() {
-  try {
-    const saved = localStorage.getItem(LS_PLAYER_DATA);
-    if (saved) {
-      playerData = JSON.parse(saved);
+function loadPlayerData(){
+  try{
+    const saved=localStorage.getItem(LS_PLAYER_DATA);
+    if(saved){
+      playerData=JSON.parse(saved);
     }
-  } catch (e) {}
+  }catch(e){}
 }
 
-function savePlayerData() {
-  try {
-    localStorage.setItem(LS_PLAYER_DATA, JSON.stringify(playerData));
-  } catch (e) {}
+function savePlayerData(){
+  localStorage.setItem(LS_PLAYER_DATA,JSON.stringify(playerData));
 }
 
-function calculateLevel() {
-  playerData.level = Math.floor(playerData.xp / 100) + 1;
+function calculateLevel(){
+  playerData.level=Math.floor(playerData.xp/100)+1;
 }
 
-function updatePlayerUI() {
-  document.getElementById("playerName").textContent = playerData.name;
-  document.getElementById("playerCoins").textContent = playerData.coins;
-  document.getElementById("playerXP").textContent = playerData.xp;
-  document.getElementById("playerLevel").textContent = playerData.level;
+function updateUI(){
+  document.getElementById("playerName").textContent=playerData.name;
+  document.getElementById("playerCoins").textContent=playerData.coins;
+  document.getElementById("playerXP").textContent=playerData.xp;
+  document.getElementById("playerLevel").textContent=playerData.level;
 }
 
-/* ===============================
-   ✅ INIT
-================================= */
+function scrollToGames(){
+  document.getElementById("gamesSection").scrollIntoView({behavior:"smooth"});
+}
 
 loadPlayerData();
 
-if (!playerData.name) {
-  const name = prompt("Enter your player name:");
-  if (name && name.trim() !== "") {
-    playerData.name = name.trim();
-  } else {
-    playerData.name = "Player";
-  }
+if(!playerData.name){
+  const name=prompt("Enter your player name:");
+  playerData.name=name||"Player";
   savePlayerData();
 }
 
 calculateLevel();
-updatePlayerUI();
+updateUI();
 </script>
 
 </body>
