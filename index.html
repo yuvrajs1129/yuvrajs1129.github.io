@@ -4,273 +4,759 @@
 <meta charset="UTF-8">
 <title>Yuvraj Soni Arcade</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="An independent, hand-built arcade by Yuvraj Soni — four games, one evolving player profile.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
+:root{
+  --void:#050507;
+  --void-soft:#0a0a10;
+  --glass:rgba(255,255,255,0.04);
+  --glass-border:rgba(255,255,255,0.09);
+  --cyan:#00e5ff;
+  --cyan-soft:rgba(0,229,255,0.35);
+  --violet:#7c4dff;
+  --violet-soft:rgba(124,77,255,0.35);
+  --ink:#eef1f6;
+  --ink-dim:#8a8f9c;
+}
+
 *{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
 
 body{
-font-family:system-ui;
-background:#020617;
-color:#e5e7eb;
-overflow-x:hidden;
-scroll-behavior:smooth;
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--void);
+  color:var(--ink);
+  overflow-x:hidden;
 }
 
-/* ===== CINEMATIC ANIMATED BACKGROUND ===== */
-body::before{
-content:"";
-position:fixed;
-inset:0;
-background:linear-gradient(
--45deg,
-#0f172a,
-#111827,
-#1e293b,
-#020617
-);
-background-size:400% 400%;
-animation:bgMove 18s ease infinite;
-z-index:-2;
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important}
 }
 
-@keyframes bgMove{
-0%{background-position:0% 50%;}
-50%{background-position:100% 50%;}
-100%{background-position:0% 50%;}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--cyan);color:var(--void)}
+:focus-visible{outline:1px solid var(--cyan);outline-offset:3px}
+img{max-width:100%;display:block}
+
+/* ===== 3D FLOATING SCENE BACKDROP ===== */
+.scene{
+  position:fixed;
+  inset:0;
+  z-index:-3;
+  overflow:hidden;
+  background:radial-gradient(ellipse 90% 60% at 50% 0%, #0d0d16 0%, var(--void) 60%);
 }
 
-body::after{
-content:"";
-position:fixed;
-inset:0;
-background:
-radial-gradient(circle at 20% 30%, rgba(56,189,248,0.18), transparent 50%),
-radial-gradient(circle at 80% 70%, rgba(168,85,247,0.18), transparent 50%);
-animation:glowFloat 10s ease-in-out infinite alternate;
-z-index:-1;
+.orb{
+  position:absolute;
+  border-radius:50%;
+  opacity:0.55;
+  will-change:transform;
 }
 
-@keyframes glowFloat{
-from{transform:translateY(0px);}
-to{transform:translateY(40px);}
+.orb-1{width:420px;height:420px;top:-120px;left:-100px;background:radial-gradient(circle at 35% 35%, var(--cyan-soft), transparent 70%);filter:blur(40px)}
+.orb-2{width:520px;height:520px;top:30%;right:-180px;background:radial-gradient(circle at 35% 35%, var(--violet-soft), transparent 70%);filter:blur(50px)}
+.orb-3{width:300px;height:300px;bottom:-80px;left:25%;background:radial-gradient(circle at 35% 35%, var(--cyan-soft), transparent 70%);filter:blur(45px)}
+.orb-4{width:260px;height:260px;top:60%;left:60%;background:radial-gradient(circle at 35% 35%, var(--violet-soft), transparent 70%);filter:blur(40px)}
+
+.grid-floor{
+  position:absolute;left:0;right:0;bottom:0;height:50vh;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.07) 1px, transparent 1px);
+  background-size:60px 60px;
+  transform:perspective(500px) rotateX(75deg);
+  transform-origin:bottom;
+  mask-image:linear-gradient(to top, black, transparent);
+  -webkit-mask-image:linear-gradient(to top, black, transparent);
+  opacity:0.5;
 }
 
-/* ===== NAVBAR ===== */
+/* ===== AMBIENT FLOATING SHARDS (always drifting, independent of mouse) ===== */
+.shard-field{
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.shard{
+  position:absolute;
+  width:var(--s, 10px);
+  height:var(--s, 10px);
+  background:linear-gradient(135deg, rgba(0,229,255,0.5), rgba(124,77,255,0.5));
+  border-radius:3px;
+  opacity:0.35;
+  animation:driftFloat var(--dur, 18s) ease-in-out infinite;
+  animation-delay:var(--delay, 0s);
+  box-shadow:0 0 14px rgba(0,229,255,0.25);
+}
+
+@keyframes driftFloat{
+  0%{transform:translate(0,0) rotate(0deg)}
+  25%{transform:translate(20px,-30px) rotate(90deg)}
+  50%{transform:translate(-15px,-60px) rotate(180deg)}
+  75%{transform:translate(-30px,-25px) rotate(270deg)}
+  100%{transform:translate(0,0) rotate(360deg)}
+}
+
+.noise{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== NAV ===== */
 .nav{
-position:fixed;
-top:0;
-width:100%;
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:18px 40px;
-background:rgba(15,23,42,0.9);
-backdrop-filter:blur(20px);
-border-bottom:1px solid #1f2937;
-z-index:1000;
+  position:fixed;top:0;width:100%;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 48px;
+  background:rgba(5,5,7,0.65);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--glass-border);
+  z-index:1000;
 }
 
 .logo{
-font-size:20px;
-font-weight:600;
-background:linear-gradient(90deg,#f97316,#38bdf8,#a855f7);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:600;font-size:18px;
+  display:flex;align-items:center;gap:10px;
 }
 
-.nav-links{
-display:flex;
-gap:30px;
-font-size:14px;
+.logo .mark{
+  width:10px;height:10px;background:var(--cyan);border-radius:2px;
+  box-shadow:0 0 12px var(--cyan), 0 0 24px var(--cyan-soft);
+  transform:rotate(45deg);
 }
 
-.nav-links span{
-cursor:pointer;
-color:#9ca3af;
-transition:0.3s;
+.nav-links{display:flex;gap:38px;align-items:center}
+
+.nav-links a{
+  font-size:13px;font-weight:500;color:var(--ink-dim);
+  cursor:pointer;position:relative;padding-bottom:4px;
+  transition:color 0.3s;
 }
 
-.nav-links span:hover{
-color:#f97316;
+.nav-links a::after{
+  content:"";position:absolute;left:0;bottom:0;width:0;height:1px;
+  background:var(--cyan);box-shadow:0 0 8px var(--cyan);
+  transition:width 0.35s ease;
 }
+
+.nav-links a:hover{color:var(--ink)}
+.nav-links a:hover::after{width:100%}
+
+.nav-cta{
+  font-size:12.5px;font-weight:600;
+  padding:10px 20px;border-radius:10px;
+  background:var(--glass);
+  border:1px solid var(--glass-border);
+  cursor:pointer;
+  transition:0.3s;
+}
+.nav-cta:hover{border-color:var(--cyan);background:rgba(0,229,255,0.06)}
 
 /* ===== HERO ===== */
 .hero{
-height:100vh;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-text-align:center;
-padding:0 20px;
+  min-height:100vh;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;padding:160px 24px 80px;position:relative;
 }
 
+.hero-frame{
+  max-width:820px;opacity:0;
+  animation:riseIn 1s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+@keyframes riseIn{
+  from{opacity:0; transform:translateY(26px)}
+  to{opacity:1; transform:translateY(0)}
+}
+
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  letter-spacing:0.24em;text-transform:uppercase;color:var(--cyan);
+  display:inline-flex;align-items:center;gap:10px;margin-bottom:26px;
+}
+
+.eyebrow .dot{
+  width:5px;height:5px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan);animation:pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse{0%,100%{opacity:1} 50%{opacity:0.3}}
+
 .hero h1{
-font-size:52px;
-margin-bottom:20px;
-background:linear-gradient(90deg,#f97316,#38bdf8,#a855f7);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(40px,6.8vw,80px);line-height:1.04;letter-spacing:-0.02em;
+}
+
+.hero h1 .glow{
+  background:linear-gradient(120deg, var(--cyan), var(--violet));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 28px rgba(0,229,255,0.25));
 }
 
 .hero p{
-max-width:650px;
-color:#9ca3af;
-font-size:16px;
+  max-width:540px;margin:30px auto 0;color:var(--ink-dim);
+  font-size:16px;line-height:1.75;
 }
 
-.hero button{
-margin-top:40px;
-padding:16px 40px;
-border:none;
-border-radius:999px;
-background:linear-gradient(135deg,#f97316,#ffb347);
-color:#020617;
-font-weight:600;
-cursor:pointer;
-box-shadow:0 15px 45px rgba(249,115,22,0.6);
-transition:0.3s;
+.hero-actions{margin-top:46px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+
+.btn{
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
+  padding:16px 34px;cursor:pointer;border-radius:12px;
+  border:1px solid var(--glass-border);background:var(--glass);color:var(--ink);
+  backdrop-filter:blur(10px);transition:0.35s cubic-bezier(.16,1,.3,1);
 }
 
-.hero button:hover{
-transform:translateY(-6px);
+.btn-glow{
+  background:linear-gradient(120deg, var(--cyan), var(--violet));
+  color:#04060a;border:none;box-shadow:0 8px 30px rgba(0,229,255,0.25);
+}
+.btn-glow:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,229,255,0.4)}
+.btn-ghost:hover{border-color:var(--cyan);background:rgba(0,229,255,0.06);transform:translateY(-3px)}
+
+.scroll-cue{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  color:var(--ink-dim);font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:0.18em;text-transform:uppercase;
+}
+
+.scroll-cue .line{width:1px;height:34px;background:var(--glass-border);position:relative;overflow:hidden}
+.scroll-cue .line::after{
+  content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;
+  background:var(--cyan);box-shadow:0 0 8px var(--cyan);
+  animation:cueDrop 1.8s ease-in-out infinite;
+}
+@keyframes cueDrop{0%{top:-100%} 60%{top:100%} 100%{top:100%}}
+
+/* ===== STATS BAR ===== */
+.stats-bar{
+  max-width:1180px;margin:0 auto;padding:0 48px 100px;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--glass-border);
+  border-bottom:1px solid var(--glass-border);
+}
+
+.stat-block{
+  padding:32px 24px;text-align:center;
+  border-right:1px solid var(--glass-border);
+}
+.stat-block:last-child{border-right:none}
+
+.stat-num{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(26px,3vw,34px);
+  background:linear-gradient(120deg, var(--cyan), var(--violet));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+.stat-label{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-dim);
+  margin-top:8px;
+}
+
+@media (max-width:720px){
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .stat-block:nth-child(2){border-right:none}
 }
 
 /* ===== SECTION ===== */
-section{
-padding:120px 40px;
-max-width:1200px;
-margin:auto;
+section{padding:120px 48px;max-width:1180px;margin:auto;position:relative}
+
+.section-head{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  margin-bottom:56px;gap:24px;flex-wrap:wrap;
 }
 
-.section-title{
-font-size:26px;
-margin-bottom:30px;
+.section-head h2{
+  font-family:'Space Grotesk',sans-serif;font-weight:600;
+  font-size:clamp(26px,3.4vw,38px);margin-top:10px;letter-spacing:-0.01em;
+}
+
+.section-head p{
+  color:var(--ink-dim);font-size:13.5px;max-width:300px;
+  text-align:right;line-height:1.6;
+}
+
+@media (max-width:720px){
+  .section-head{flex-direction:column;align-items:flex-start}
+  .section-head p{text-align:left}
 }
 
 /* ===== GAME CARDS ===== */
-.games{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-gap:30px;
-}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px}
 
 .game-card{
-padding:40px;
-border-radius:25px;
-background:rgba(15,23,42,0.85);
-border:1px solid #1f2937;
-transition:0.4s;
-cursor:pointer;
-text-align:center;
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;
+  padding:38px 30px;cursor:pointer;position:relative;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transform-style:preserve-3d;
+  transition:transform 0.15s ease-out, border-color 0.3s, box-shadow 0.3s;
+  will-change:transform;overflow:hidden;
 }
 
-.game-card:hover{
-transform:translateY(-10px) scale(1.02);
-border-color:#f97316;
-box-shadow:0 25px 60px rgba(0,0,0,0.7);
+.game-card::before{
+  content:"";position:absolute;inset:0;border-radius:20px;
+  background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(0,229,255,0.14), transparent 60%);
+  opacity:0;transition:opacity 0.3s;pointer-events:none;
 }
+
+.game-card:hover{border-color:rgba(0,229,255,0.4);box-shadow:0 20px 50px rgba(0,0,0,0.5), 0 0 40px rgba(0,229,255,0.08)}
+.game-card:hover::before{opacity:1}
+
+.card-inner{transform:translateZ(40px);transform-style:preserve-3d}
+
+.game-index{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-dim);letter-spacing:0.1em}
 
 .game-icon{
-font-size:50px;
-margin-bottom:15px;
+  font-size:36px;margin:24px 0 16px;display:block;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,0.4));
+  transition:transform 0.4s cubic-bezier(.16,1,.3,1);
+}
+.game-card:hover .game-icon{transform:translateY(-4px) scale(1.08)}
+
+.game-card h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:21px;margin-bottom:10px}
+
+.game-card .tag{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--cyan);
 }
 
-/* ===== PROFILE ===== */
-.profile-box{
-background:rgba(15,23,42,0.85);
-padding:30px;
-border-radius:25px;
-border:1px solid #1f2937;
+.game-card .play{
+  margin-top:24px;display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:500;color:var(--ink-dim);transition:0.3s ease;
 }
+.game-card:hover .play{color:var(--ink); gap:12px}
+
+/* ===== ABOUT SECTION ===== */
+.about-wrap{
+  display:grid;grid-template-columns:0.9fr 1.1fr;gap:64px;align-items:center;
+}
+
+@media (max-width:860px){
+  .about-wrap{grid-template-columns:1fr;gap:40px}
+}
+
+.about-visual{
+  aspect-ratio:1;border-radius:24px;
+  background:var(--glass);border:1px solid var(--glass-border);
+  backdrop-filter:blur(14px);position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.about-visual::before{
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(rgba(0,229,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.06) 1px, transparent 1px);
+  background-size:32px 32px;
+}
+
+.about-visual .core{
+  width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, var(--cyan), var(--violet));
+  box-shadow:0 0 80px rgba(0,229,255,0.4), 0 0 140px rgba(124,77,255,0.25);
+  animation:corePulse 4s ease-in-out infinite;
+  position:relative;z-index:1;
+}
+
+@keyframes corePulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+}
+
+.about-visual .ring{
+  position:absolute;border:1px solid rgba(0,229,255,0.25);border-radius:50%;
+}
+.about-visual .ring-1{width:180px;height:180px;animation:spin 16s linear infinite}
+.about-visual .ring-2{width:240px;height:240px;border-color:rgba(124,77,255,0.2);animation:spin 24s linear infinite reverse}
+
+@keyframes spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
+
+.about-copy .eyebrow{margin-bottom:18px}
+
+.about-copy h2{
+  font-family:'Space Grotesk',sans-serif;font-weight:600;
+  font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin-bottom:24px;letter-spacing:-0.01em;
+}
+
+.about-copy p{
+  color:var(--ink-dim);font-size:15.5px;line-height:1.85;margin-bottom:18px;
+}
+
+.about-copy strong{color:var(--ink);font-weight:600}
+
+/* ===== HOW IT WORKS ===== */
+.steps{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--glass-border);border:1px solid var(--glass-border);border-radius:20px;overflow:hidden;
+}
+
+@media (max-width:780px){.steps{grid-template-columns:1fr}}
+
+.step{background:var(--void-soft);padding:44px 36px;position:relative}
+
+.step-num{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;
+  background:linear-gradient(120deg, var(--cyan), var(--violet));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  opacity:0.5;
+}
+
+.step h3{
+  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:19px;
+  margin:18px 0 12px;
+}
+
+.step p{color:var(--ink-dim);font-size:14px;line-height:1.7}
+
+/* ===== FEATURES GRID ===== */
+.features{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;
+}
+
+.feature-card{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:18px;
+  padding:32px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transition:0.35s ease;
+}
+
+.feature-card:hover{border-color:rgba(124,77,255,0.4);transform:translateY(-4px)}
+
+.feature-icon{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg, rgba(0,229,255,0.15), rgba(124,77,255,0.15));
+  border:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:20px;
+}
+
+.feature-card h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin-bottom:10px}
+.feature-card p{color:var(--ink-dim);font-size:13.5px;line-height:1.7}
+
+/* ===== PROFILE GLASS CARD ===== */
+.profile-wrap{display:grid;grid-template-columns:1.1fr 0.9fr;gap:24px}
+@media (max-width:720px){.profile-wrap{grid-template-columns:1fr}}
+
+.profile-card{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;
+  padding:42px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  position:relative;overflow:hidden;
+}
+
+.profile-card::before{
+  content:"";position:absolute;top:-40%;right:-20%;width:280px;height:280px;
+  background:radial-gradient(circle, var(--violet-soft), transparent 70%);
+  filter:blur(40px);pointer-events:none;
+}
+
+.member-since{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:0.14em;text-transform:uppercase;color:var(--cyan);margin-bottom:8px;
+}
+
+.member-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:30px;margin-bottom:30px}
 
 .stat-row{
-display:flex;
-justify-content:space-between;
-margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:15px 0;border-bottom:1px solid var(--glass-border);font-size:14px;
 }
+.stat-row:last-of-type{border-bottom:none}
+.stat-row span:first-child{color:var(--ink-dim);font-size:13px;font-weight:500}
+.stat-row strong{font-family:'JetBrains Mono',monospace;font-weight:500;font-size:16px;color:var(--cyan)}
 
-.xp-bar{
-height:8px;
-background:#1f2937;
-border-radius:999px;
-overflow:hidden;
-margin-top:10px;
-}
-
+.xp-bar{height:6px;background:rgba(255,255,255,0.06);border-radius:99px;margin-top:18px;overflow:hidden}
 .xp-fill{
-height:100%;
-background:linear-gradient(90deg,#f97316,#38bdf8);
-width:0%;
-transition:0.6s;
+  height:100%;background:linear-gradient(90deg, var(--cyan), var(--violet));
+  box-shadow:0 0 12px var(--cyan-soft);width:0%;border-radius:99px;
+  transition:width 0.8s cubic-bezier(.16,1,.3,1);
 }
 
-footer{
-text-align:center;
-padding:40px;
-color:#64748b;
+.profile-actions{display:flex;flex-direction:column;justify-content:center;gap:18px}
+.profile-actions p{color:var(--ink-dim);font-size:13.5px;line-height:1.75}
+
+/* ===== FOOTER ===== */
+footer{border-top:1px solid var(--glass-border);position:relative}
+
+.footer-main{
+  max-width:1180px;margin:auto;padding:72px 48px 40px;
+  display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:48px;
 }
+
+@media (max-width:720px){.footer-main{grid-template-columns:1fr;gap:36px}}
+
+.footer-brand .logo{margin-bottom:16px}
+
+.footer-brand p{color:var(--ink-dim);font-size:13.5px;line-height:1.75;max-width:280px}
+
+.footer-col h4{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:18px;
+}
+
+.footer-col a{
+  display:block;color:var(--ink);font-size:13.5px;margin-bottom:12px;
+  opacity:0.85;transition:0.25s;cursor:pointer;
+}
+.footer-col a:hover{opacity:1;color:var(--cyan)}
+
+.footer-bottom{
+  max-width:1180px;margin:auto;padding:24px 48px 40px;
+  border-top:1px solid var(--glass-border);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-dim);letter-spacing:0.05em;
+}
+
+.footer-bottom .mark{color:var(--cyan)}
 </style>
 </head>
 
 <body>
 
-<div class="nav">
-<div class="logo">Yuvraj Soni Arcade</div>
-<div class="nav-links">
-<span onclick="goTo('home')">Home</span>
-<span onclick="goTo('games')">Games</span>
-<span onclick="goTo('profile')">Profile</span>
+<div class="scene" id="scene">
+  <div class="orb orb-1" data-depth="0.04"></div>
+  <div class="orb orb-2" data-depth="0.07"></div>
+  <div class="orb orb-3" data-depth="0.03"></div>
+  <div class="orb orb-4" data-depth="0.05"></div>
+  <div class="grid-floor"></div>
 </div>
+<div class="shard-field" id="shardField"></div>
+<div class="noise"></div>
+
+<div class="nav">
+  <div class="logo"><span class="mark"></span>Yuvraj Soni Arcade</div>
+  <div class="nav-links">
+    <a onclick="goTo('home')">Home</a>
+    <a onclick="goTo('games')">Games</a>
+    <a onclick="goTo('about')">About</a>
+    <a onclick="goTo('profile')">Profile</a>
+    <span class="nav-cta" onclick="goTo('games')">Play Now</span>
+  </div>
 </div>
 
 <div class="hero" id="home">
-<h1>Next‑Level Neon Gaming Experience</h1>
-<p>Designed & Developed by Yuvraj Soni. Play immersive arcade games with achievements, leveling and evolving gameplay systems.</p>
-<button onclick="goTo('games')">Start Playing</button>
+  <div class="hero-frame">
+    <span class="eyebrow"><span class="dot"></span>Independent Arcade · Est. 2026</span>
+    <h1>Play in <span class="glow">another</span><br>dimension.</h1>
+    <p>A hand-built collection of arcade games — designed and developed end-to-end by Yuvraj Soni, with a leveling system that remembers every player who walks in.</p>
+    <div class="hero-actions">
+      <button class="btn btn-glow" onclick="goTo('games')">Enter the Arcade</button>
+      <button class="btn btn-ghost" onclick="goTo('about')">Our Story</button>
+    </div>
+  </div>
+  <div class="scroll-cue"><span>Scroll</span><div class="line"></div></div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-block"><div class="stat-num">04</div><div class="stat-label">Games Live</div></div>
+  <div class="stat-block"><div class="stat-num">1</div><div class="stat-label">Solo Developer</div></div>
+  <div class="stat-block"><div class="stat-num">∞</div><div class="stat-label">XP To Earn</div></div>
+  <div class="stat-block"><div class="stat-num">100%</div><div class="stat-label">Browser-Based</div></div>
 </div>
 
 <section id="games">
-<div class="section-title">🎮 Featured Games</div>
-<div class="games">
-<div class="game-card" onclick="location.href='eagle.html'">
-<div class="game-icon">🦅</div>
-<strong>Eagle Flight</strong>
-</div>
+  <div class="section-head">
+    <div>
+      <span class="eyebrow" style="margin-bottom:0">The Collection</span>
+      <h2>Four Games, Built by Hand</h2>
+    </div>
+    <p>Each title is a self-contained experience — tilt the cards, the arcade reacts.</p>
+  </div>
 
-<div class="game-card" onclick="location.href='space.html'">
-<div class="game-icon">🚀</div>
-<strong>Space Runner</strong>
-</div>
+  <div class="games">
+    <div class="game-card" onclick="location.href='eagle.html'">
+      <div class="card-inner">
+        <span class="game-index">N&deg;01</span>
+        <span class="game-icon">🦅</span>
+        <h3>Eagle Flight</h3>
+        <span class="tag">Endless · Skill</span>
+        <div class="play">Play now →</div>
+      </div>
+    </div>
 
-<div class="game-card" onclick="location.href='drift.html'">
-<div class="game-icon">🚗</div>
-<strong>Neon Drift Racer</strong>
-</div>
+    <div class="game-card" onclick="location.href='space.html'">
+      <div class="card-inner">
+        <span class="game-index">N&deg;02</span>
+        <span class="game-icon">🚀</span>
+        <h3>Space Runner</h3>
+        <span class="tag">Arcade · Reflex</span>
+        <div class="play">Play now →</div>
+      </div>
+    </div>
 
-<div class="game-card" onclick="location.href='xo.html'">
-<div class="game-icon">❌</div>
-<strong>X/O Bot Duel</strong>
-</div>
-</div>
+    <div class="game-card" onclick="location.href='drift.html'">
+      <div class="card-inner">
+        <span class="game-index">N&deg;03</span>
+        <span class="game-icon">🚗</span>
+        <h3>Neon Drift Racer</h3>
+        <span class="tag">Racing · Precision</span>
+        <div class="play">Play now →</div>
+      </div>
+    </div>
+
+    <div class="game-card" onclick="location.href='xo.html'">
+      <div class="card-inner">
+        <span class="game-index">N&deg;04</span>
+        <span class="game-icon">❌</span>
+        <h3>X/O Bot Duel</h3>
+        <span class="tag">Strategy · 1v1 AI</span>
+        <div class="play">Play now →</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="about-wrap">
+    <div class="about-visual">
+      <div class="ring ring-2"></div>
+      <div class="ring ring-1"></div>
+      <div class="core"></div>
+    </div>
+    <div class="about-copy">
+      <span class="eyebrow">Why This Exists</span>
+      <h2>One developer.<br>Four worlds.<br>Zero shortcuts.</h2>
+      <p>Most arcades online are templates wearing different skins. <strong>Yuvraj Soni Arcade</strong> is the opposite — every game here is written, tuned, and shipped by a single person, end to end, with no asset packs and no recycled engines.</p>
+      <p>The goal isn't to have the most games. It's to have <strong>four that actually feel considered</strong> — distinct mechanics, distinct moods, and a profile system that ties your progress across all of them.</p>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow" style="margin-bottom:0">The Loop</span>
+      <h2>How the Arcade Works</h2>
+    </div>
+    <p>One profile, one XP bar, every game feeds into it.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>Pick a game</h3>
+      <p>Choose from four titles, each with its own pace and skill curve. No installs, no loading screens — just open and play.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>Earn XP &amp; coins</h3>
+      <p>Every run you finish feeds your single arcade-wide profile. Performance in any game contributes to the same progress bar.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>Level up</h3>
+      <p>Your level climbs automatically as XP builds. It's saved locally, so it's exactly as you left it next time you're back.</p>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow" style="margin-bottom:0">Under the Hood</span>
+      <h2>Built Like a Real Product</h2>
+    </div>
+    <p>The small details that separate an arcade from a folder of game files.</p>
+  </div>
+
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Instant load</h3>
+      <p>No bundlers, no heavy frameworks. Every game opens straight in the browser, on desktop or mobile.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🪪</div>
+      <h3>One shared profile</h3>
+      <p>A single name, level, and XP bar that follows you across all four games — not four separate save files.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💾</div>
+      <h3>Local-first saving</h3>
+      <p>Progress is stored right in your browser. No account, no signup, nothing to lose if a server goes down.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎚️</div>
+      <h3>Tuned difficulty</h3>
+      <p>Each game is balanced individually rather than copy-pasted, so the challenge actually fits the mechanic.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔊</div>
+      <h3>Ambient soundtrack</h3>
+      <p>A looping arcade score plays softly in the background, designed to stay out of the way during gameplay.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <h3>Responsive by default</h3>
+      <p>The arcade — and every game in it — is built to resize cleanly from a desktop monitor down to a phone screen.</p>
+    </div>
+  </div>
 </section>
 
 <section id="profile">
-<div class="section-title">👤 Player Profile</div>
-<div class="profile-box">
-<div class="stat-row"><span>Name</span><strong id="playerName"></strong></div>
-<div class="stat-row"><span>Level</span><strong id="playerLevel"></strong></div>
-<div class="stat-row"><span>Coins</span><strong id="playerCoins"></strong></div>
-<div class="stat-row"><span>XP</span><strong id="playerXP"></strong></div>
-<div class="xp-bar">
-<div class="xp-fill" id="xpFill"></div>
-</div>
-<button style="margin-top:20px" onclick="changeName()">Change Name</button>
-</div>
+  <div class="section-head">
+    <div>
+      <span class="eyebrow" style="margin-bottom:0">Membership</span>
+      <h2>Player Profile</h2>
+    </div>
+    <p>Your progress is saved locally and carries across every game in the arcade.</p>
+  </div>
+
+  <div class="profile-wrap">
+    <div class="profile-card">
+      <div class="member-since">Member Card</div>
+      <div class="member-name" id="playerName">—</div>
+
+      <div class="stat-row"><span>Level</span><strong id="playerLevel">—</strong></div>
+      <div class="stat-row"><span>Coins</span><strong id="playerCoins">—</strong></div>
+      <div class="stat-row"><span>Experience</span><strong id="playerXP">—</strong></div>
+
+      <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+    </div>
+
+    <div class="profile-card profile-actions">
+      <p>Rename your card at any time — your level, coins and XP stay exactly as they are.</p>
+      <button class="btn btn-ghost" style="align-self:flex-start" onclick="changeName()">Change Name</button>
+    </div>
+  </div>
 </section>
 
 <footer>
-© 2026 Yuvraj Soni Arcade
+  <div class="footer-main">
+    <div class="footer-brand">
+      <div class="logo"><span class="mark"></span>Yuvraj Soni Arcade</div>
+      <p>An independent arcade, designed and built by one person — four games, one evolving player profile, zero shortcuts.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Arcade</h4>
+      <a onclick="goTo('games')">All Games</a>
+      <a onclick="goTo('about')">About</a>
+      <a onclick="goTo('how')">How It Works</a>
+      <a onclick="goTo('profile')">Your Profile</a>
+    </div>
+    <div class="footer-col">
+      <h4>Games</h4>
+      <a onclick="location.href='eagle.html'">Eagle Flight</a>
+      <a onclick="location.href='space.html'">Space Runner</a>
+      <a onclick="location.href='drift.html'">Neon Drift Racer</a>
+      <a onclick="location.href='xo.html'">X/O Bot Duel</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span><span class="mark">◆</span> 2026 Yuvraj Soni Arcade</span>
+    <span>Designed &amp; developed in-house</span>
+  </div>
 </footer>
 
 <script>
@@ -281,9 +767,9 @@ bgm.volume=0.4;
 let musicStarted=false;
 
 function startMusic(){
-if(musicStarted)return;
-musicStarted=true;
-bgm.play().catch(()=>{});
+  if(musicStarted)return;
+  musicStarted=true;
+  bgm.play().catch(()=>{});
 }
 document.addEventListener("click",startMusic);
 document.addEventListener("touchstart",startMusic);
@@ -293,48 +779,136 @@ const LS_PLAYER_DATA="yuvraj_player_data_v1";
 let playerData={name:"",coins:0,xp:0,level:1};
 
 function loadPlayerData(){
-const saved=localStorage.getItem(LS_PLAYER_DATA);
-if(saved){playerData=JSON.parse(saved);}
+  const saved=localStorage.getItem(LS_PLAYER_DATA);
+  if(saved){playerData=JSON.parse(saved);}
 }
 
 function savePlayerData(){
-localStorage.setItem(LS_PLAYER_DATA,JSON.stringify(playerData));
+  localStorage.setItem(LS_PLAYER_DATA,JSON.stringify(playerData));
 }
 
 function calculateLevel(){
-playerData.level=Math.floor(playerData.xp/100)+1;
+  playerData.level=Math.floor(playerData.xp/100)+1;
 }
 
 function updateUI(){
-document.getElementById("playerName").textContent=playerData.name;
-document.getElementById("playerCoins").textContent=playerData.coins;
-document.getElementById("playerXP").textContent=playerData.xp;
-document.getElementById("playerLevel").textContent=playerData.level;
-document.getElementById("xpFill").style.width=(playerData.xp%100)+"%";
+  document.getElementById("playerName").textContent=playerData.name;
+  document.getElementById("playerCoins").textContent=playerData.coins;
+  document.getElementById("playerXP").textContent=playerData.xp;
+  document.getElementById("playerLevel").textContent=playerData.level;
+  document.getElementById("xpFill").style.width=(playerData.xp%100)+"%";
 }
 
 function goTo(id){
-document.getElementById(id).scrollIntoView({behavior:"smooth"});
+  document.getElementById(id).scrollIntoView({behavior:"smooth"});
 }
 
 function changeName(){
-const name=prompt("Enter new name:");
-if(name){
-playerData.name=name;
-savePlayerData();
-updateUI();
-}
+  const name=prompt("Enter new name:");
+  if(name){
+    playerData.name=name;
+    savePlayerData();
+    updateUI();
+  }
 }
 
 loadPlayerData();
-
 if(!playerData.name){
-playerData.name="Yuvraj Soni";
-savePlayerData();
+  playerData.name="Yuvraj Soni";
+  savePlayerData();
 }
-
 calculateLevel();
 updateUI();
+
+// ===== MOUSE PARALLAX ON BACKGROUND ORBS =====
+const orbs=document.querySelectorAll('.orb');
+let mouseX=0, mouseY=0, curX=0, curY=0;
+const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+window.addEventListener('mousemove',(e)=>{
+  mouseX=(e.clientX/window.innerWidth-0.5)*2;
+  mouseY=(e.clientY/window.innerHeight-0.5)*2;
+});
+
+function animateParallax(){
+  curX+=(mouseX-curX)*0.04;
+  curY+=(mouseY-curY)*0.04;
+  orbs.forEach(orb=>{
+    const depth=parseFloat(orb.dataset.depth)*100;
+    orb.style.transform=`translate(${curX*depth}px, ${curY*depth}px)`;
+  });
+  requestAnimationFrame(animateParallax);
+}
+if(!reduceMotion) animateParallax();
+
+window.addEventListener('scroll',()=>{
+  const y=window.scrollY;
+  document.querySelector('.grid-floor').style.transform=
+    `perspective(500px) rotateX(75deg) translateY(${y*0.08}px)`;
+},{passive:true});
+
+// ===== 3D TILT ON GAME CARDS =====
+document.querySelectorAll('.game-card').forEach(card=>{
+  card.addEventListener('mousemove',(e)=>{
+    const rect=card.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const y=e.clientY-rect.top;
+    const cx=rect.width/2;
+    const cy=rect.height/2;
+    const rotateX=((y-cy)/cy)*-7;
+    const rotateY=((x-cx)/cx)*7;
+    card.style.transform=`perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(0)`;
+    card.style.setProperty('--mx',`${(x/rect.width)*100}%`);
+    card.style.setProperty('--my',`${(y/rect.height)*100}%`);
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='perspective(700px) rotateX(0deg) rotateY(0deg)';
+  });
+});
+
+// ===== AMBIENT FLOATING SHARDS (always drifting) =====
+const shardField=document.getElementById('shardField');
+if(!reduceMotion){
+  const shardCount=18;
+  for(let i=0;i<shardCount;i++){
+    const s=document.createElement('div');
+    s.className='shard';
+    const size=6+Math.random()*10;
+    s.style.setProperty('--s',`${size}px`);
+    s.style.left=`${Math.random()*100}%`;
+    s.style.top=`${Math.random()*100}%`;
+    s.style.setProperty('--dur',`${14+Math.random()*14}s`);
+    s.style.setProperty('--delay',`${Math.random()*-20}s`);
+    shardField.appendChild(s);
+  }
+}
+
+// ===== SCROLL REVEAL =====
+const revealEls=document.querySelectorAll('.game-card, .feature-card, .step, .about-visual, .about-copy, .profile-card');
+revealEls.forEach(el=>{
+  el.style.opacity='0';
+  el.style.transform='translateY(24px)';
+  el.style.transition='opacity 0.7s cubic-bezier(.16,1,.3,1), transform 0.7s cubic-bezier(.16,1,.3,1)';
+});
+
+const io=new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.style.opacity='1';
+      entry.target.style.transform='translateY(0)';
+      io.unobserve(entry.target);
+    }
+  });
+},{threshold:0.15});
+
+revealEls.forEach(el=>io.observe(el));
+
+if(reduceMotion){
+  revealEls.forEach(el=>{
+    el.style.opacity='1';
+    el.style.transform='none';
+  });
+}
 </script>
 
 </body>
