@@ -652,6 +652,7 @@
     let gameState="loading"; // loading, ready, running, paused, over
     let speed=40, baseSpeed=40, spawnTimer=0, baseSpawnInterval=1.0;
     let baseFov=60;
+    let cameraLookY=2;
 
     const DIFF_CONFIG={
       easy:   {label:"Easy",   speedBase:40,speedMax:110,spawnBase:1.3,laneFactor:0.22},
@@ -866,6 +867,20 @@
       const isWide = (width/height) > 1.2;
       baseFov = isWide ? 50 : 60;
       camera.fov = baseFov;
+
+      // A tall viewport has lots of vertical headroom, so the camera can sit
+      // high and look steeply down without losing the player's car off the
+      // bottom edge. A wide viewport has much less vertical coverage at the
+      // same FOV, so the same camera position crops the car out of frame.
+      // Pull the camera lower and closer, and level the look-at point, so
+      // the car stays fully visible on wide/desktop screens.
+      if(isWide){
+        camera.position.set(0,4.4,9.5);
+        cameraLookY=1.6;
+      } else {
+        camera.position.set(0,6.3,12);
+        cameraLookY=2;
+      }
       camera.updateProjectionMatrix();
     }
 
@@ -1135,7 +1150,7 @@
       // subtle FOV widening at speed for a sense of velocity
       camera.fov=baseFov+Math.max(0,Math.min(speedFactor,1))*6;
       camera.updateProjectionMatrix();
-      camera.lookAt(0,2,-10);
+      camera.lookAt(0,cameraLookY,-10);
     }
 
     function render(){ renderer.render(scene,camera); }
