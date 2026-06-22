@@ -666,6 +666,1044 @@
   <div id="footerName">Game owner: <strong>Yuvraj Soni</strong></div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
-  <script src="space-game.js"></script>
+  
+  <script>
+// ============================================================
+// NEON SPACE RUNNER 3D — by Yuvraj Soni Arcade
+// Full Three.js rebuild: procedural ship/asteroids (no external
+// model files needed), power-ups, coins, combos, boss fights,
+// achievements, and a shared arcade profile (XP/coins).
+// ============================================================
+
+(function () {
+  "use strict";
+
+  // ===== DOM =====
+  const container   = document.getElementById("threeContainer");
+  const hintEl      = document.getElementById("hintBox");
+  const hudScore    = document.getElementById("hud-score");
+  const hudBest     = document.getElementById("hud-best");
+  const hudCoins    = document.getElementById("hud-coins");
+  const healthFill  = document.getElementById("healthFill");
+  const comboBadge  = document.getElementById("comboBadge");
+  const achToast    = document.getElementById("achToast");
+  const bossBar     = document.getElementById("bossBar");
+  const bossHealthFill = document.getElementById("bossHealthFill");
+  const powerupBar  = document.getElementById("powerupBar");
+
+  const setupOverlay  = document.getElementById("setupOverlay");
+  const resultOverlay = document.getElementById("resultOverlay");
+  const pauseOverlay  = document.getElementById("pauseOverlay");
+  const btnDiffEasy   = document.getElementById("btnDiffEasy");
+  const btnDiffMedium = document.getElementById("btnDiffMedium");
+  const btnDiffHard   = document.getElementById("btnDiffHard");
+  const btnStartRun   = document.getElementById("btnStartRun");
+  const btnResultAgain = document.getElementById("btnResultAgain");
+  const btnResultChange= document.getElementById("btnResultChange");
+  const btnPause      = document.getElementById("pauseBtn");
+  const btnResume     = document.getElementById("btnResume");
+  const btnPauseQuit  = document.getElementById("btnPauseQuit");
+  const fireBtnMobile = document.getElementById("fireBtnMobile");
+
+  const resultTitle   = document.getElementById("resultTitle");
+  const resultEyebrow = document.getElementById("resultEyebrow");
+  const newBestTag    = document.getElementById("newBestTag");
+  const statScore     = document.getElementById("statScore");
+  const statBest      = document.getElementById("statBest");
+  const statCoins     = document.getElementById("statCoins");
+  const statCombo     = document.getElementById("statCombo");
+  const achUnlockedWrap = document.getElementById("achUnlockedWrap");
+  const achUnlockedList = document.getElementById("achUnlockedList");
+
+  // ===== Sounds (same filenames as before) =====
+  const engineSound    = new Audio("engine.mp3");
+  const explosionSound = new Audio("explosion.mp3");
+  const laserSound     = new Audio("laser.mp3");
+  engineSound.loop = true;
+  engineSound.volume = 0.45;
+  explosionSound.volume = 0.85;
+  laserSound.volume = 0.6;
+
+  let audioUnlocked = false;
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    [explosionSound, laserSound].forEach((s) => {
+      try {
+        s.currentTime = 0;
+        s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(() => {});
+      } catch (e) {}
+    });
+  }
+  function playSound(s) {
+    if (!s) return;
+    try { s.currentTime = 0; s.play().catch(() => {}); } catch (e) {}
+  }
+  function startEngine() { try { engineSound.currentTime = 0; engineSound.play().catch(() => {}); } catch (e) {} }
+  function stopEngine() { try { engineSound.pause(); } catch (e) {} }
+
+  // ===== Persistence =====
+  const LS_BEST = "space3d_best_score_v1";
+  const LS_ACH  = "space3d_achievements_v1";
+  const LS_PLAYER_DATA = "yuvraj_player_data_v1"; // shared arcade-wide profile
+
+  let bestScore = 0;
+  let achievements = {
+    noob: false,    // score 150+
+    pro: false,     // score 350+
+    legend: false,  // score 600+
+    hacker: false,  // score 800+
+    sniper: false,  // 20 kills in one run
+    survivor: false,// beat first boss
+    collector: false// 50 coins in one run
+  };
+
+  const ACH_META = {
+    noob:      { icon: "🥉", title: "Noob",      desc: "Reach score 150" },
+    pro:       { icon: "🥈", title: "Pro",        desc: "Reach score 350" },
+    legend:    { icon: "🥇", title: "Legend",     desc: "Reach score 600" },
+    hacker:    { icon: "💠", title: "Hacker",     desc: "Reach score 800" },
+    sniper:    { icon: "🎯", title: "Sniper",     desc: "20 kills in one run" },
+    survivor:  { icon: "🛡️", title: "Survivor",   desc: "Defeat a Sentinel" },
+    collector: { icon: "🪙", title: "Collector",  desc: "Collect 50 coins in one run" }
+  };
+
+  function loadProgress() {
+    try {
+      const b = localStorage.getItem(LS_BEST);
+      if (b !== null) bestScore = parseInt(b, 10) || 0;
+      const a = localStorage.getItem(LS_ACH);
+      if (a) achievements = Object.assign(achievements, JSON.parse(a));
+    } catch (e) {}
+    hudBest.textContent = Math.floor(bestScore);
+  }
+  function saveProgress() {
+    try {
+      localStorage.setItem(LS_BEST, String(bestScore));
+      localStorage.setItem(LS_ACH, JSON.stringify(achievements));
+    } catch (e) {}
+  }
+
+  // Feed XP/coins into the shared arcade-wide profile (homepage reads this)
+  function addToArcadeProfile(xpGained, coinsGained) {
+    try {
+      const raw = localStorage.getItem(LS_PLAYER_DATA);
+      let data = raw ? JSON.parse(raw) : { name: "Yuvraj Soni", coins: 0, xp: 0, level: 1 };
+      data.coins = (data.coins || 0) + coinsGained;
+      data.xp = (data.xp || 0) + xpGained;
+      data.level = Math.floor(data.xp / 100) + 1;
+      localStorage.setItem(LS_PLAYER_DATA, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  let comboHideTimer = null;
+  function showCombo(n) {
+    comboBadge.textContent = "Combo ×" + n;
+    comboBadge.classList.add("show");
+    clearTimeout(comboHideTimer);
+    comboHideTimer = setTimeout(() => comboBadge.classList.remove("show"), 900);
+  }
+
+  let achToastTimer = null;
+  function showAchToast(text) {
+    achToast.textContent = "🏆 " + text;
+    achToast.classList.add("show");
+    clearTimeout(achToastTimer);
+    achToastTimer = setTimeout(() => achToast.classList.remove("show"), 2200);
+  }
+
+  const newlyUnlocked = [];
+  function checkAchievements(ctx) {
+    const checks = [
+      ["noob", ctx.score >= 150],
+      ["pro", ctx.score >= 350],
+      ["legend", ctx.score >= 600],
+      ["hacker", ctx.score >= 800],
+      ["sniper", ctx.kills >= 20],
+      ["survivor", ctx.bossesDefeated >= 1],
+      ["collector", ctx.coinsThisRun >= 50]
+    ];
+    for (const [key, unlocked] of checks) {
+      if (unlocked && !achievements[key]) {
+        achievements[key] = true;
+        newlyUnlocked.push(key);
+        showAchToast(ACH_META[key].title + " unlocked");
+        saveProgress();
+      }
+    }
+  }
+
+  // ===== Difficulty =====
+  const DIFF = {
+    easy:   { label: "Easy",   spawnBase: 0.85, speedBase: 26, speedMax: 46, asteroidHp: 1, bossHp: 10 },
+    medium: { label: "Medium", spawnBase: 0.6,  speedBase: 34, speedMax: 58, asteroidHp: 1, bossHp: 16 },
+    hard:   { label: "Hard",   spawnBase: 0.42, speedBase: 42, speedMax: 72, asteroidHp: 2, bossHp: 24 }
+  };
+  let difficulty = "easy";
+
+  function isOverlayVisible(el) { return el && !el.classList.contains("hidden"); }
+  function setDifficulty(d) {
+    difficulty = d;
+    btnDiffEasy.classList.toggle("active", d === "easy");
+    btnDiffMedium.classList.toggle("active", d === "medium");
+    btnDiffHard.classList.toggle("active", d === "hard");
+  }
+
+  // ===== Three.js core =====
+  let scene, camera, renderer, clock;
+  let baseFov = 62, cameraLookY = 0;
+
+  const PLAY_HALF_W = 4.6;
+  const PLAY_HALF_H = 3.0;
+
+  const ship = { mesh: null, vx: 0, vy: 0, x: 0, y: 0, radius: 0.55, hp: 3, maxHp: 3, alive: true, invuln: 0 };
+  let shipThrust = null;
+  let shieldMesh = null;
+
+  const asteroids = []; // {mesh, x,y,z, radius, hp, vrot}
+  const bullets = [];   // {mesh, z}
+  const coins = [];     // {mesh, x,y,z, spin}
+  const powerupOrbs = []; // {mesh, x,y,z, type}
+  const particles = []; // generic floating particles for ambience
+  let starField = null;
+  let boss = null; // {group, hp, maxHp, x, y, z, phase}
+
+  let gameState = "loading"; // loading, ready, running, paused, over
+  let score = 0, coinsThisRun = 0, kills = 0, bossesDefeated = 0;
+  let combo = 0, maxCombo = 0;
+  let spawnTimer = 0, coinSpawnTimer = 0, powerupSpawnTimer = 0;
+  let elapsedDistance = 0;
+  let bossActive = false, bossSpawnedAt = 0;
+
+  // Power-up state
+  const POWERUP_TYPES = ["shield", "rapid", "magnet", "slowmo"];
+  const POWERUP_META = {
+    shield: { icon: "🛡️", label: "Shield", duration: 8 },
+    rapid:  { icon: "⚡", label: "Rapid Fire", duration: 7 },
+    magnet: { icon: "🧲", label: "Magnet", duration: 8 },
+    slowmo: { icon: "🐢", label: "Slow-Mo", duration: 5 }
+  };
+  let activePowerups = {}; // type -> remaining seconds
+  const powerupChips = {}; // type -> dom element
+
+  let moveUp = false, moveDown = false, moveLeft = false, moveRight = false;
+  let pointerActive = false, pointerStartX = 0, pointerStartY = 0, shipStartX = 0, shipStartY = 0;
+  let bulletCooldown = 0;
+  const BULLET_COOLDOWN_BASE = 0.22;
+  const BULLET_COOLDOWN_RAPID = 0.09;
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // ---------- Scene setup ----------
+  function initThree() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050507);
+    scene.fog = new THREE.Fog(0x050507, 18, 110);
+
+    const aspect = container.clientWidth / container.clientHeight;
+    camera = new THREE.PerspectiveCamera(baseFov, aspect, 0.1, 200);
+    camera.position.set(0, 0, 10);
+    camera.lookAt(0, 0, -10);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    clock = new THREE.Clock();
+
+    scene.add(new THREE.AmbientLight(0x9fb4ff, 0.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(5, 8, 6);
+    scene.add(dir);
+    const rim = new THREE.PointLight(0x00e5ff, 1.2, 40);
+    rim.position.set(0, 0, 6);
+    scene.add(rim);
+
+    buildStarfield();
+    buildNebula();
+    buildShip();
+
+    onWindowResize();
+    window.addEventListener("resize", onWindowResize);
+
+    modelsReady();
+  }
+
+  function onWindowResize() {
+    if (!renderer || !camera) return;
+    const width = container.clientWidth || 400;
+    const height = container.clientHeight || 600;
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    const isWide = width / height > 1.2;
+    baseFov = isWide ? 56 : 64;
+    camera.fov = baseFov;
+    camera.updateProjectionMatrix();
+  }
+
+  function modelsReady() {
+    hintEl.textContent = "Tap Launch, then steer with arrows / drag. E or tap ⚡ to fire.";
+    openSetupOverlay();
+  }
+
+  // ---------- Starfield & nebula (ambient depth) ----------
+  function buildStarfield() {
+    const count = 900;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 120;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 80;
+      positions[i * 3 + 2] = -Math.random() * 160;
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.14, transparent: true, opacity: 0.85 });
+    starField = new THREE.Points(geom, mat);
+    scene.add(starField);
+  }
+
+  function buildNebula() {
+    const colors = [0x00e5ff, 0x7c4dff];
+    for (let i = 0; i < 4; i++) {
+      const geom = new THREE.SphereGeometry(10 + Math.random() * 8, 16, 16);
+      const mat = new THREE.MeshBasicMaterial({
+        color: colors[i % 2], transparent: true, opacity: 0.045, depthWrite: false
+      });
+      const blob = new THREE.Mesh(geom, mat);
+      blob.position.set((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 20, -40 - Math.random() * 60);
+      scene.add(blob);
+    }
+  }
+
+  // ---------- Ship (procedural geometry, no external model needed) ----------
+  function buildShip() {
+    const group = new THREE.Group();
+
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a24, metalness: 0.75, roughness: 0.3 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00e5ff, emissiveIntensity: 0.6, metalness: 0.5, roughness: 0.3 });
+    const cockpitMat = new THREE.MeshStandardMaterial({ color: 0x7c4dff, emissive: 0x7c4dff, emissiveIntensity: 0.5, metalness: 0.2, roughness: 0.15, transparent: true, opacity: 0.85 });
+
+    // Fuselage
+    const fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.5, 8), bodyMat);
+    fuselage.rotation.x = Math.PI / 2;
+    group.add(fuselage);
+
+    // Wings
+    const wingGeom = new THREE.BoxGeometry(1.5, 0.06, 0.5);
+    const wingL = new THREE.Mesh(wingGeom, bodyMat);
+    wingL.position.set(-0.55, 0, 0.1);
+    wingL.rotation.z = 0.12;
+    group.add(wingL);
+    const wingR = wingL.clone();
+    wingR.position.x = 0.55;
+    wingR.rotation.z = -0.12;
+    group.add(wingR);
+
+    // Wingtip accents
+    const tipGeom = new THREE.BoxGeometry(0.08, 0.08, 0.5);
+    const tipL = new THREE.Mesh(tipGeom, accentMat);
+    tipL.position.set(-1.25, 0, 0.1);
+    group.add(tipL);
+    const tipR = tipL.clone();
+    tipR.position.x = 1.25;
+    group.add(tipR);
+
+    // Cockpit
+    const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), cockpitMat);
+    cockpit.position.set(0, 0.12, 0.35);
+    group.add(cockpit);
+
+    // Engine glow (thrust)
+    const thrustMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.85 });
+    const thrust = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.6, 8), thrustMat);
+    thrust.rotation.x = -Math.PI / 2;
+    thrust.position.set(0, 0, -0.95);
+    group.add(thrust);
+    shipThrust = thrust;
+
+    group.rotation.y = Math.PI;
+    group.position.set(0, 0, 0);
+    scene.add(group);
+    ship.mesh = group;
+
+    // Shield visual (hidden until powerup active)
+    const shieldGeom = new THREE.SphereGeometry(0.85, 16, 16);
+    const shieldMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.18, wireframe: true });
+    shieldMesh = new THREE.Mesh(shieldGeom, shieldMat);
+    shieldMesh.visible = false;
+    group.add(shieldMesh);
+  }
+
+  // ---------- Asteroids (procedural, irregular per-instance) ----------
+  function makeAsteroidGeometry() {
+    const geom = new THREE.IcosahedronGeometry(1, 1);
+    const pos = geom.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const ox = pos.getX(i), oy = pos.getY(i), oz = pos.getZ(i);
+      const n = 0.78 + Math.random() * 0.4;
+      pos.setXYZ(i, ox * n, oy * n, oz * n);
+    }
+    geom.computeVertexNormals();
+    return geom;
+  }
+
+  function spawnAsteroid(cfg) {
+    const radius = 0.4 + Math.random() * 0.7;
+    const geom = makeAsteroidGeometry();
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x35303a, roughness: 0.95, metalness: 0.05,
+      emissive: Math.random() < 0.3 ? 0xff4d6d : 0x000000,
+      emissiveIntensity: 0.15
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.scale.setScalar(radius);
+    const x = (Math.random() * 2 - 1) * PLAY_HALF_W;
+    const y = (Math.random() * 2 - 1) * PLAY_HALF_H;
+    const z = -70 - Math.random() * 20;
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    asteroids.push({
+      mesh, radius, hp: cfg.asteroidHp,
+      vrot: new THREE.Vector3((Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 1.4),
+      drift: (Math.random() - 0.5) * 0.6
+    });
+  }
+
+  function spawnCoin() {
+    const geom = new THREE.OctahedronGeometry(0.18, 0);
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffc93c, emissive: 0xffc93c, emissiveIntensity: 0.7, metalness: 0.6, roughness: 0.2 });
+    const mesh = new THREE.Mesh(geom, mat);
+    const x = (Math.random() * 2 - 1) * PLAY_HALF_W * 0.85;
+    const y = (Math.random() * 2 - 1) * PLAY_HALF_H * 0.85;
+    const z = -70 - Math.random() * 20;
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    coins.push({ mesh, spin: 2 + Math.random() * 2 });
+  }
+
+  function spawnPowerup() {
+    const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+    const colorMap = { shield: 0x00e5ff, rapid: 0xff4d6d, magnet: 0xffc93c, slowmo: 0x3ddc84 };
+    const geom = new THREE.TorusGeometry(0.22, 0.07, 10, 18);
+    const mat = new THREE.MeshStandardMaterial({ color: colorMap[type], emissive: colorMap[type], emissiveIntensity: 0.8, metalness: 0.4, roughness: 0.2 });
+    const mesh = new THREE.Mesh(geom, mat);
+    const x = (Math.random() * 2 - 1) * PLAY_HALF_W * 0.7;
+    const y = (Math.random() * 2 - 1) * PLAY_HALF_H * 0.7;
+    const z = -70 - Math.random() * 15;
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    powerupOrbs.push({ mesh, type, spin: 1.5 });
+  }
+
+  // ---------- Boss (asteroid sentinel) ----------
+  function spawnBoss(cfg) {
+    const group = new THREE.Group();
+    const coreGeom = makeAsteroidGeometry();
+    const coreMat = new THREE.MeshStandardMaterial({ color: 0x2a2230, roughness: 0.9, emissive: 0xff4d6d, emissiveIntensity: 0.25 });
+    const core = new THREE.Mesh(coreGeom, coreMat);
+    core.scale.setScalar(1.7);
+    group.add(core);
+
+    // Orbiting shard rings (visual + later could be hazards)
+    for (let i = 0; i < 3; i++) {
+      const shardGeom = makeAsteroidGeometry();
+      const shardMat = new THREE.MeshStandardMaterial({ color: 0x3a3242, roughness: 0.9 });
+      const shard = new THREE.Mesh(shardGeom, shardMat);
+      shard.scale.setScalar(0.35);
+      shard.userData.orbitAngle = (i / 3) * Math.PI * 2;
+      shard.userData.orbitRadius = 1.8;
+      group.add(shard);
+    }
+
+    group.position.set(0, 0, -75);
+    scene.add(group);
+    boss = { group, hp: cfg.bossHp, maxHp: cfg.bossHp, t: 0 };
+    bossActive = true;
+    bossBar.classList.add("show");
+    updateBossBar();
+    hintEl.textContent = "Sentinel detected — focus fire on the core!";
+  }
+
+  function updateBossBar() {
+    if (!boss) return;
+    bossHealthFill.style.width = clamp((boss.hp / boss.maxHp) * 100, 0, 100) + "%";
+  }
+
+  function destroyBoss() {
+    if (!boss) return;
+    triggerExplosionAt(boss.group.position.x, boss.group.position.y, boss.group.position.z, 2.2);
+    scene.remove(boss.group);
+    boss = null;
+    bossActive = false;
+    bossBar.classList.remove("show");
+    bossesDefeated++;
+    score += 200;
+    coinsThisRun += 20;
+    showCombo("BOSS DOWN +200");
+  }
+
+  // ---------- Explosions ----------
+  function triggerExplosionAt(x, y, z, scaleMul) {
+    const geom = new THREE.SphereGeometry(0.5, 14, 14);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 1 });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    particles.push({ mesh, radius: 0.5, alpha: 1, growth: 9 * (scaleMul || 1), fade: 2.2 });
+    playSound(explosionSound);
+  }
+
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.radius += p.growth * dt;
+      p.alpha -= p.fade * dt;
+      if (p.alpha <= 0) {
+        scene.remove(p.mesh);
+        particles.splice(i, 1);
+        continue;
+      }
+      p.mesh.scale.setScalar(p.radius);
+      p.mesh.material.opacity = Math.max(0, p.alpha);
+    }
+  }
+
+  // ---------- Bullets ----------
+  function fireBullet() {
+    if (gameState !== "running" || !ship.alive) return;
+    if (bulletCooldown > 0) return;
+    const geom = new THREE.CylinderGeometry(0.04, 0.04, 0.6, 6);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.set(ship.x, ship.y, -0.6);
+    scene.add(mesh);
+    bullets.push({ mesh });
+    bulletCooldown = activePowerups.rapid ? BULLET_COOLDOWN_RAPID : BULLET_COOLDOWN_BASE;
+    playSound(laserSound);
+  }
+
+  function updateBullets(dt) {
+    const BULLET_SPEED = 60;
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      b.mesh.position.z -= BULLET_SPEED * dt;
+      if (b.mesh.position.z < -90) {
+        scene.remove(b.mesh);
+        bullets.splice(i, 1);
+      }
+    }
+  }
+
+  // ---------- Power-up chips UI ----------
+  function ensureChip(type) {
+    if (powerupChips[type]) return powerupChips[type];
+    const el = document.createElement("div");
+    el.className = "powerup-chip";
+    el.innerHTML = '<span class="ic">' + POWERUP_META[type].icon + '</span><span class="lbl">' + POWERUP_META[type].label + '</span><span class="t">0s</span>';
+    powerupBar.appendChild(el);
+    powerupChips[type] = el;
+    return el;
+  }
+
+  function activatePowerup(type) {
+    activePowerups[type] = POWERUP_META[type].duration;
+    const chip = ensureChip(type);
+    chip.classList.add("show");
+    if (type === "shield") { shieldMesh.visible = true; ship.invuln = Math.max(ship.invuln, activePowerups[type]); }
+  }
+
+  function updatePowerups(dt) {
+    for (const type of Object.keys(activePowerups)) {
+      activePowerups[type] -= dt;
+      const chip = powerupChips[type];
+      if (chip) {
+        const t = chip.querySelector(".t");
+        if (t) t.textContent = Math.max(0, Math.ceil(activePowerups[type])) + "s";
+      }
+      if (activePowerups[type] <= 0) {
+        delete activePowerups[type];
+        if (chip) chip.classList.remove("show");
+        if (type === "shield") shieldMesh.visible = false;
+      }
+    }
+  }
+
+  // ---------- Ship movement ----------
+  function updateShip(dt) {
+    if (!ship.alive) return;
+    const accel = 16, maxSpeed = 7, damping = 8;
+
+    let ax = 0, ay = 0;
+    if (moveUp) ay += 1;
+    if (moveDown) ay -= 1;
+    if (moveLeft) ax -= 1;
+    if (moveRight) ax += 1;
+
+    ship.vx += ax * accel * dt;
+    ship.vy += ay * accel * dt;
+    ship.vx -= ship.vx * damping * dt;
+    ship.vy -= ship.vy * damping * dt;
+    ship.vx = clamp(ship.vx, -maxSpeed, maxSpeed);
+    ship.vy = clamp(ship.vy, -maxSpeed, maxSpeed);
+
+    ship.x = clamp(ship.x + ship.vx * dt, -PLAY_HALF_W, PLAY_HALF_W);
+    ship.y = clamp(ship.y + ship.vy * dt, -PLAY_HALF_H, PLAY_HALF_H);
+
+    if (ship.mesh) {
+      ship.mesh.position.x = ship.x;
+      ship.mesh.position.y = ship.y;
+      ship.mesh.rotation.z = clamp(-ship.vx * 0.12, -0.5, 0.5);
+      ship.mesh.rotation.x = Math.PI / -2 + clamp(ship.vy * 0.06, -0.3, 0.3);
+      if (shipThrust) shipThrust.scale.z = 1 + Math.random() * 0.4;
+    }
+    if (ship.invuln > 0) ship.invuln -= dt;
+  }
+
+  // ---------- Collisions ----------
+  function checkCollisions(cfg, dt) {
+    // bullets vs asteroids
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      let hit = false;
+      for (let j = asteroids.length - 1; j >= 0; j--) {
+        const a = asteroids[j];
+        const dx = a.mesh.position.x - b.mesh.position.x;
+        const dy = a.mesh.position.y - b.mesh.position.y;
+        const dz = a.mesh.position.z - b.mesh.position.z;
+        if (Math.sqrt(dx * dx + dy * dy + dz * dz) < a.radius + 0.3) {
+          a.hp--;
+          if (a.hp <= 0) {
+            triggerExplosionAt(a.mesh.position.x, a.mesh.position.y, a.mesh.position.z, 0.7);
+            scene.remove(a.mesh);
+            asteroids.splice(j, 1);
+            kills++;
+            combo++;
+            if (combo > maxCombo) maxCombo = combo;
+            if (combo >= 3) showCombo(combo);
+            score += 12 + Math.min(combo, 10) * 2;
+          }
+          hit = true;
+          break;
+        }
+      }
+      // bullets vs boss
+      if (!hit && boss) {
+        const bp = boss.group.position;
+        const dx = bp.x - b.mesh.position.x;
+        const dy = bp.y - b.mesh.position.y;
+        const dz = bp.z - b.mesh.position.z;
+        if (Math.sqrt(dx * dx + dy * dy + dz * dz) < 2.0) {
+          boss.hp--;
+          updateBossBar();
+          triggerExplosionAt(b.mesh.position.x, b.mesh.position.y, b.mesh.position.z, 0.35);
+          hit = true;
+          if (boss.hp <= 0) destroyBoss();
+        }
+      }
+      if (hit) {
+        scene.remove(b.mesh);
+        bullets.splice(i, 1);
+      }
+    }
+
+    // ship vs asteroids
+    if (ship.invuln <= 0) {
+      for (let j = asteroids.length - 1; j >= 0; j--) {
+        const a = asteroids[j];
+        const dx = a.mesh.position.x - ship.x;
+        const dy = a.mesh.position.y - ship.y;
+        const dz = a.mesh.position.z - 0;
+        if (Math.sqrt(dx * dx + dy * dy + dz * dz) < a.radius + ship.radius) {
+          scene.remove(a.mesh);
+          asteroids.splice(j, 1);
+          damageShip();
+          combo = 0;
+        }
+      }
+      if (boss) {
+        const bp = boss.group.position;
+        const dx = bp.x - ship.x, dy = bp.y - ship.y, dz = bp.z;
+        if (Math.sqrt(dx * dx + dy * dy + dz * dz) < 2.4) {
+          damageShip();
+          boss.group.position.z += 3; // knockback
+        }
+      }
+    }
+
+    // ship vs coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i];
+      const dx = c.mesh.position.x - ship.x;
+      const dy = c.mesh.position.y - ship.y;
+      const dz = c.mesh.position.z;
+      const range = activePowerups.magnet ? 4.5 : 0.7;
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < range) {
+        scene.remove(c.mesh);
+        coins.splice(i, 1);
+        coinsThisRun++;
+        score += 5;
+      }
+    }
+
+    // ship vs powerups
+    for (let i = powerupOrbs.length - 1; i >= 0; i--) {
+      const p = powerupOrbs[i];
+      const dx = p.mesh.position.x - ship.x;
+      const dy = p.mesh.position.y - ship.y;
+      const dz = p.mesh.position.z;
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < 0.85) {
+        scene.remove(p.mesh);
+        powerupOrbs.splice(i, 1);
+        activatePowerup(p.type);
+      }
+    }
+  }
+
+  function damageShip() {
+    ship.hp--;
+    ship.invuln = 1.2;
+    triggerExplosionAt(ship.x, ship.y, 0, 0.5);
+    healthFill.style.width = clamp((ship.hp / ship.maxHp) * 100, 0, 100) + "%";
+    if (ship.hp <= 0) {
+      handleGameOver();
+    }
+  }
+
+  // ---------- Field updates ----------
+  function updateField(dt, cfg, speed) {
+    for (let i = asteroids.length - 1; i >= 0; i--) {
+      const a = asteroids[i];
+      a.mesh.position.z += speed * dt;
+      a.mesh.position.x += a.drift * dt;
+      a.mesh.rotation.x += a.vrot.x * dt;
+      a.mesh.rotation.y += a.vrot.y * dt;
+      if (a.mesh.position.z > 12) {
+        scene.remove(a.mesh);
+        asteroids.splice(i, 1);
+      }
+    }
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i];
+      c.mesh.position.z += speed * dt;
+      c.mesh.rotation.y += c.spin * dt;
+      if (c.mesh.position.z > 12) {
+        scene.remove(c.mesh);
+        coins.splice(i, 1);
+      }
+    }
+    for (let i = powerupOrbs.length - 1; i >= 0; i--) {
+      const p = powerupOrbs[i];
+      p.mesh.position.z += speed * dt;
+      p.mesh.rotation.x += p.spin * dt;
+      p.mesh.rotation.y += p.spin * 0.7 * dt;
+      if (p.mesh.position.z > 12) {
+        scene.remove(p.mesh);
+        powerupOrbs.splice(i, 1);
+      }
+    }
+    if (boss) {
+      boss.t += dt;
+      boss.group.position.x = Math.sin(boss.t * 0.6) * 2.2;
+      boss.group.position.y = Math.cos(boss.t * 0.4) * 1.2;
+      boss.group.rotation.y += 0.3 * dt;
+      boss.group.children.forEach((child, idx) => {
+        if (child.userData.orbitAngle !== undefined) {
+          child.userData.orbitAngle += dt * 0.8;
+          const r = child.userData.orbitRadius;
+          child.position.set(Math.cos(child.userData.orbitAngle) * r, Math.sin(child.userData.orbitAngle) * r * 0.6, 0);
+        }
+      });
+      // boss slowly approaches then holds
+      if (boss.group.position.z < -18) boss.group.position.z += speed * dt * 0.4;
+    }
+
+    if (starField) {
+      const pos = starField.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        let z = pos.getZ(i) + speed * dt * 0.6;
+        if (z > 10) z -= 160;
+        pos.setZ(i, z);
+      }
+      pos.needsUpdate = true;
+    }
+  }
+
+  // ---------- Overlay helpers ----------
+  function openSetupOverlay() { setupOverlay.classList.remove("hidden"); }
+  function closeSetupOverlay() { setupOverlay.classList.add("hidden"); }
+  function closeResultOverlay() { resultOverlay.classList.add("hidden"); }
+
+  function openResultOverlay(crashed) {
+    const isNewBest = score >= bestScore && score > 0;
+    resultEyebrow.textContent = crashed ? "Run Ended" : "Run Complete";
+    resultTitle.textContent = crashed ? "Hull breached" : "Run finished";
+    newBestTag.style.display = isNewBest ? "inline-block" : "none";
+    statScore.textContent = Math.floor(score);
+    statBest.textContent = Math.floor(bestScore);
+    statCoins.textContent = coinsThisRun;
+    statCombo.textContent = maxCombo;
+
+    if (newlyUnlocked.length > 0) {
+      achUnlockedWrap.style.display = "block";
+      achUnlockedList.innerHTML = "";
+      newlyUnlocked.forEach((key) => {
+        const meta = ACH_META[key];
+        const row = document.createElement("div");
+        row.className = "ach-row";
+        row.innerHTML = '<span class="ic">' + meta.icon + '</span><span class="txt"><b>' + meta.title + '</b><span>' + meta.desc + '</span></span>';
+        achUnlockedList.appendChild(row);
+      });
+    } else {
+      achUnlockedWrap.style.display = "none";
+    }
+    resultOverlay.classList.remove("hidden");
+  }
+
+  // ---------- Game flow ----------
+  function clearField() {
+    for (const a of asteroids) scene.remove(a.mesh);
+    asteroids.length = 0;
+    for (const b of bullets) scene.remove(b.mesh);
+    bullets.length = 0;
+    for (const c of coins) scene.remove(c.mesh);
+    coins.length = 0;
+    for (const p of powerupOrbs) scene.remove(p.mesh);
+    powerupOrbs.length = 0;
+    for (const p of particles) scene.remove(p.mesh);
+    particles.length = 0;
+    if (boss) { scene.remove(boss.group); boss = null; }
+    bossActive = false;
+    bossBar.classList.remove("show");
+    Object.keys(powerupChips).forEach((t) => powerupChips[t].classList.remove("show"));
+    activePowerups = {};
+    if (shieldMesh) shieldMesh.visible = false;
+  }
+
+  function resetGameState() {
+    score = 0; coinsThisRun = 0; kills = 0; bossesDefeated = 0;
+    combo = 0; maxCombo = 0;
+    spawnTimer = 0; coinSpawnTimer = 1; powerupSpawnTimer = 6;
+    elapsedDistance = 0;
+    ship.hp = ship.maxHp; ship.alive = true; ship.invuln = 1.0;
+    ship.x = 0; ship.y = 0; ship.vx = 0; ship.vy = 0;
+    if (ship.mesh) ship.mesh.position.set(0, 0, 0);
+    healthFill.style.width = "100%";
+    newlyUnlocked.length = 0;
+    clearField();
+    gameState = "ready";
+    hudScore.textContent = "0";
+    hudCoins.textContent = "0";
+  }
+
+  function startGame() {
+    resetGameState();
+    gameState = "running";
+    startEngine();
+    closeSetupOverlay();
+    closeResultOverlay();
+    pauseOverlay.classList.add("hidden");
+  }
+
+  function handleGameOver() {
+    if (gameState === "over") return;
+    gameState = "over";
+    ship.alive = false;
+    stopEngine();
+    triggerExplosionAt(ship.x, ship.y, 0, 1.4);
+    if (score > bestScore) bestScore = score;
+    checkAchievements({ score, kills, bossesDefeated, coinsThisRun });
+    saveProgress();
+    addToArcadeProfile(Math.floor(score * 0.5), coinsThisRun);
+    hudBest.textContent = Math.floor(bestScore);
+    openResultOverlay(true);
+  }
+
+  function togglePause() {
+    if (gameState === "running") {
+      gameState = "paused";
+      stopEngine();
+      pauseOverlay.classList.remove("hidden");
+    } else if (gameState === "paused") {
+      gameState = "running";
+      startEngine();
+      pauseOverlay.classList.add("hidden");
+    }
+  }
+
+  // ---------- Main update ----------
+  function updateGame(dt) {
+    if (gameState !== "running") {
+      updateParticles(dt);
+      return;
+    }
+    const cfg = DIFF[difficulty];
+    const slow = activePowerups.slowmo ? 0.5 : 1;
+    const speed = clamp(cfg.speedBase + elapsedDistance * 0.02, cfg.speedBase, cfg.speedMax) * slow;
+
+    elapsedDistance += speed * dt;
+    score += speed * dt * 0.4;
+    hudScore.textContent = Math.floor(score);
+    hudCoins.textContent = coinsThisRun;
+    if (score > bestScore) bestScore = score;
+
+    if (bulletCooldown > 0) bulletCooldown -= dt;
+
+    updateShip(dt);
+    updateBullets(dt);
+    updatePowerups(dt);
+
+    if (!bossActive) {
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        spawnAsteroid(cfg);
+        const base = cfg.spawnBase;
+        spawnTimer = base * 0.7 + Math.random() * base * 0.6;
+      }
+      coinSpawnTimer -= dt;
+      if (coinSpawnTimer <= 0) {
+        spawnCoin();
+        coinSpawnTimer = 1.4 + Math.random() * 1.2;
+      }
+      powerupSpawnTimer -= dt;
+      if (powerupSpawnTimer <= 0) {
+        spawnPowerup();
+        powerupSpawnTimer = 14 + Math.random() * 8;
+      }
+      // boss trigger every 1000 score-distance units
+      if (Math.floor(elapsedDistance / 1000) > bossSpawnedAt) {
+        bossSpawnedAt = Math.floor(elapsedDistance / 1000);
+        spawnBoss(cfg);
+      }
+    }
+
+    updateField(dt, cfg, speed);
+    checkCollisions(cfg, dt);
+    updateParticles(dt);
+
+    // camera feel: slight drift toward ship position + speed shake
+    const speedFactor = clamp((speed - cfg.speedBase) / (cfg.speedMax - cfg.speedBase + 0.001), 0, 1);
+    camera.position.x = ship.x * 0.18 + Math.sin(performance.now() * 0.002) * speedFactor * 0.05;
+    camera.position.y = ship.y * 0.14;
+    camera.fov = baseFov + speedFactor * 5;
+    camera.updateProjectionMatrix();
+    camera.lookAt(ship.x * 0.4, ship.y * 0.4, -10);
+
+    if (shieldMesh && shieldMesh.visible) {
+      shieldMesh.rotation.y += dt * 1.5;
+      shieldMesh.rotation.x += dt * 0.8;
+    }
+  }
+
+  function render() { renderer.render(scene, camera); }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    updateGame(dt);
+    render();
+  }
+
+  // ---------- Input ----------
+  function requestFire() {
+    if (gameState !== "running") return;
+    unlockAudio();
+    fireBullet();
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "ArrowUp" || e.key === "w" || e.key === "W") moveUp = true;
+    if (e.code === "ArrowDown" || e.key === "s" || e.key === "S") moveDown = true;
+    if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") moveLeft = true;
+    if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") moveRight = true;
+    if (e.code === "Space") {
+      e.preventDefault();
+      unlockAudio();
+      if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay)) startGame();
+    }
+    if (e.code === "Escape" && (gameState === "running" || gameState === "paused")) togglePause();
+    if (e.key === "e" || e.key === "E") requestFire();
+  });
+
+  document.addEventListener("keyup", (e) => {
+    if (e.code === "ArrowUp" || e.key === "w" || e.key === "W") moveUp = false;
+    if (e.code === "ArrowDown" || e.key === "s" || e.key === "S") moveDown = false;
+    if (e.code === "ArrowLeft" || e.key === "a" || e.key === "A") moveLeft = false;
+    if (e.code === "ArrowRight" || e.key === "d" || e.key === "D") moveRight = false;
+  });
+
+  function startPointerDrag(clientX, clientY) {
+    if (isOverlayVisible(setupOverlay) || isOverlayVisible(resultOverlay) || isOverlayVisible(pauseOverlay)) return;
+    unlockAudio();
+    if (gameState !== "running") return;
+    pointerActive = true;
+    pointerStartX = clientX;
+    pointerStartY = clientY;
+    shipStartX = ship.x;
+    shipStartY = ship.y;
+  }
+  function updatePointerDrag(clientX, clientY) {
+    if (!pointerActive || gameState !== "running") return;
+    const rect = container.getBoundingClientRect();
+    const dx = (clientX - pointerStartX) / rect.width * (PLAY_HALF_W * 2.2);
+    const dy = (clientY - pointerStartY) / rect.height * (PLAY_HALF_H * 2.2);
+    ship.x = clamp(shipStartX + dx, -PLAY_HALF_W, PLAY_HALF_W);
+    ship.y = clamp(shipStartY - dy, -PLAY_HALF_H, PLAY_HALF_H);
+    ship.vx = 0; ship.vy = 0;
+  }
+  function endPointerDrag() { pointerActive = false; }
+
+  container.addEventListener("mousedown", (e) => startPointerDrag(e.clientX, e.clientY));
+  document.addEventListener("mousemove", (e) => updatePointerDrag(e.clientX, e.clientY));
+  document.addEventListener("mouseup", endPointerDrag);
+
+  container.addEventListener("touchstart", (e) => {
+    if (e.target.closest("#mobileControls")) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    startPointerDrag(t.clientX, t.clientY);
+  }, { passive: false });
+  document.addEventListener("touchmove", (e) => {
+    if (!pointerActive) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    updatePointerDrag(t.clientX, t.clientY);
+  }, { passive: false });
+  document.addEventListener("touchend", endPointerDrag);
+
+  container.addEventListener("click", () => { if (gameState === "running") requestFire(); });
+  fireBtnMobile.addEventListener("touchstart", (e) => { e.preventDefault(); e.stopPropagation(); requestFire(); }, { passive: false });
+  fireBtnMobile.addEventListener("click", (e) => { e.stopPropagation(); requestFire(); });
+
+  // ---------- UI buttons ----------
+  btnDiffEasy.addEventListener("click", () => setDifficulty("easy"));
+  btnDiffMedium.addEventListener("click", () => setDifficulty("medium"));
+  btnDiffHard.addEventListener("click", () => setDifficulty("hard"));
+  btnStartRun.addEventListener("click", () => { unlockAudio(); startGame(); });
+  btnResultAgain.addEventListener("click", () => { unlockAudio(); startGame(); });
+  btnResultChange.addEventListener("click", () => { closeResultOverlay(); openSetupOverlay(); });
+  btnPause.addEventListener("click", () => { if (gameState === "running") togglePause(); });
+  btnResume.addEventListener("click", togglePause);
+  btnPauseQuit.addEventListener("click", () => {
+    pauseOverlay.classList.add("hidden");
+    gameState = "over";
+    stopEngine();
+    if (score > bestScore) bestScore = score;
+    checkAchievements({ score, kills, bossesDefeated, coinsThisRun });
+    saveProgress();
+    addToArcadeProfile(Math.floor(score * 0.5), coinsThisRun);
+    hudBest.textContent = Math.floor(bestScore);
+    openResultOverlay(false);
+  });
+
+  // ---------- Init ----------
+  loadProgress();
+  initThree();
+  clock = new THREE.Clock();
+  clock.start();
+  animate();
+})();
+  </script>
 </body>
 </html>
