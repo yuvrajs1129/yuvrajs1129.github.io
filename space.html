@@ -2,828 +2,670 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Neon Space Runner – by Yuvraj</title>
+  <title>Neon Space Runner — Yuvraj Soni Arcade</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <meta name="description" content="Neon Space Runner, a high-graphics space dodge game made by Yuvraj. Fly your ship through glowing asteroids, fire laser beams, and survive as long as you can.">
+  <meta name="description" content="Neon Space Runner — a full 3D space dodge-and-shoot game by Yuvraj Soni. Pilot through an asteroid field, collect power-ups, and chase the highest distance.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      box-sizing: border-box;
+    :root{
+      --void:#050507;
+      --void-soft:#0a0a10;
+      --glass:rgba(255,255,255,0.05);
+      --glass-border:rgba(255,255,255,0.10);
+      --cyan:#00e5ff;
+      --cyan-soft:rgba(0,229,255,0.35);
+      --violet:#7c4dff;
+      --violet-soft:rgba(124,77,255,0.35);
+      --ink:#eef1f6;
+      --ink-dim:#8a8f9c;
+      --danger:#ff4d6d;
+      --good:#3ddc84;
+      --gold:#ffc93c;
     }
 
-    body {
-      margin: 0;
-      padding: 16px;
-      background: radial-gradient(circle at top, #020617 0, #020617 50%, #000 100%);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #e5e7eb;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      padding:18px 16px 28px;
+      background:radial-gradient(ellipse 90% 60% at 50% 0%, #0d0d16 0%, var(--void) 60%);
+      font-family:'Inter',system-ui,sans-serif;
+      color:var(--ink);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      min-height:100vh;
     }
 
-    h1 {
-      margin: 0 0 6px;
-      font-size: 24px;
-      text-align: center;
-      color: #38bdf8;
-      text-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+    a{color:inherit;text-decoration:none}
+
+    .top-link{
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:18px;
+      cursor:pointer;
+      transition:color 0.25s;
+    }
+    .top-link:hover{color:var(--cyan)}
+
+    .brand-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:4px;
     }
 
-    #subtitle {
-      font-size: 13px;
-      color: #9ca3af;
-      text-align: center;
-      margin-bottom: 10px;
-      max-width: 480px;
+    .mark{
+      width:9px;height:9px;background:var(--cyan);border-radius:2px;
+      box-shadow:0 0 10px var(--cyan), 0 0 20px var(--cyan-soft);
+      transform:rotate(45deg);
+      flex-shrink:0;
     }
 
-    .canvas-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: 480px;
+    h1{
+      margin:0 0 6px;
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:clamp(22px,4vw,30px);
+      text-align:center;
+      letter-spacing:-0.01em;
     }
 
-    canvas {
-      background: radial-gradient(circle at top, #0b1120 0, #020617 55%, #020617 100%);
-      border-radius: 16px;
-      border: 2px solid #0f172a;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.85);
-      width: 100%;
-      height: auto;
-      display: block;
-      touch-action: none;
+    h1 .glow{
+      background:linear-gradient(120deg, var(--cyan), var(--violet));
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
     }
 
-    /* Mobile FIRE button */
-    #fireButtonMobile {
-      position: absolute;
-      right: 12px;
-      bottom: 12px;
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(248,113,113,0.8);
-      background: radial-gradient(circle, rgba(248,113,113,0.9), rgba(127,29,29,0.95));
-      color: #fef2f2;
-      font-size: 13px;
-      font-weight: 600;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      user-select: none;
+    #subtitle{
+      font-size:13px;
+      color:var(--ink-dim);
+      text-align:center;
+      margin-bottom:18px;
+      max-width:560px;
+      line-height:1.6;
+    }
+    #subtitle strong{color:var(--ink);font-weight:600}
+
+    .canvas-wrapper{
+      position:relative;
+      width:100%;
+      max-width:480px;
+      aspect-ratio:2/3;
+      border-radius:22px;
+      overflow:hidden;
+      border:1px solid var(--glass-border);
+      box-shadow:0 30px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,229,255,0.05);
+      background:var(--void);
     }
 
-    #fireButtonMobile:active {
-      transform: translateY(1px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.8);
+    @media (min-width:860px) and (min-height:560px){
+      .canvas-wrapper{
+        max-width:1100px;
+        aspect-ratio:16/9;
+      }
     }
 
-    #footerName {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #64748b;
-      text-align: center;
+    #threeContainer{position:absolute;inset:0}
+    canvas{display:block;width:100%;height:100%}
+
+    /* ===== HUD ===== */
+    #hud{
+      position:absolute;
+      inset:0;
+      padding:14px;
+      pointer-events:none;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
     }
+
+    .hud-panel{
+      background:rgba(5,5,7,0.55);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      border:1px solid var(--glass-border);
+      border-radius:14px;
+      padding:10px 14px;
+    }
+
+    #hud-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+
+    #hud-left{ display:flex; flex-direction:column; gap:4px; min-width:108px; }
+
+    .hud-label{
+      font-family:'JetBrains Mono',monospace;
+      font-size:9.5px;
+      letter-spacing:0.1em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+    }
+
+    .hud-value{
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:18px;
+      color:var(--ink);
+    }
+
+    .hud-value.accent{
+      background:linear-gradient(120deg, var(--cyan), var(--violet));
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    }
+
+    .hud-row-mini{
+      display:flex;
+      gap:14px;
+      margin-top:6px;
+    }
+    .hud-mini{ display:flex; flex-direction:column; gap:1px; }
+    .hud-mini .hud-value{ font-size:13px; color:var(--gold); }
+
+    #hud-right{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+    }
+
+    #healthPanel{ min-width:130px; }
+
+    .health-bar{
+      width:100%;
+      height:7px;
+      border-radius:99px;
+      background:rgba(255,255,255,0.08);
+      overflow:hidden;
+      margin-top:6px;
+    }
+    .health-fill{
+      height:100%;
+      background:linear-gradient(90deg, var(--danger), var(--gold));
+      width:100%;
+      border-radius:99px;
+      transition:width 0.3s ease;
+    }
+
+    #pauseBtn{
+      pointer-events:auto;
+      width:36px;height:36px;
+      border-radius:10px;
+      background:rgba(5,5,7,0.55);
+      backdrop-filter:blur(12px);
+      border:1px solid var(--glass-border);
+      color:var(--ink);
+      font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition:0.25s;
+    }
+    #pauseBtn:hover{border-color:var(--cyan); color:var(--cyan)}
+
+    #comboBadge{
+      position:absolute;
+      top:14px;
+      left:50%;
+      transform:translateX(-50%) translateY(-10px);
+      background:rgba(0,229,255,0.12);
+      border:1px solid rgba(0,229,255,0.5);
+      color:var(--cyan);
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;
+      font-weight:500;
+      letter-spacing:0.06em;
+      padding:6px 14px;
+      border-radius:999px;
+      opacity:0;
+      transition:opacity 0.25s ease, transform 0.25s ease;
+      pointer-events:none;
+      white-space:nowrap;
+    }
+    #comboBadge.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+    #achToast{
+      position:absolute;
+      top:62px;
+      left:50%;
+      transform:translateX(-50%) translateY(-10px);
+      background:rgba(255,201,60,0.12);
+      border:1px solid rgba(255,201,60,0.5);
+      color:var(--gold);
+      font-family:'JetBrains Mono',monospace;
+      font-size:10.5px;
+      font-weight:500;
+      letter-spacing:0.04em;
+      padding:7px 16px;
+      border-radius:999px;
+      opacity:0;
+      transition:opacity 0.3s ease, transform 0.3s ease;
+      pointer-events:none;
+      white-space:nowrap;
+      text-align:center;
+    }
+    #achToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+    #bossBar{
+      position:absolute;
+      top:14px;
+      left:50%;
+      transform:translateX(-50%);
+      width:70%;
+      max-width:420px;
+      opacity:0;
+      transition:opacity 0.4s ease;
+      pointer-events:none;
+    }
+    #bossBar.show{ opacity:1; }
+    #bossBar .hud-label{ text-align:center; color:var(--danger); margin-bottom:5px; }
+    .boss-health-bar{
+      width:100%; height:9px; border-radius:99px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,77,109,0.4);
+      overflow:hidden;
+    }
+    .boss-health-fill{
+      height:100%; background:linear-gradient(90deg, var(--danger), #ff9a8b);
+      width:100%; border-radius:99px; transition:width 0.25s ease;
+    }
+
+    #powerupBar{
+      position:absolute;
+      bottom:14px;
+      left:14px;
+      display:flex;
+      gap:8px;
+      pointer-events:none;
+    }
+    .powerup-chip{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      background:rgba(5,5,7,0.6);
+      backdrop-filter:blur(10px);
+      border:1px solid var(--glass-border);
+      border-radius:999px;
+      padding:6px 12px 6px 8px;
+      font-family:'JetBrains Mono',monospace;
+      font-size:10.5px;
+      color:var(--ink);
+      opacity:0;
+      transform:translateY(8px);
+      transition:opacity 0.25s, transform 0.25s;
+    }
+    .powerup-chip.show{ opacity:1; transform:translateY(0); }
+    .powerup-chip .ic{ font-size:13px; }
+
+    #hud-bottom{ display:flex; flex-direction:column; gap:8px; align-items:center; }
+
+    #hintBox{
+      font-family:'JetBrains Mono',monospace;
+      font-size:10.5px;
+      color:var(--ink-dim);
+      text-align:center;
+      letter-spacing:0.02em;
+    }
+
+    /* Mobile controls */
+    #mobileControls{
+      position:absolute;
+      bottom:14px;
+      right:14px;
+      display:none;
+      gap:10px;
+      pointer-events:auto;
+    }
+    .mc-btn{
+      width:54px;height:54px;
+      border-radius:16px;
+      background:rgba(5,5,7,0.6);
+      backdrop-filter:blur(10px);
+      border:1px solid var(--glass-border);
+      color:var(--ink);
+      font-size:20px;
+      display:flex;align-items:center;justify-content:center;
+      user-select:none;
+    }
+    #fireBtnMobile{
+      border-color:rgba(255,77,109,0.6);
+      background:radial-gradient(circle, rgba(255,77,109,0.25), rgba(5,5,7,0.6));
+      color:var(--danger);
+    }
+
+    @media (max-width:859px), (max-height:559px){
+      #mobileControls{ display:flex; }
+    }
+
+    /* ===== Overlays ===== */
+    .overlay{
+      position:absolute;
+      inset:0;
+      background:rgba(5,5,7,0.78);
+      backdrop-filter:blur(6px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
+      padding:20px;
+      animation:overlayFade 0.25s ease-out;
+      overflow-y:auto;
+    }
+    .overlay.hidden{display:none}
+    @keyframes overlayFade{from{opacity:0} to{opacity:1}}
+
+    .modal{
+      width:100%;
+      max-width:320px;
+      border-radius:20px;
+      padding:26px 24px 22px;
+      background:var(--void-soft);
+      border:1px solid var(--glass-border);
+      box-shadow:0 30px 70px rgba(0,0,0,0.7), 0 0 60px rgba(0,229,255,0.06);
+      text-align:center;
+      animation:modalIn 0.3s cubic-bezier(.16,1,.3,1);
+      margin:auto;
+    }
+    @keyframes modalIn{
+      from{transform:translateY(16px) scale(0.96); opacity:0}
+      to{transform:translateY(0) scale(1); opacity:1}
+    }
+
+    .modal-eyebrow{
+      font-family:'JetBrains Mono',monospace;
+      font-size:10px;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      color:var(--cyan);
+      margin-bottom:10px;
+    }
+
+    .modal-title{
+      font-family:'Space Grotesk',sans-serif;
+      font-size:21px;
+      font-weight:700;
+      color:var(--ink);
+      margin-bottom:8px;
+      letter-spacing:-0.01em;
+    }
+
+    .modal-text{
+      font-size:13px;
+      color:var(--ink-dim);
+      line-height:1.6;
+      margin-bottom:18px;
+    }
+
+    .choice-label{
+      font-family:'JetBrains Mono',monospace;
+      font-size:10.5px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+      margin-bottom:8px;
+      text-align:left;
+    }
+
+    .choice-row{ display:flex; gap:8px; justify-content:center; margin-bottom:18px; }
+
+    .choice-btn{
+      flex:1;
+      padding:10px 8px;
+      border-radius:12px;
+      border:1px solid var(--glass-border);
+      background:var(--glass);
+      color:var(--ink);
+      font-size:12.5px;
+      font-weight:500;
+      cursor:pointer;
+      transition:0.2s ease;
+      font-family:'Inter',sans-serif;
+    }
+    .choice-btn:hover{border-color:rgba(0,229,255,0.4)}
+    .choice-btn.active{
+      border-color:var(--cyan);
+      background:linear-gradient(120deg, rgba(0,229,255,0.18), rgba(124,77,255,0.18));
+      box-shadow:0 0 0 1px rgba(0,229,255,0.3) inset;
+    }
+
+    .primary-btn-row{ display:flex; gap:10px; }
+
+    .primary-btn{
+      flex:1;
+      padding:13px 14px;
+      border-radius:12px;
+      border:none;
+      background:linear-gradient(120deg, var(--cyan), var(--violet));
+      color:#04060a;
+      font-size:13.5px;
+      font-weight:600;
+      cursor:pointer;
+      font-family:'Inter',sans-serif;
+      box-shadow:0 10px 30px rgba(0,229,255,0.25);
+      transition:0.2s ease;
+    }
+    .primary-btn:hover{transform:translateY(-2px); box-shadow:0 14px 36px rgba(0,229,255,0.35)}
+
+    .secondary-btn{
+      flex:1;
+      padding:13px 14px;
+      border-radius:12px;
+      border:1px solid var(--glass-border);
+      background:var(--glass);
+      color:var(--ink);
+      font-size:13.5px;
+      font-weight:500;
+      cursor:pointer;
+      font-family:'Inter',sans-serif;
+      transition:0.2s ease;
+    }
+    .secondary-btn:hover{border-color:var(--cyan); color:var(--cyan)}
+
+    .result-stats{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:18px;
+      padding:14px;
+      background:var(--glass);
+      border:1px solid var(--glass-border);
+      border-radius:12px;
+    }
+    .result-stat{ flex:1; min-width:70px; }
+    .result-stat .num{
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:17px;
+      color:var(--cyan);
+    }
+    .result-stat .label{
+      font-family:'JetBrains Mono',monospace;
+      font-size:9px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+      margin-top:3px;
+    }
+
+    .new-best-tag{
+      display:inline-block;
+      font-family:'JetBrains Mono',monospace;
+      font-size:10px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:var(--good);
+      background:rgba(61,220,132,0.12);
+      border:1px solid rgba(61,220,132,0.4);
+      padding:4px 10px;
+      border-radius:999px;
+      margin-bottom:14px;
+    }
+
+    .ach-list{
+      text-align:left;
+      margin-bottom:18px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .ach-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:9px 12px;
+      border-radius:10px;
+      background:var(--glass);
+      border:1px solid var(--glass-border);
+      font-size:12px;
+    }
+    .ach-row.locked{ opacity:0.35; }
+    .ach-row .ic{ font-size:16px; }
+    .ach-row .txt{ flex:1; }
+    .ach-row .txt b{ display:block; color:var(--ink); font-size:12.5px; }
+    .ach-row .txt span{ color:var(--ink-dim); font-size:10.5px; }
+
+    #footerName{
+      margin-top:14px;
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;
+      color:var(--ink-dim);
+      text-align:center;
+      letter-spacing:0.04em;
+    }
+    #footerName strong{color:var(--ink)}
   </style>
 </head>
 <body>
-  <h1>Neon Space Runner – by Yuvraj</h1>
+
+  <a class="top-link" href="index.html">← Back to Arcade</a>
+
+  <div class="brand-row"><span class="mark"></span></div>
+  <h1>Neon Space <span class="glow">Runner</span></h1>
   <div id="subtitle">
-    Arrows / W-S / Drag se ship ko up-down move karo. Glowing asteroids se bach ke udao.<br>
-    PC: <strong>E</strong> dabao laser fire ke liye · Mobile: niche <strong>FIRE</strong> button se fire.
+    A full 3D run through a living asteroid field. Dodge debris, shoot what's in your way, grab power-ups, and survive the boss every 1000m.<br>
+    <strong>PC:</strong> Arrows / WASD to move, E or click to fire &nbsp;·&nbsp; <strong>Mobile:</strong> drag to steer, tap FIRE.
   </div>
 
   <div class="canvas-wrapper">
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
-    <button id="fireButtonMobile" type="button">FIRE</button>
+    <div id="threeContainer"></div>
+
+    <div id="hud">
+      <div id="hud-top">
+        <div class="hud-panel" id="hud-left">
+          <div class="hud-label">Score</div>
+          <div class="hud-value accent" id="hud-score">0</div>
+          <div class="hud-row-mini">
+            <div class="hud-mini">
+              <div class="hud-label">Best</div>
+              <div class="hud-value" id="hud-best" style="font-size:13px">0</div>
+            </div>
+            <div class="hud-mini">
+              <div class="hud-label">Coins</div>
+              <div class="hud-value" id="hud-coins" style="font-size:13px">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="hud-right">
+          <div class="hud-panel" id="healthPanel">
+            <div class="hud-label">Hull Integrity</div>
+            <div class="health-bar"><div class="health-fill" id="healthFill"></div></div>
+          </div>
+          <button id="pauseBtn" title="Pause">❚❚</button>
+        </div>
+      </div>
+
+      <div id="bossBar">
+        <div class="hud-label">⚠ Asteroid Sentinel</div>
+        <div class="boss-health-bar"><div class="boss-health-fill" id="bossHealthFill"></div></div>
+      </div>
+
+      <div id="comboBadge"></div>
+      <div id="achToast"></div>
+
+      <div id="powerupBar"></div>
+
+      <div id="hud-bottom">
+        <div class="hud-panel" id="hintBox">Loading the field…</div>
+      </div>
+    </div>
+
+    <div id="mobileControls">
+      <div class="mc-btn" id="fireBtnMobile">⚡</div>
+    </div>
+
+    <!-- Difficulty popup -->
+    <div id="setupOverlay" class="overlay hidden">
+      <div class="modal">
+        <div class="modal-eyebrow">Pre-Flight</div>
+        <div class="modal-title">Enter the field</div>
+        <div class="modal-text">Choose difficulty. Harder fields spawn denser asteroids and tougher sentinels.</div>
+        <div class="choice-label">Difficulty</div>
+        <div class="choice-row">
+          <button class="choice-btn active" data-diff="easy" id="btnDiffEasy">Easy</button>
+          <button class="choice-btn" data-diff="medium" id="btnDiffMedium">Medium</button>
+          <button class="choice-btn" data-diff="hard" id="btnDiffHard">Hard</button>
+        </div>
+        <div class="primary-btn-row">
+          <button class="primary-btn" id="btnStartRun" type="button">Launch</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause popup -->
+    <div id="pauseOverlay" class="overlay hidden">
+      <div class="modal">
+        <div class="modal-eyebrow">Paused</div>
+        <div class="modal-title">Holding position</div>
+        <div class="modal-text">Your run is frozen mid-field. Resume whenever you're ready.</div>
+        <div class="primary-btn-row">
+          <button class="primary-btn" id="btnResume" type="button">Resume</button>
+          <button class="secondary-btn" id="btnPauseQuit" type="button">Quit run</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result popup -->
+    <div id="resultOverlay" class="overlay hidden">
+      <div class="modal">
+        <div class="modal-eyebrow" id="resultEyebrow">Run Ended</div>
+        <div class="modal-title" id="resultTitle">Hull breached</div>
+        <div id="newBestTag" class="new-best-tag" style="display:none">New best score</div>
+        <div class="result-stats">
+          <div class="result-stat"><div class="num" id="statScore">0</div><div class="label">Score</div></div>
+          <div class="result-stat"><div class="num" id="statBest">0</div><div class="label">Best</div></div>
+          <div class="result-stat"><div class="num" id="statCoins">0</div><div class="label">Coins</div></div>
+          <div class="result-stat"><div class="num" id="statCombo">0</div><div class="label">Max Combo</div></div>
+        </div>
+        <div id="achUnlockedWrap" style="display:none">
+          <div class="choice-label" style="text-align:center;margin-bottom:10px">New Achievement</div>
+          <div class="ach-list" id="achUnlockedList"></div>
+        </div>
+        <div class="primary-btn-row">
+          <button class="primary-btn" id="btnResultAgain" type="button">Fly again</button>
+          <button class="secondary-btn" id="btnResultChange" type="button">Change difficulty</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div id="footerName">
-    Game owner: <strong>Yuvraj</strong>
-  </div>
+  <div id="footerName">Game owner: <strong>Yuvraj Soni</strong></div>
 
-  <script>
-    // ===== BASIC SETUP =====
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const fireButton = document.getElementById("fireButtonMobile");
-
-    const OWNER_NAME = "Yuvraj";
-
-    // ===== SOUNDS =====
-    const engineSound    = new Audio("engine.mp3");
-    const explosionSound = new Audio("explosion.mp3");
-    const laserSound     = new Audio("laser.mp3");
-
-    engineSound.loop      = true;
-    engineSound.volume    = 0.5;
-    explosionSound.volume = 0.9;
-    laserSound.volume     = 0.8;
-
-    let audioUnlocked = false;
-
-    // NOTE: Engine sound ko yahan unlock nahi kar rahe,
-    // sirf explosion/laser ko prime kar rahe hain.
-    function unlockAudio() {
-      if (audioUnlocked) return;
-      audioUnlocked = true;
-      [explosionSound, laserSound].forEach(sound => {
-        if (!sound) return;
-        try {
-          sound.currentTime = 0;
-          sound.play().then(() => {
-            sound.pause();
-            sound.currentTime = 0;
-          }).catch(() => {});
-        } catch (e) {}
-      });
-    }
-
-    function playSound(sound) {
-      if (!sound) return;
-      try {
-        sound.currentTime = 0;
-        sound.play();
-      } catch (e) {}
-    }
-
-    function startEngine() {
-      try {
-        engineSound.currentTime = 0;
-        engineSound.play();
-      } catch (e) {}
-    }
-
-    function stopEngine() {
-      try {
-        engineSound.pause();
-      } catch (e) {}
-    }
-
-    // ===== SCORE + ACHIEVEMENTS (LOCALSTORAGE) =====
-    let score = 0;
-    let bestScore = 0;
-
-    const LS_SPACE_BEST = "space_best_score_v1";
-    const LS_SPACE_ACH  = "space_achievements_v1";
-
-    let spaceAchievements = {
-      noob:   false, // 150+
-      pro:    false, // 350+
-      legend: false, // 600+
-      hacker: false  // 800+
-    };
-
-    let achievementMessage = "";
-    let achievementTimer   = 0; // frames (~60fps)
-
-    function loadSpaceProgress() {
-      try {
-        const savedBest = localStorage.getItem(LS_SPACE_BEST);
-        if (savedBest !== null) {
-          bestScore = parseInt(savedBest, 10) || 0;
-        }
-        const savedAch = localStorage.getItem(LS_SPACE_ACH);
-        if (savedAch) {
-          const obj = JSON.parse(savedAch);
-          spaceAchievements = Object.assign(spaceAchievements, obj);
-        }
-      } catch (e) {}
-    }
-
-    function saveSpaceProgress() {
-      try {
-        localStorage.setItem(LS_SPACE_BEST, String(bestScore));
-        localStorage.setItem(LS_SPACE_ACH, JSON.stringify(spaceAchievements));
-      } catch (e) {}
-    }
-
-    function showSpaceAchievement(text) {
-      achievementMessage = text;
-      achievementTimer   = 120; // ~2 seconds
-    }
-
-    function updateBestAndAchievements() {
-      let changed = false;
-
-      if (score > bestScore) {
-        bestScore = score;
-        changed = true;
-      }
-
-      if (score >= 150 && !spaceAchievements.noob) {
-        spaceAchievements.noob = true;
-        showSpaceAchievement("Achievement unlocked: Noob (Score 150+)");
-        changed = true;
-      }
-      if (score >= 350 && !spaceAchievements.pro) {
-        spaceAchievements.pro = true;
-        showSpaceAchievement("Achievement unlocked: Pro (Score 350+)");
-        changed = true;
-      }
-      if (score >= 600 && !spaceAchievements.legend) {
-        spaceAchievements.legend = true;
-        showSpaceAchievement("Achievement unlocked: Legend (Score 600+)");
-        changed = true;
-      }
-      if (score >= 800 && !spaceAchievements.hacker) {
-        spaceAchievements.hacker = true;
-        showSpaceAchievement("Achievement unlocked: Hacker (Score 800+)");
-        changed = true;
-      }
-
-      if (changed) {
-        saveSpaceProgress();
-      }
-    }
-
-    // ===== GAME STATE =====
-    let gameState = "ready"; // "ready", "running", "over"
-
-    const ship = {
-      x: canvas.width * 0.2,
-      y: canvas.height / 2,
-      radius: 18,
-      speed: 280,
-      alive: true
-    };
-
-    const stars = [];
-    const enemies = [];
-    const bullets = [];
-
-    let enemyTimer = 0;
-    const ENEMY_INTERVAL_MIN = 0.7;
-    const ENEMY_INTERVAL_MAX = 1.3;
-
-    const BULLET_SPEED   = 520;
-    const BULLET_COOLDOWN = 0.25;
-    const MAX_BULLETS     = 3;
-    let bulletCooldown    = 0;
-
-    let lastTime = null;
-    let explosion = null;
-
-    // Input flags
-    let moveUp = false;
-    let moveDown = false;
-    let pointerActive = false;
-    let pointerOffsetY = 0;
-
-    // ===== STARS =====
-    function initStars() {
-      stars.length = 0;
-      for (let i = 0; i < 50; i++) {
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          size: Math.random() * 2 + 0.5,
-          speed: 20 + Math.random() * 70,
-          alpha: 0.3 + Math.random() * 0.7
-        });
-      }
-    }
-
-    function updateStars(dt) {
-      for (const s of stars) {
-        s.x -= s.speed * dt;
-        if (s.x < -10) {
-          s.x = canvas.width + Math.random() * 40;
-          s.y = Math.random() * canvas.height;
-          s.speed = 20 + Math.random() * 70;
-          s.alpha = 0.3 + Math.random() * 0.7;
-        }
-      }
-    }
-
-    function drawStars() {
-      for (const s of stars) {
-        ctx.fillStyle = `rgba(148, 163, 184, ${s.alpha})`;
-        ctx.fillRect(s.x, s.y, s.size, s.size);
-      }
-    }
-
-    // ===== ENEMIES =====
-    function spawnEnemy(difficulty = 1) {
-      const margin = 40;
-      const y = margin + Math.random() * (canvas.height - margin * 2);
-      const radius = 16 + Math.random() * 18;
-      const baseSpeed = 140 + Math.random() * 110;
-      const speed = baseSpeed * difficulty;
-      const wobbleSpeed = 1 + Math.random() * 1.5;
-      const wobbleAmount = 8 + Math.random() * 8;
-
-      enemies.push({
-        x: canvas.width + radius + 10,
-        y,
-        radius,
-        speed,
-        wobbleSpeed,
-        wobbleAmount,
-        wobblePhase: Math.random() * Math.PI * 2
-      });
-    }
-
-    function updateEnemies(dt) {
-      for (const e of enemies) {
-        e.x -= e.speed * dt;
-        e.wobblePhase += e.wobbleSpeed * dt;
-        e.y += Math.sin(e.wobblePhase) * e.wobbleAmount * dt;
-      }
-
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        if (enemies[i].x < -enemies[i].radius * 2) {
-          enemies.splice(i, 1);
-        }
-      }
-    }
-
-    function drawEnemies() {
-      for (const e of enemies) {
-        ctx.save();
-        ctx.translate(e.x, e.y);
-        ctx.shadowColor = "#f97316";
-        ctx.shadowBlur = 10;
-
-        const gradient = ctx.createRadialGradient(0, 0, e.radius * 0.2, 0, 0, e.radius);
-        gradient.addColorStop(0, "#fed7aa");
-        gradient.addColorStop(0.4, "#fb923c");
-        gradient.addColorStop(1, "#7c2d12");
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = "#9a3412";
-        ctx.beginPath();
-        ctx.arc(-e.radius * 0.3, -e.radius * 0.2, e.radius * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(e.radius * 0.2, e.radius * 0.25, e.radius * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-      }
-    }
-
-    // ===== LASER BULLETS =====
-    function fireBullet() {
-      if (gameState !== "running") return;
-      if (!ship.alive) return;
-      if (bulletCooldown > 0) return;
-      if (bullets.length >= MAX_BULLETS) return;
-
-      bullets.push({
-        x: ship.x + ship.radius * 1.4,
-        y: ship.y
-      });
-
-      bulletCooldown = BULLET_COOLDOWN;
-      playSound(laserSound);
-    }
-
-    function updateBullets(dt) {
-      for (const b of bullets) {
-        b.x += BULLET_SPEED * dt;
-      }
-      for (let i = bullets.length - 1; i >= 0; i--) {
-        if (bullets[i].x > canvas.width + 40) {
-          bullets.splice(i, 1);
-        }
-      }
-    }
-
-    function drawBullets() {
-      ctx.save();
-      ctx.strokeStyle = "#fde68a";
-      ctx.lineWidth = 2;
-      for (const b of bullets) {
-        ctx.beginPath();
-        ctx.moveTo(b.x - 4, b.y);
-        ctx.lineTo(b.x + 14, b.y);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    // ===== SHIP =====
-    function updateShip(dt) {
-      if (!ship.alive) return;
-
-      if (moveUp)   ship.y -= ship.speed * dt;
-      if (moveDown) ship.y += ship.speed * dt;
-
-      const margin = 30;
-      if (ship.y < margin) ship.y = margin;
-      if (ship.y > canvas.height - margin) ship.y = canvas.height - margin;
-    }
-
-    function drawShip() {
-      if (!ship.alive) return;
-
-      ctx.save();
-      ctx.translate(ship.x, ship.y);
-
-      ctx.shadowColor = "#38bdf8";
-      ctx.shadowBlur = 18;
-
-      ctx.fillStyle = "#0ea5e9";
-      ctx.beginPath();
-      ctx.moveTo(-ship.radius * 0.8, -ship.radius);
-      ctx.lineTo(-ship.radius * 0.8, ship.radius);
-      ctx.lineTo(ship.radius * 1.3, 0);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "#e0f2fe";
-      ctx.beginPath();
-      ctx.arc(ship.radius * 0.2, -ship.radius * 0.3, ship.radius * 0.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.shadowBlur = 14;
-      ctx.shadowColor = "#f97316";
-      const flameGradient = ctx.createLinearGradient(
-        -ship.radius * 1.4, 0,
-        -ship.radius * 0.5, 0
-      );
-      flameGradient.addColorStop(0, "rgba(248, 250, 252, 0.1)");
-      flameGradient.addColorStop(0.4, "rgba(251, 146, 60, 0.7)");
-      flameGradient.addColorStop(1, "rgba(248, 113, 113, 0)");
-      ctx.fillStyle = flameGradient;
-      ctx.beginPath();
-      ctx.moveTo(-ship.radius * 0.8, -ship.radius * 0.4);
-      ctx.lineTo(-ship.radius * 1.6, 0);
-      ctx.lineTo(-ship.radius * 0.8, ship.radius * 0.4);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    // ===== EXPLOSION =====
-    function triggerExplosionAt(x, y) {
-      explosion = {
-        x,
-        y,
-        radius: 0,
-        alpha: 1
-      };
-      playSound(explosionSound);
-    }
-
-    function updateExplosion(dt) {
-      if (!explosion) return;
-      explosion.radius += 260 * dt;
-      explosion.alpha  -= 1.6 * dt;
-      if (explosion.alpha <= 0) {
-        explosion = null;
-      }
-    }
-
-    function drawExplosion() {
-      if (!explosion) return;
-
-      ctx.save();
-      ctx.translate(explosion.x, explosion.y);
-      const r = explosion.radius;
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-      g.addColorStop(0, `rgba(248, 250, 252, ${explosion.alpha})`);
-      g.addColorStop(0.3, `rgba(252, 211, 77, ${explosion.alpha})`);
-      g.addColorStop(0.7, `rgba(248, 113, 113, ${explosion.alpha * 0.9})`);
-      g.addColorStop(1, `rgba(15, 23, 42, 0)`);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // ===== COLLISIONS =====
-    function checkShipCollisions() {
-      if (!ship.alive) return;
-      for (const e of enemies) {
-        const dx = e.x - ship.x;
-        const dy = e.y - ship.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < e.radius + ship.radius * 0.7) {
-          gameOver();
-          return;
-        }
-      }
-    }
-
-    function checkBulletCollisions() {
-      for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        for (let j = enemies.length - 1; j >= 0; j--) {
-          const e = enemies[j];
-          const dx = e.x - b.x;
-          const dy = e.y - b.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < e.radius) {
-            enemies.splice(j, 1);
-            bullets.splice(i, 1);
-            triggerExplosionAt(e.x, e.y);
-            score += 8;
-            updateBestAndAchievements();
-            return;
-          }
-        }
-      }
-    }
-
-    // ===== SCORE =====
-    function updateScore(dt) {
-      if (gameState === "running") {
-        score += dt * 10; // 10 points per second
-        updateBestAndAchievements();
-      }
-    }
-
-    // ===== GAME CONTROL =====
-    function resetGame() {
-      gameState = "ready";
-      score = 0;
-      ship.y = canvas.height / 2;
-      ship.alive = true;
-      enemies.length = 0;
-      bullets.length = 0;
-      enemyTimer = 0;
-      bulletCooldown = 0;
-      explosion = null;
-      stopEngine();
-      lastTime = null;
-      achievementMessage = "";
-      achievementTimer   = 0;
-    }
-
-    function startGame() {
-      gameState = "running";
-      score = 0;
-      ship.alive = true;
-      enemies.length = 0;
-      bullets.length = 0;
-      enemyTimer = 0;
-      bulletCooldown = 0;
-      explosion = null;
-      startEngine(); // engine yahin se start hoga (user gesture ke andar)
-      lastTime = null;
-      achievementMessage = "";
-      achievementTimer   = 0;
-    }
-
-    function gameOver() {
-      if (gameState !== "over") {
-        gameState = "over";
-        ship.alive = false;
-        stopEngine();
-        triggerExplosionAt(ship.x, ship.y);
-        saveSpaceProgress();
-      }
-    }
-
-    // ===== MAIN UPDATE =====
-    function update(dt) {
-      let difficulty = 1 + score / 150;
-      if (difficulty > 4) difficulty = 4;
-
-      updateStars(dt);
-      updateExplosion(dt);
-
-      if (gameState === "running") {
-        if (bulletCooldown > 0) {
-          bulletCooldown -= dt;
-          if (bulletCooldown < 0) bulletCooldown = 0;
-        }
-
-        updateShip(dt);
-        updateBullets(dt);
-
-        enemyTimer -= dt;
-        if (enemyTimer <= 0) {
-          spawnEnemy(difficulty);
-          const min = ENEMY_INTERVAL_MIN / difficulty;
-          const max = ENEMY_INTERVAL_MAX / difficulty;
-          enemyTimer = min + Math.random() * (max - min);
-        }
-
-        updateEnemies(dt);
-        checkShipCollisions();
-        checkBulletCollisions();
-        updateScore(dt);
-      }
-
-      if (achievementTimer > 0) {
-        achievementTimer--;
-      }
-    }
-
-    // ===== DRAW =====
-    function drawBackground() {
-      const g = ctx.createLinearGradient(0, 0, canvas.width, 0);
-      g.addColorStop(0, "rgba(15,23,42,0.0)");
-      g.addColorStop(0.4, "rgba(30,64,175,0.35)");
-      g.addColorStop(1, "rgba(15,23,42,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function drawUI() {
-      ctx.fillStyle = "#e5e7eb";
-      ctx.font = "20px system-ui, sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillText(`Score: ${Math.floor(score)}`, 14, 26);
-
-      ctx.font = "13px system-ui, sans-serif";
-      ctx.fillStyle = "#9ca3af";
-      ctx.fillText(`Best: ${Math.floor(bestScore)}`, 14, 44);
-
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#e5e7eb";
-      ctx.fillText(`Game by ${OWNER_NAME}`, canvas.width - 10, 24);
-
-      // Achievement message
-      if (achievementTimer > 0 && achievementMessage) {
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, achievementTimer / 30);
-        ctx.fillStyle = "#facc15";
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(achievementMessage, canvas.width / 2, 60);
-        ctx.restore();
-      }
-
-      ctx.textAlign = "center";
-
-      if (gameState === "ready") {
-        ctx.fillStyle = "#e5e7eb";
-        ctx.font = "22px system-ui, sans-serif";
-        ctx.fillText("Tap / Click / Space to Start", canvas.width / 2, canvas.height / 2 - 10);
-
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillStyle = "#cbd5f5";
-        ctx.fillText(
-          "Move up-down, dodge asteroids & use laser (E / FIRE).",
-          canvas.width / 2,
-          canvas.height / 2 + 16
-        );
-      }
-
-      if (gameState === "over") {
-        ctx.fillStyle = "#fee2e2";
-        ctx.font = "26px system-ui, sans-serif";
-        ctx.fillText("Crashed!", canvas.width / 2, canvas.height / 2 - 20);
-
-        ctx.font = "16px system-ui, sans-serif";
-        ctx.fillStyle = "#e5e7eb";
-        ctx.fillText(`Score: ${Math.floor(score)}`, canvas.width / 2, canvas.height / 2 + 8);
-        ctx.fillText(`Best: ${Math.floor(bestScore)}`, canvas.width / 2, canvas.height / 2 + 32);
-
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillStyle = "#cbd5f5";
-        ctx.fillText(
-          "Press Space / Tap to Play Again",
-          canvas.width / 2,
-          canvas.height / 2 + 60
-        );
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      drawBackground();
-      drawStars();
-      drawEnemies();
-      drawShip();
-      drawBullets();
-      drawExplosion();
-      drawUI();
-    }
-
-    // ===== MAIN LOOP =====
-    function loop(timestamp) {
-      if (!lastTime) lastTime = timestamp;
-      let dt = (timestamp - lastTime) / 1000;
-      lastTime = timestamp;
-
-      if (dt > 0.05) dt = 0.05;
-
-      update(dt);
-      draw();
-      requestAnimationFrame(loop);
-    }
-
-    // ===== INPUT HANDLERS =====
-    function requestFire() {
-      if (gameState !== "running") return;
-      unlockAudio();
-      fireBullet();
-    }
-
-    document.addEventListener("keydown", (e) => {
-      if (e.code === "ArrowUp" || e.key === "w" || e.key === "W") {
-        moveUp = true;
-      }
-      if (e.code === "ArrowDown" || e.key === "s" || e.key === "S") {
-        moveDown = true;
-      }
-      if (e.code === "Space") {
-        e.preventDefault();
-        unlockAudio();
-        if (gameState === "ready") startGame();
-        else if (gameState === "over") resetGame();
-      }
-      if (e.key === "e" || e.key === "E") {
-        requestFire();
-      }
-    });
-
-    document.addEventListener("keyup", (e) => {
-      if (e.code === "ArrowUp" || e.key === "w" || e.key === "W") {
-        moveUp = false;
-      }
-      if (e.code === "ArrowDown" || e.key === "s" || e.key === "S") {
-        moveDown = false;
-      }
-    });
-
-    function canvasYFromEvent(e) {
-      const rect = canvas.getBoundingClientRect();
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return clientY - rect.top;
-    }
-
-    // Touch drag for ship
-    canvas.addEventListener("touchstart", (e) => {
-      if (e.target !== canvas) return;
-      e.preventDefault();
-      unlockAudio();
-      const y = canvasYFromEvent(e);
-      pointerActive = true;
-      pointerOffsetY = y - ship.y;
-
-      if (gameState === "ready") startGame();
-      else if (gameState === "over") resetGame();
-    }, { passive: false });
-
-    canvas.addEventListener("touchmove", (e) => {
-      if (e.target !== canvas) return;
-      e.preventDefault();
-      if (!pointerActive) return;
-      const y = canvasYFromEvent(e);
-      ship.y = y - pointerOffsetY;
-    }, { passive: false });
-
-    canvas.addEventListener("touchend", (e) => {
-      if (e.target !== canvas) return;
-      pointerActive = false;
-    });
-
-    // Mouse drag (optional, PC)
-    canvas.addEventListener("mousedown", (e) => {
-      unlockAudio();
-      pointerActive = true;
-      const y = canvasYFromEvent(e);
-      pointerOffsetY = y - ship.y;
-      if (gameState === "ready") startGame();
-      else if (gameState === "over") resetGame();
-    });
-
-    canvas.addEventListener("mousemove", (e) => {
-      if (!pointerActive) return;
-      const y = canvasYFromEvent(e);
-      ship.y = y - pointerOffsetY;
-    });
-
-    document.addEventListener("mouseup", () => {
-      pointerActive = false;
-    });
-
-    // Mobile FIRE button – click + touch
-    fireButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      requestFire();
-    });
-
-    fireButton.addEventListener("touchstart", (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      requestFire();
-    }, { passive: false });
-
-    // ===== START =====
-    loadSpaceProgress();
-    initStars();
-    resetGame();
-    requestAnimationFrame(loop);
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script src="space-game.js"></script>
 </body>
 </html>
