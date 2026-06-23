@@ -2,112 +2,192 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yuvraj Soni Arcade — Next Level Gaming</title>
+<title>Yuvraj Soni Arcade</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Yuvraj Soni Arcade — hand-built 3D games, one evolving player profile.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   TOKENS
+══════════════════════════════════════ */
 :root{
-  --bg:#03030a;
-  --surface:rgba(255,255,255,0.03);
-  --border:rgba(255,255,255,0.08);
-  --border-hi:rgba(255,255,255,0.16);
-  --cyan:#00e5ff;
-  --cyan-dim:rgba(0,229,255,0.15);
-  --cyan-glow:rgba(0,229,255,0.4);
-  --violet:#7c4dff;
-  --violet-dim:rgba(124,77,255,0.15);
-  --magenta:#ff2d78;
-  --gold:#ffc93c;
-  --text:#f0f2f8;
-  --text-dim:#6b7280;
-  --text-mid:#9ca3af;
-  --r:20px;
-  --r-sm:12px;
+  --bg:#02020a;
+  --s1:rgba(255,255,255,0.03);
+  --b1:rgba(255,255,255,0.07);
+  --b2:rgba(255,255,255,0.14);
+  --c:#00e5ff;
+  --cg:rgba(0,229,255,0.18);
+  --cgl:rgba(0,229,255,0.35);
+  --v:#7c4dff;
+  --vg:rgba(124,77,255,0.18);
+  --m:#ff2d78;
+  --g:#ffc93c;
+  --t:#f0f3fa;
+  --td:#6b7280;
+  --tm:#9ca3af;
+  --r:18px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth;font-size:16px}
+html{scroll-behavior:smooth}
 body{
   font-family:'Inter',sans-serif;
   background:var(--bg);
-  color:var(--text);
+  color:var(--t);
   overflow-x:hidden;
-  min-height:100vh;
+  cursor:none; /* custom cursor */
 }
-::selection{background:var(--cyan);color:#000}
-:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+::selection{background:var(--c);color:#000}
 a{color:inherit;text-decoration:none}
-img{display:block;max-width:100%}
 
-/* ═══════════════════════════════════════════
-   THREE.JS CANVAS (full-page 3D background)
-═══════════════════════════════════════════ */
-#bg3d{
-  position:fixed;inset:0;z-index:0;
+/* ══════════════════════════════════════
+   CUSTOM CURSOR
+══════════════════════════════════════ */
+#cursor{
+  position:fixed;top:0;left:0;z-index:9999;
+  pointer-events:none;mix-blend-mode:difference;
 }
-#bg3d canvas{width:100%!important;height:100%!important}
+#cursor-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#fff;
+  position:absolute;transform:translate(-50%,-50%);
+  transition:transform .1s;
+}
+#cursor-ring{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(255,255,255,0.55);
+  position:absolute;transform:translate(-50%,-50%);
+  transition:width .3s,height .3s,opacity .3s;
+}
+body:has(.gcard:hover) #cursor-ring,
+body:has(.nav-cta:hover) #cursor-ring{
+  width:56px;height:56px;opacity:.5;
+}
 
-/* ═══════════════════════════════════════════
-   CONTENT LAYER
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   LOADING SCREEN
+══════════════════════════════════════ */
+#loader{
+  position:fixed;inset:0;z-index:8000;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:32px;
+  transition:opacity .7s ease, visibility .7s ease;
+}
+#loader.done{opacity:0;visibility:hidden}
+.loader-logo{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;
+  letter-spacing:-.01em;
+  background:linear-gradient(120deg,var(--c),var(--v),var(--m));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  background-size:300% 100%;
+  animation:shimmer 2.5s ease-in-out infinite;
+}
+@keyframes shimmer{0%,100%{background-position:0%}50%{background-position:100%}}
+.loader-bar-wrap{
+  width:220px;height:2px;
+  background:rgba(255,255,255,0.07);
+  border-radius:99px;overflow:hidden;
+}
+.loader-bar-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--c),var(--v));
+  border-radius:99px;
+  box-shadow:0 0 12px var(--cgl);
+  transition:width .05s linear;
+}
+.loader-pct{
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  letter-spacing:.14em;color:var(--td);
+}
+
+/* ══════════════════════════════════════
+   THREE.JS BG
+══════════════════════════════════════ */
+#bg3d{position:fixed;inset:0;z-index:0}
+#bg3d canvas{width:100%!important;height:100%!important;display:block}
+
+/* ══════════════════════════════════════
+   CURSOR TRAIL PARTICLES
+══════════════════════════════════════ */
+.trail-particle{
+  position:fixed;
+  width:4px;height:4px;border-radius:50%;
+  pointer-events:none;z-index:9000;
+  animation:trailFade .8s ease-out forwards;
+}
+@keyframes trailFade{
+  0%{opacity:.7;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(0)}
+}
+
+/* ══════════════════════════════════════
+   CONTENT
+══════════════════════════════════════ */
 #content{position:relative;z-index:10}
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    NAV
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 .nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;
+  position:fixed;top:0;left:0;right:0;z-index:500;
   display:flex;align-items:center;justify-content:space-between;
-  padding:18px 52px;
-  background:rgba(3,3,10,0.55);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
-  transition:padding .4s ease;
+  padding:22px 56px;
+  transition:padding .4s,background .4s,border-color .4s;
+  border-bottom:1px solid transparent;
 }
-.nav.scrolled{padding:14px 52px}
+.nav.solid{
+  padding:16px 56px;
+  background:rgba(2,2,10,.72);
+  backdrop-filter:blur(22px);
+  border-color:var(--b1);
+}
 .nav-logo{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:17px;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;
   display:flex;align-items:center;gap:10px;
-  letter-spacing:.01em;
+  letter-spacing:-.01em;
 }
 .logo-gem{
-  width:11px;height:11px;
-  background:linear-gradient(135deg,var(--cyan),var(--violet));
-  border-radius:3px;transform:rotate(45deg);
-  box-shadow:0 0 14px var(--cyan-glow);
+  width:10px;height:10px;border-radius:2px;
+  background:linear-gradient(135deg,var(--c),var(--v));
+  transform:rotate(45deg);
+  box-shadow:0 0 14px var(--cgl);
   animation:gemPulse 3s ease-in-out infinite;
 }
-@keyframes gemPulse{0%,100%{box-shadow:0 0 14px var(--cyan-glow)}50%{box-shadow:0 0 28px var(--cyan-glow),0 0 48px rgba(124,77,255,0.3)}}
-.nav-links{display:flex;align-items:center;gap:36px}
+@keyframes gemPulse{0%,100%{box-shadow:0 0 14px var(--cgl)}50%{box-shadow:0 0 28px var(--cgl),0 0 48px rgba(124,77,255,.3)}}
+.nav-links{display:flex;align-items:center;gap:38px}
 .nav-links a{
-  font-size:13px;font-weight:500;color:var(--text-dim);
-  letter-spacing:.02em;transition:color .25s;position:relative;padding-bottom:3px;
+  font-size:13px;font-weight:500;color:var(--td);letter-spacing:.02em;
+  cursor:pointer;position:relative;padding-bottom:3px;transition:color .25s;
 }
 .nav-links a::after{
   content:"";position:absolute;bottom:0;left:0;width:0;height:1px;
-  background:var(--cyan);box-shadow:0 0 8px var(--cyan);
-  transition:width .3s ease;
+  background:var(--c);box-shadow:0 0 8px var(--c);transition:width .3s ease;
 }
-.nav-links a:hover{color:var(--text)}
+.nav-links a:hover{color:var(--t)}
 .nav-links a:hover::after{width:100%}
 .nav-cta{
-  font-size:12.5px;font-weight:600;
-  padding:9px 20px;border-radius:9px;
-  background:linear-gradient(135deg,var(--cyan),var(--violet));
+  font-size:13px;font-weight:600;
+  padding:10px 22px;border-radius:10px;
+  background:linear-gradient(135deg,var(--c),var(--v));
   color:#020408;border:none;cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,229,255,0.25);
+  box-shadow:0 4px 20px rgba(0,229,255,.25);
   transition:transform .25s,box-shadow .25s;
+  position:relative;overflow:hidden;
 }
-.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,0.4)}
+.nav-cta::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,.22),transparent 70%);
+  transform:translateX(-100%);transition:transform .5s;
+}
+.nav-cta:hover::before{transform:translateX(100%)}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,229,255,.4)}
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    HERO
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 .hero{
   min-height:100vh;
   display:flex;flex-direction:column;
@@ -116,445 +196,465 @@ img{display:block;max-width:100%}
   padding:120px 24px 80px;
   position:relative;
 }
-
-/* Floating particles injected by JS */
-.hero-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-
 .hero-eyebrow{
   display:inline-flex;align-items:center;gap:10px;
   font-family:'JetBrains Mono',monospace;
   font-size:11px;letter-spacing:.28em;text-transform:uppercase;
-  color:var(--cyan);margin-bottom:32px;
-  opacity:0;animation:heroUp .9s cubic-bezier(.16,1,.3,1) .1s forwards;
+  color:var(--c);margin-bottom:36px;
+  opacity:0;transform:translateY(20px);
+  transition:opacity .8s .1s,transform .8s .1s cubic-bezier(.16,1,.3,1);
 }
-.eyebrow-dot{
+.hero-eyebrow.in{opacity:1;transform:none}
+.edot{
   width:6px;height:6px;border-radius:50%;
-  background:var(--cyan);box-shadow:0 0 10px var(--cyan);
-  animation:dotBlink 2s ease-in-out infinite;
+  background:var(--c);box-shadow:0 0 10px var(--c);
+  animation:blink 2s ease-in-out infinite;
 }
-@keyframes dotBlink{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
-.hero h1{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:clamp(52px,8vw,100px);
-  line-height:.96;letter-spacing:-.03em;
-  opacity:0;animation:heroUp .95s cubic-bezier(.16,1,.3,1) .2s forwards;
+/* Big headline with clip reveal */
+.hero-headline{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(56px,9vw,112px);
+  line-height:.93;letter-spacing:-.035em;
+  overflow:hidden;
 }
-.hero h1 em{
-  font-style:normal;
-  background:linear-gradient(120deg,var(--cyan) 0%,var(--violet) 50%,var(--magenta) 100%);
+.hero-headline .line{
+  display:block;overflow:hidden;
+}
+.hero-headline .line-inner{
+  display:block;
+  transform:translateY(110%);
+  transition:transform .9s cubic-bezier(.16,1,.3,1);
+}
+.hero-headline .line-inner.in{transform:translateY(0)}
+.hero-headline .line:nth-child(2) .line-inner{transition-delay:.12s}
+.hero-headline .line:nth-child(3) .line-inner{transition-delay:.24s}
+
+.gradient-word{
+  background:linear-gradient(120deg,var(--c) 0%,var(--v) 45%,var(--m) 100%);
   background-size:200% 100%;
-  -webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;
-  animation:textShimmer 6s ease-in-out infinite;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:wordShimmer 5s ease-in-out infinite;
 }
-@keyframes textShimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes wordShimmer{0%,100%{background-position:0%}50%{background-position:100%}}
 
 .hero-sub{
-  max-width:520px;
-  font-size:clamp(15px,1.8vw,17px);
-  line-height:1.8;color:var(--text-mid);
-  margin:28px auto 0;
-  opacity:0;animation:heroUp .95s cubic-bezier(.16,1,.3,1) .35s forwards;
+  max-width:500px;font-size:clamp(15px,1.8vw,17px);line-height:1.82;
+  color:var(--tm);margin:32px auto 0;
+  opacity:0;transform:translateY(22px);
+  transition:opacity .8s .5s,transform .8s .5s cubic-bezier(.16,1,.3,1);
 }
+.hero-sub.in{opacity:1;transform:none}
 
 .hero-actions{
-  margin-top:52px;
-  display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
-  opacity:0;animation:heroUp .95s cubic-bezier(.16,1,.3,1) .5s forwards;
+  margin-top:52px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
+  opacity:0;transform:translateY(22px);
+  transition:opacity .8s .7s,transform .8s .7s cubic-bezier(.16,1,.3,1);
 }
-.btn-primary{
-  display:inline-flex;align-items:center;gap:8px;
+.hero-actions.in{opacity:1;transform:none}
+
+.btn-p{
+  display:inline-flex;align-items:center;gap:9px;
   font-size:14.5px;font-weight:600;
-  padding:17px 38px;border-radius:12px;border:none;
-  background:linear-gradient(135deg,var(--cyan),var(--violet));
+  padding:18px 40px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--c),var(--v));
   color:#020408;cursor:pointer;
-  box-shadow:0 8px 32px rgba(0,229,255,0.3);
+  box-shadow:0 8px 32px rgba(0,229,255,.28);
   transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;
   position:relative;overflow:hidden;
 }
-.btn-primary::before{
+.btn-p::before{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,0.18),transparent 70%);
+  background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,.2),transparent 70%);
   transform:translateX(-100%);transition:transform .5s;
 }
-.btn-primary:hover::before{transform:translateX(100%)}
-.btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,229,255,0.45)}
-.btn-ghost{
-  display:inline-flex;align-items:center;gap:8px;
+.btn-p:hover::before{transform:translateX(100%)}
+.btn-p:hover{transform:translateY(-3px);box-shadow:0 18px 50px rgba(0,229,255,.42)}
+.btn-g{
+  display:inline-flex;align-items:center;gap:9px;
   font-size:14.5px;font-weight:500;
-  padding:17px 38px;border-radius:12px;
-  border:1px solid var(--border-hi);
-  background:var(--surface);color:var(--text);
-  cursor:pointer;backdrop-filter:blur(10px);
+  padding:18px 40px;border-radius:12px;
+  border:1px solid var(--b2);background:var(--s1);
+  color:var(--t);cursor:pointer;backdrop-filter:blur(10px);
   transition:border-color .3s,background .3s,transform .3s;
 }
-.btn-ghost:hover{border-color:var(--cyan);background:var(--cyan-dim);transform:translateY(-3px)}
+.btn-g:hover{border-color:var(--c);background:var(--cg);transform:translateY(-3px)}
 
 .scroll-cue{
   position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;gap:8px;
+  display:flex;flex-direction:column;align-items:center;gap:9px;
   font-family:'JetBrains Mono',monospace;font-size:9.5px;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);
-  opacity:0;animation:heroUp 1s .9s forwards;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--td);
+  opacity:0;animation:fadeIn 1s 1.4s forwards;
 }
-.scroll-line{width:1px;height:40px;background:var(--border-hi);position:relative;overflow:hidden}
-.scroll-line::after{
+@keyframes fadeIn{to{opacity:1}}
+.scl{width:1px;height:42px;background:var(--b2);position:relative;overflow:hidden}
+.scl::after{
   content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;
-  background:linear-gradient(180deg,transparent,var(--cyan));
-  animation:scrollDrop 2s ease-in-out infinite;
+  background:linear-gradient(180deg,transparent,var(--c));
+  animation:sdrop 2s ease-in-out infinite;
 }
-@keyframes scrollDrop{0%{top:-100%}60%{top:100%}100%{top:100%}}
+@keyframes sdrop{0%{top:-100%}60%{top:100%}100%{top:100%}}
 
-@keyframes heroUp{
-  from{opacity:0;transform:translateY(28px)}
-  to{opacity:1;transform:translateY(0)}
+/* ══════════════════════════════════════
+   MARQUEE STRIP
+══════════════════════════════════════ */
+.marquee-wrap{
+  overflow:hidden;border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);
+  padding:18px 0;background:rgba(0,229,255,.02);
+  margin-bottom:0;
 }
+.marquee-track{
+  display:flex;gap:60px;width:max-content;
+  animation:marquee 28s linear infinite;
+}
+.marquee-wrap:hover .marquee-track{animation-play-state:paused}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.marquee-item{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--td);display:flex;align-items:center;gap:16px;white-space:nowrap;
+}
+.marquee-item span{color:var(--c);font-size:14px}
 
-/* ═══════════════════════════════════════════
-   STATS STRIP
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   STATS
+══════════════════════════════════════ */
+.stats-section{max-width:1100px;margin:0 auto;padding:100px 52px 0}
 .stats{
   display:grid;grid-template-columns:repeat(4,1fr);
-  max-width:1080px;margin:0 auto;
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  overflow:hidden;
-  background:rgba(255,255,255,0.018);
-  backdrop-filter:blur(20px);
+  border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;
+  background:rgba(255,255,255,.015);backdrop-filter:blur(20px);
 }
 .stat{
-  padding:32px 28px;text-align:center;
-  border-right:1px solid var(--border);
-  position:relative;overflow:hidden;
-  transition:background .35s;
+  padding:36px 28px;text-align:center;
+  border-right:1px solid var(--b1);
+  position:relative;overflow:hidden;cursor:default;
+  transition:background .4s;
 }
-.stat:last-child{border-right:none}
 .stat::before{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(135deg,var(--cyan-dim),var(--violet-dim));
+  background:linear-gradient(135deg,var(--cg),var(--vg));
   opacity:0;transition:opacity .4s;
 }
+.stat:last-child{border-right:none}
 .stat:hover::before{opacity:1}
+.stat:hover .stat-num{filter:drop-shadow(0 0 12px var(--cgl))}
 .stat-num{
   font-family:'Space Grotesk',sans-serif;font-weight:700;
-  font-size:clamp(30px,3.5vw,44px);
-  background:linear-gradient(120deg,var(--cyan),var(--violet));
+  font-size:clamp(32px,4vw,48px);
+  background:linear-gradient(120deg,var(--c),var(--v));
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  display:block;
+  display:block;transition:filter .4s;
 }
 .stat-label{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--text-dim);margin-top:6px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--td);margin-top:8px;
+  position:relative;z-index:1;
 }
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    SECTIONS
-═══════════════════════════════════════════ */
+══════════════════════════════════════ */
 section{padding:140px 52px;max-width:1180px;margin:auto}
 .sec-eye{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;
-  color:var(--cyan);display:block;margin-bottom:16px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:.26em;text-transform:uppercase;color:var(--c);
+  display:block;margin-bottom:18px;
 }
 .sec-title{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:clamp(32px,4vw,52px);
-  letter-spacing:-.02em;line-height:1.05;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(34px,4.5vw,56px);letter-spacing:-.025em;line-height:1.04;
 }
-.sec-sub{
-  color:var(--text-mid);font-size:15.5px;line-height:1.75;
-  max-width:560px;margin-top:18px;
-}
+.sec-sub{color:var(--tm);font-size:15.5px;line-height:1.8;max-width:540px;margin-top:18px}
 .sec-head{
   display:flex;justify-content:space-between;align-items:flex-end;
   margin-bottom:64px;gap:24px;flex-wrap:wrap;
 }
 
-/* ═══════════════════════════════════════════
-   GAME CARDS (3D tilt)
-═══════════════════════════════════════════ */
-.games-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-@media(max-width:680px){.games-grid{grid-template-columns:1fr}}
-
+/* ══════════════════════════════════════
+   GAME CARDS
+══════════════════════════════════════ */
+.games-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:20px;
+}
 .gcard{
-  position:relative;border-radius:var(--r);
-  border:1px solid var(--border);
-  background:rgba(255,255,255,0.025);
-  padding:44px 38px 38px;
-  cursor:pointer;overflow:hidden;
+  position:relative;border-radius:20px;
+  border:1px solid var(--b1);
+  background:rgba(255,255,255,.022);
+  padding:46px 38px 40px;cursor:pointer;overflow:hidden;
   transform-style:preserve-3d;
-  transition:border-color .4s,box-shadow .4s,transform .15s ease-out;
+  transition:border-color .4s,box-shadow .4s,transform .12s ease-out;
   will-change:transform;
 }
 .gcard::before{
-  content:"";position:absolute;inset:0;border-radius:var(--r);
-  background:radial-gradient(380px circle at var(--mx,50%) var(--my,50%),rgba(0,229,255,0.11),transparent 65%);
-  opacity:0;transition:opacity .35s;pointer-events:none;
+  content:"";position:absolute;inset:0;border-radius:20px;
+  background:radial-gradient(360px circle at var(--mx,50%) var(--my,50%),rgba(0,229,255,.13),transparent 65%);
+  opacity:0;transition:opacity .3s;pointer-events:none;
 }
-.gcard:hover{border-color:rgba(0,229,255,0.45);box-shadow:0 24px 64px rgba(0,0,0,0.5),0 0 48px rgba(0,229,255,0.07)}
+.gcard::after{
+  content:"";position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--c),transparent);
+  transform:scaleX(0);transition:transform .5s cubic-bezier(.16,1,.3,1);
+}
 .gcard:hover::before{opacity:1}
-
-/* Large game number watermark */
+.gcard:hover::after{transform:scaleX(1)}
+.gcard:hover{
+  border-color:rgba(0,229,255,.4);
+  box-shadow:0 28px 70px rgba(0,0,0,.55),0 0 50px rgba(0,229,255,.07);
+}
 .gcard-num{
-  position:absolute;top:-10px;right:16px;
+  position:absolute;top:-8px;right:18px;
   font-family:'Space Grotesk',sans-serif;font-weight:700;
-  font-size:120px;line-height:1;letter-spacing:-.05em;
-  color:rgba(255,255,255,0.025);
-  pointer-events:none;user-select:none;
+  font-size:130px;line-height:1;letter-spacing:-.05em;
+  color:rgba(255,255,255,.022);user-select:none;pointer-events:none;
   transition:color .4s;
 }
-.gcard:hover .gcard-num{color:rgba(0,229,255,0.05)}
-
-.gcard-icon{font-size:42px;margin-bottom:22px;display:block;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.5));transition:transform .4s cubic-bezier(.16,1,.3,1)}
-.gcard:hover .gcard-icon{transform:translateY(-6px) scale(1.1)}
+.gcard:hover .gcard-num{color:rgba(0,229,255,.045)}
+.gcard-badge{
+  position:absolute;top:22px;right:22px;
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 12px;border-radius:99px;
+  background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.28);color:var(--c);
+}
+.gcard-icon{
+  font-size:44px;margin-bottom:24px;display:block;
+  filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));
+  transition:transform .4s cubic-bezier(.16,1,.3,1);
+}
+.gcard:hover .gcard-icon{transform:translateY(-7px) scale(1.12)}
 .gcard-tag{
   font-family:'JetBrains Mono',monospace;font-size:10px;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);
-  margin-bottom:10px;display:block;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--c);
+  margin-bottom:12px;display:block;
 }
 .gcard h3{
   font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:24px;
-  margin-bottom:12px;letter-spacing:-.01em;
+  margin-bottom:13px;letter-spacing:-.01em;
 }
-.gcard p{color:var(--text-mid);font-size:14px;line-height:1.7;margin-bottom:28px}
-.gcard-play{
+.gcard p{color:var(--tm);font-size:14px;line-height:1.72;margin-bottom:30px}
+.gcard-arrow{
   display:flex;align-items:center;gap:8px;
-  font-size:13px;font-weight:500;color:var(--text-dim);
+  font-size:13px;font-weight:500;color:var(--td);
   transition:color .3s,gap .3s;
 }
-.gcard:hover .gcard-play{color:var(--cyan);gap:14px}
-.gcard-badge{
-  position:absolute;top:20px;right:20px;
-  font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
-  padding:5px 12px;border-radius:99px;
-  background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--cyan);
-}
+.gcard:hover .gcard-arrow{color:var(--c);gap:14px}
 
-/* ═══════════════════════════════════════════
-   ABOUT (split layout with 3D visual)
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   ABOUT
+══════════════════════════════════════ */
 .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
-@media(max-width:860px){.about-grid{grid-template-columns:1fr;gap:48px}}
-
 .about-visual{
-  aspect-ratio:1;border-radius:28px;
-  background:rgba(255,255,255,0.02);
-  border:1px solid var(--border);
+  aspect-ratio:1;border-radius:24px;
+  background:rgba(255,255,255,.018);border:1px solid var(--b1);
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
 }
 .about-visual::before{
   content:"";position:absolute;inset:0;
   background:
-    linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);
-  background-size:36px 36px;
+    linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);
+  background-size:38px 38px;
 }
-.about-orb{
+.aorb{
   width:130px;height:130px;border-radius:50%;
-  background:radial-gradient(circle at 38% 38%,var(--cyan),var(--violet) 60%,var(--magenta));
-  box-shadow:0 0 80px rgba(0,229,255,0.45),0 0 160px rgba(124,77,255,0.25);
-  animation:orbPulse 5s ease-in-out infinite;
-  position:relative;z-index:1;
+  background:radial-gradient(circle at 35% 35%,var(--c),var(--v) 55%,var(--m));
+  box-shadow:0 0 80px rgba(0,229,255,.45),0 0 150px rgba(124,77,255,.22);
+  animation:orbPulse 5s ease-in-out infinite;z-index:1;
 }
-@keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
-.about-ring{
-  position:absolute;border-radius:50%;
-  border:1px solid rgba(0,229,255,0.2);
+@keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.aring{
+  position:absolute;border-radius:50%;border:1px solid rgba(0,229,255,.18);
 }
-.about-ring-1{width:200px;height:200px;animation:spinCW 18s linear infinite}
-.about-ring-2{width:270px;height:270px;border-color:rgba(124,77,255,0.15);animation:spinCCW 28s linear infinite}
-.about-ring-3{width:340px;height:340px;border-color:rgba(255,45,120,0.1);animation:spinCW 40s linear infinite}
-@keyframes spinCW{to{transform:rotate(360deg)}}
-@keyframes spinCCW{to{transform:rotate(-360deg)}}
-
+.aring-1{width:200px;height:200px;animation:sCW 18s linear infinite}
+.aring-2{width:270px;height:270px;border-color:rgba(124,77,255,.13);animation:sCCW 27s linear infinite}
+.aring-3{width:340px;height:340px;border-color:rgba(255,45,120,.08);animation:sCW 40s linear infinite}
+@keyframes sCW{to{transform:rotate(360deg)}}
+@keyframes sCCW{to{transform:rotate(-360deg)}}
 .about-copy .sec-sub{max-width:100%}
-.about-copy p{color:var(--text-mid);font-size:15px;line-height:1.85;margin-bottom:16px}
-.about-copy p strong{color:var(--text);font-weight:600}
+.about-copy p{color:var(--tm);font-size:15px;line-height:1.88;margin-bottom:18px}
+.about-copy p strong{color:var(--t);font-weight:600}
 
-/* ═══════════════════════════════════════════
-   HOW IT WORKS
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   STEPS
+══════════════════════════════════════ */
 .steps{
   display:grid;grid-template-columns:repeat(3,1fr);
-  gap:1px;background:var(--border);
-  border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+  gap:1px;background:var(--b1);
+  border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;
 }
-@media(max-width:720px){.steps{grid-template-columns:1fr}}
 .step{
-  background:rgba(255,255,255,0.018);
-  padding:52px 40px;position:relative;
-  transition:background .35s;overflow:hidden;
+  background:rgba(255,255,255,.016);padding:52px 40px;
+  position:relative;transition:background .35s;overflow:hidden;
 }
 .step::before{
   content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--cyan),var(--violet));
-  transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1);
+  background:linear-gradient(90deg,var(--c),var(--v));
+  transform:scaleX(0);transform-origin:left;transition:transform .55s cubic-bezier(.16,1,.3,1);
 }
-.step:hover{background:rgba(255,255,255,0.035)}
+.step:hover{background:rgba(255,255,255,.032)}
 .step:hover::before{transform:scaleX(1)}
 .step-num{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:56px;
-  background:linear-gradient(120deg,var(--cyan),var(--violet));
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:60px;
+  background:linear-gradient(120deg,var(--c),var(--v));
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  opacity:.45;line-height:1;margin-bottom:24px;
+  opacity:.4;line-height:1;margin-bottom:26px;
 }
-.step h3{
-  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;
-  margin-bottom:14px;
-}
-.step p{color:var(--text-mid);font-size:14px;line-height:1.75}
+.step h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;margin-bottom:14px}
+.step p{color:var(--tm);font-size:14px;line-height:1.75}
 
-/* ═══════════════════════════════════════════
-   FEATURES GRID
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   FEATURES
+══════════════════════════════════════ */
 .feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:860px){.feats{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:540px){.feats{grid-template-columns:1fr}}
-
 .feat{
-  background:rgba(255,255,255,0.025);
-  border:1px solid var(--border);border-radius:var(--r);
+  background:rgba(255,255,255,.022);border:1px solid var(--b1);border-radius:var(--r);
   padding:32px 28px;
   transition:border-color .35s,transform .35s,box-shadow .35s;
 }
 .feat:hover{
-  border-color:rgba(124,77,255,0.5);
-  transform:translateY(-5px);
-  box-shadow:0 20px 48px rgba(0,0,0,0.4),0 0 32px rgba(124,77,255,0.08);
+  border-color:rgba(124,77,255,.5);transform:translateY(-6px);
+  box-shadow:0 24px 52px rgba(0,0,0,.42),0 0 36px rgba(124,77,255,.08);
 }
 .feat-icon{
   width:48px;height:48px;border-radius:14px;
-  background:linear-gradient(135deg,var(--cyan-dim),var(--violet-dim));
-  border:1px solid var(--border);
+  background:linear-gradient(135deg,var(--cg),var(--vg));
+  border:1px solid var(--b1);
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:20px;
+  font-size:22px;margin-bottom:22px;
 }
 .feat h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin-bottom:10px}
-.feat p{color:var(--text-dim);font-size:13.5px;line-height:1.7}
+.feat p{color:var(--td);font-size:13.5px;line-height:1.72}
 
-/* ═══════════════════════════════════════════
-   PROFILE CARD
-═══════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   PROFILE
+══════════════════════════════════════ */
 .profile-wrap{
-  display:grid;grid-template-columns:1.2fr 0.8fr;gap:20px;
-  background:rgba(255,255,255,0.018);
-  border:1px solid var(--border);border-radius:var(--r);
-  overflow:hidden;position:relative;
+  display:grid;grid-template-columns:1.2fr .8fr;
+  border:1px solid var(--b1);border-radius:20px;overflow:hidden;
+  position:relative;background:rgba(255,255,255,.016);
 }
 .profile-wrap::before{
-  content:"";position:absolute;top:-30%;right:-10%;
-  width:320px;height:320px;
-  background:radial-gradient(circle,rgba(124,77,255,0.12),transparent 70%);
-  filter:blur(40px);pointer-events:none;
+  content:"";position:absolute;top:-30%;right:-10%;width:320px;height:320px;
+  background:radial-gradient(circle,rgba(124,77,255,.1),transparent 70%);filter:blur(40px);
 }
 .profile-wrap::after{
-  content:"";position:absolute;bottom:-20%;left:10%;
-  width:240px;height:240px;
-  background:radial-gradient(circle,rgba(0,229,255,0.08),transparent 70%);
-  filter:blur(40px);pointer-events:none;
+  content:"";position:absolute;bottom:-20%;left:10%;width:240px;height:240px;
+  background:radial-gradient(circle,rgba(0,229,255,.07),transparent 70%);filter:blur(40px);
 }
-.profile-main{padding:52px;position:relative;z-index:1}
+.profile-main{padding:56px;position:relative;z-index:1}
 .profile-aside{
-  padding:52px 40px;
-  border-left:1px solid var(--border);
+  padding:56px 40px;border-left:1px solid var(--b1);
   display:flex;flex-direction:column;justify-content:center;
   position:relative;z-index:1;
 }
-@media(max-width:720px){
-  .profile-wrap{grid-template-columns:1fr}
-  .profile-aside{border-left:none;border-top:1px solid var(--border)}
-}
-.member-label{
+.plabel{
   font-family:'JetBrains Mono',monospace;font-size:10px;
-  letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:8px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:8px;
 }
-.member-name{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;
+.pname{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:38px;
   margin-bottom:36px;letter-spacing:-.01em;
 }
 .pstat{
   display:flex;justify-content:space-between;align-items:center;
-  padding:16px 0;border-bottom:1px solid var(--border);font-size:14px;
+  padding:16px 0;border-bottom:1px solid var(--b1);font-size:14px;
 }
 .pstat:last-of-type{border-bottom:none}
-.pstat span:first-child{color:var(--text-dim);font-size:13px;font-weight:500}
+.pstat span:first-child{color:var(--td);font-size:13px;font-weight:500}
 .pstat strong{
-  font-family:'JetBrains Mono',monospace;font-weight:500;font-size:17px;
-  color:var(--cyan);
+  font-family:'JetBrains Mono',monospace;font-weight:500;font-size:18px;color:var(--c);
 }
-.xp-track{height:5px;background:rgba(255,255,255,0.07);border-radius:99px;margin-top:20px;overflow:hidden}
+.xp-track{height:5px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:22px;overflow:hidden}
 .xp-fill{
-  height:100%;background:linear-gradient(90deg,var(--cyan),var(--violet));
-  box-shadow:0 0 12px var(--cyan-glow);border-radius:99px;
-  width:0%;transition:width .9s cubic-bezier(.16,1,.3,1);
+  height:100%;background:linear-gradient(90deg,var(--c),var(--v));
+  box-shadow:0 0 12px var(--cgl);border-radius:99px;
+  width:0%;transition:width 1s cubic-bezier(.16,1,.3,1);
 }
-.profile-aside p{color:var(--text-dim);font-size:14px;line-height:1.75;margin-bottom:24px}
+.profile-aside p{color:var(--td);font-size:14px;line-height:1.78;margin-bottom:24px}
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    FOOTER
-═══════════════════════════════════════════ */
-footer{border-top:1px solid var(--border)}
+══════════════════════════════════════ */
+footer{border-top:1px solid var(--b1)}
 .footer-main{
-  max-width:1180px;margin:auto;padding:80px 52px 48px;
-  display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:56px;
+  max-width:1180px;margin:auto;padding:88px 52px 52px;
+  display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:56px;
 }
-@media(max-width:720px){.footer-main{grid-template-columns:1fr;gap:40px}}
 .footer-brand .nav-logo{margin-bottom:18px}
-.footer-brand p{color:var(--text-dim);font-size:14px;line-height:1.8;max-width:300px}
+.footer-brand p{color:var(--td);font-size:14px;line-height:1.82;max-width:300px}
 .footer-col h4{
   font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--text-dim);margin-bottom:20px;
+  text-transform:uppercase;color:var(--td);margin-bottom:22px;
 }
 .footer-col a{
-  display:block;font-size:14px;color:var(--text-mid);margin-bottom:13px;
-  transition:color .25s;cursor:pointer;
+  display:block;font-size:14px;color:var(--tm);margin-bottom:14px;
+  cursor:pointer;transition:color .25s;
 }
-.footer-col a:hover{color:var(--cyan)}
-.footer-bottom{
-  max-width:1180px;margin:auto;padding:24px 52px 44px;
-  border-top:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:12px;
-  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);
+.footer-col a:hover{color:var(--c)}
+.footer-btm{
+  max-width:1180px;margin:auto;padding:24px 52px 48px;
+  border-top:1px solid var(--b1);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);
 }
-.footer-bottom .gem{color:var(--cyan)}
+.footer-btm .gem{color:var(--c)}
 
-/* ═══════════════════════════════════════════
-   REVEAL ANIMATION
-═══════════════════════════════════════════ */
-.reveal{opacity:0;transform:translateY(30px);transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1)}
-.reveal.in{opacity:1;transform:none}
-.reveal-delay-1{transition-delay:.1s}
-.reveal-delay-2{transition-delay:.2s}
-.reveal-delay-3{transition-delay:.3s}
-.reveal-delay-4{transition-delay:.4s}
+/* ══════════════════════════════════════
+   REVEAL
+══════════════════════════════════════ */
+.rv{
+  opacity:0;transform:translateY(32px);
+  transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);
+}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}
+.rv.d3{transition-delay:.3s}.rv.d4{transition-delay:.4s}
 
-/* ═══════════════════════════════════════════
+/* ══════════════════════════════════════
    RESPONSIVE
-═══════════════════════════════════════════ */
-@media(max-width:860px){
-  .nav{padding:16px 24px}
+══════════════════════════════════════ */
+@media(max-width:900px){
+  .nav{padding:16px 24px}.nav.solid{padding:14px 24px}
   section{padding:100px 24px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .stat:nth-child(2){border-right:none}
+  .games-grid{grid-template-columns:1fr}
+  .about-grid{grid-template-columns:1fr;gap:48px}
+  .steps{grid-template-columns:1fr}
+  .feats{grid-template-columns:repeat(2,1fr)}
+  .profile-wrap{grid-template-columns:1fr}
+  .profile-aside{border-left:none;border-top:1px solid var(--b1)}
+  .footer-main{grid-template-columns:1fr;gap:40px}
+  .stats-section{padding:80px 24px 0}
 }
 @media(max-width:540px){
   .nav-links{display:none}
-  .hero h1{letter-spacing:-.02em}
-  .footer-bottom{flex-direction:column;align-items:flex-start}
+  .feats{grid-template-columns:1fr}
+  body{cursor:auto}
+  #cursor{display:none}
 }
 </style>
 </head>
 <body>
 
-<!-- Three.js full-page 3D background -->
-<div id="bg3d"></div>
+<!-- Custom cursor -->
+<div id="cursor">
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+</div>
 
-<!-- Floating particles layer (CSS only, zero JS cost) -->
-<div class="hero-particles" id="particles"></div>
+<!-- Loading screen -->
+<div id="loader">
+  <div class="loader-logo">Yuvraj Soni Arcade</div>
+  <div class="loader-bar-wrap"><div class="loader-bar-fill" id="lbar"></div></div>
+  <div class="loader-pct" id="lpct">0%</div>
+</div>
+
+<!-- Three.js 3D background -->
+<div id="bg3d"></div>
 
 <div id="content">
 
@@ -572,26 +672,35 @@ footer{border-top:1px solid var(--border)}
 
   <!-- HERO -->
   <div class="hero" id="home">
-    <span class="hero-eyebrow"><span class="eyebrow-dot"></span>Independent Arcade · Est. 2026</span>
-    <h1>Play in<br><em>another</em><br>dimension.</h1>
-    <p class="hero-sub">A hand-built collection of four arcade games — designed and developed end-to-end by Yuvraj Soni, with a leveling system that remembers every player who walks in.</p>
-    <div class="hero-actions">
-      <button class="btn-primary" onclick="goTo('games')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    <span class="hero-eyebrow" id="eyebrow"><span class="edot"></span>Independent Arcade · Est. 2026</span>
+    <h1 class="hero-headline" id="headline">
+      <span class="line"><span class="line-inner">Play in</span></span>
+      <span class="line"><span class="line-inner gradient-word">another</span></span>
+      <span class="line"><span class="line-inner">dimension.</span></span>
+    </h1>
+    <p class="hero-sub" id="herosub">A hand-built collection of four arcade games — designed and developed end-to-end by Yuvraj Soni, with a leveling system that remembers every player who walks in.</p>
+    <div class="hero-actions" id="heroactions">
+      <button class="btn-p" onclick="goTo('games')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         Enter the Arcade
       </button>
-      <button class="btn-ghost" onclick="goTo('about')">Our Story</button>
+      <button class="btn-g" onclick="goTo('about')">Our Story</button>
     </div>
-    <div class="scroll-cue"><span>Scroll</span><div class="scroll-line"></div></div>
+    <div class="scroll-cue"><span>Scroll</span><div class="scl"></div></div>
+  </div>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
+    <div class="marquee-track" id="mtrack"></div>
   </div>
 
   <!-- STATS -->
-  <div style="max-width:1080px;margin:0 auto;padding:0 52px 140px">
-    <div class="stats reveal">
+  <div class="stats-section">
+    <div class="stats rv" id="statsEl">
       <div class="stat"><span class="stat-num" data-count="4">0</span><div class="stat-label">Games Live</div></div>
-      <div class="stat"><span class="stat-num" data-count="1">0</span><div class="stat-label">Solo Developer</div></div>
+      <div class="stat"><span class="stat-num">1</span><div class="stat-label">Solo Developer</div></div>
       <div class="stat"><span class="stat-num">∞</span><div class="stat-label">XP To Earn</div></div>
-      <div class="stat"><span class="stat-num" data-count="100">0</span><div class="stat-label">% Browser-Based</div></div>
+      <div class="stat"><span class="stat-num" data-count="100" data-suf="%">0</span><div class="stat-label">Browser-Based</div></div>
     </div>
   </div>
 
@@ -599,136 +708,118 @@ footer{border-top:1px solid var(--border)}
   <section id="games">
     <div class="sec-head">
       <div>
-        <span class="sec-eye reveal">The Collection</span>
-        <h2 class="sec-title reveal reveal-delay-1">Four games,<br>built by hand.</h2>
+        <span class="sec-eye rv">The Collection</span>
+        <h2 class="sec-title rv d1">Four games,<br>built by hand.</h2>
+        <p class="sec-sub rv d2">Each title is a self-contained world. Tilt the cards — the arcade reacts to you.</p>
       </div>
-      <p class="sec-sub reveal" style="text-align:right;max-width:300px">Each title is a self-contained experience. Hover the cards — the arcade reacts.</p>
     </div>
     <div class="games-grid">
-
-      <div class="gcard reveal" onclick="location.href='eagle.html'">
+      <div class="gcard rv" onclick="location.href='eagle.html'">
         <div class="gcard-num">01</div>
         <span class="gcard-badge">Endless</span>
         <span class="gcard-icon">🦅</span>
         <span class="gcard-tag">Skill · Reflex</span>
         <h3>Eagle Flight</h3>
         <p>Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and higher multipliers.</p>
-        <div class="gcard-play">Play now <span>→</span></div>
+        <div class="gcard-arrow">Play now <span style="transition:transform .3s">→</span></div>
       </div>
-
-      <div class="gcard reveal reveal-delay-1" onclick="location.href='space.html'">
+      <div class="gcard rv d1" onclick="location.href='space.html'">
         <div class="gcard-num">02</div>
         <span class="gcard-badge">3D · Waves</span>
         <span class="gcard-icon">🚀</span>
         <span class="gcard-tag">Shooter · Strategy</span>
         <h3>Void Interceptor</h3>
         <p>A full 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, defeat wave bosses, and upgrade your ship.</p>
-        <div class="gcard-play">Play now <span>→</span></div>
+        <div class="gcard-arrow">Play now <span>→</span></div>
       </div>
-
-      <div class="gcard reveal reveal-delay-2" onclick="location.href='drift.html'">
+      <div class="gcard rv d2" onclick="location.href='drift.html'">
         <div class="gcard-num">03</div>
         <span class="gcard-badge">3D · Racing</span>
         <span class="gcard-icon">🚗</span>
         <span class="gcard-tag">Racing · Precision</span>
         <h3>Neon Drift Racer</h3>
         <p>Race through a neon city highway in full 3D. Dodge traffic, chain near-misses for combos, and push your distance record.</p>
-        <div class="gcard-play">Play now <span>→</span></div>
+        <div class="gcard-arrow">Play now <span>→</span></div>
       </div>
-
-      <div class="gcard reveal reveal-delay-3" onclick="location.href='xo.html'">
+      <div class="gcard rv d3" onclick="location.href='xo.html'">
         <div class="gcard-num">04</div>
         <span class="gcard-badge">Strategy</span>
         <span class="gcard-icon">❌</span>
         <span class="gcard-tag">1v1 · AI Duel</span>
         <h3>X/O Bot Duel</h3>
-        <p>A tactical battle against an AI opponent that adapts to your moves. Simple to start, genuinely hard to master.</p>
-        <div class="gcard-play">Play now <span>→</span></div>
+        <p>A tactical battle against an AI opponent that adapts. Simple to start, genuinely hard to master.</p>
+        <div class="gcard-arrow">Play now <span>→</span></div>
       </div>
-
     </div>
   </section>
 
   <!-- ABOUT -->
   <section id="about">
     <div class="about-grid">
-      <div class="about-visual reveal">
-        <div class="about-ring about-ring-3"></div>
-        <div class="about-ring about-ring-2"></div>
-        <div class="about-ring about-ring-1"></div>
-        <div class="about-orb"></div>
+      <div class="about-visual rv">
+        <div class="aring aring-3"></div>
+        <div class="aring aring-2"></div>
+        <div class="aring aring-1"></div>
+        <div class="aorb"></div>
       </div>
       <div class="about-copy">
-        <span class="sec-eye reveal">The Story</span>
-        <h2 class="sec-title reveal reveal-delay-1">One developer.<br>Four worlds.<br>Zero shortcuts.</h2>
+        <span class="sec-eye rv">The Story</span>
+        <h2 class="sec-title rv d1">One developer.<br>Four worlds.<br>Zero shortcuts.</h2>
         <div style="margin-top:24px">
-          <p class="reveal reveal-delay-2">Most online arcades are templates wearing different skins. <strong>Yuvraj Soni Arcade</strong> is different — every game here is written, tuned, and shipped by a single person, end to end, with no asset packs and no recycled engines.</p>
-          <p class="reveal reveal-delay-3">The goal isn't to have the most games. It's to have <strong>four that actually feel considered</strong> — distinct mechanics, distinct moods, and a shared profile system that ties your progress across all of them into one evolving identity.</p>
+          <p class="rv d2">Most online arcades are templates wearing different skins. <strong>Yuvraj Soni Arcade</strong> is different — every game here is written, tuned, and shipped by a single person, end to end, with no asset packs and no recycled engines.</p>
+          <p class="rv d3">The goal isn't the most games. It's to have <strong>four that feel considered</strong> — distinct mechanics, distinct moods, and a shared profile system that ties your progress into one evolving identity.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- HOW IT WORKS -->
-  <section id="how" style="padding-top:0">
+  <section style="padding-top:0" id="how">
     <div class="sec-head">
       <div>
-        <span class="sec-eye reveal">The Loop</span>
-        <h2 class="sec-title reveal reveal-delay-1">How the arcade works</h2>
+        <span class="sec-eye rv">The Loop</span>
+        <h2 class="sec-title rv d1">How the arcade works</h2>
       </div>
-      <p class="sec-sub reveal" style="text-align:right;max-width:260px">One profile, one XP bar — every game feeds into it.</p>
+      <p class="sec-sub rv" style="text-align:right;max-width:260px">One profile, one XP bar — every game feeds into it.</p>
     </div>
-    <div class="steps">
-      <div class="step reveal">
-        <div class="step-num">01</div>
-        <h3>Pick a game</h3>
-        <p>Choose from four titles, each with its own pace and skill curve. No installs, no loading screens — open and play instantly in any browser.</p>
-      </div>
-      <div class="step reveal reveal-delay-1">
-        <div class="step-num">02</div>
-        <h3>Earn XP &amp; coins</h3>
-        <p>Every run you finish feeds your single arcade-wide profile. Performance in any game contributes to the same progress bar.</p>
-      </div>
-      <div class="step reveal reveal-delay-2">
-        <div class="step-num">03</div>
-        <h3>Level up forever</h3>
-        <p>Your level climbs automatically as XP builds. Saved locally — exactly as you left it, every time you return.</p>
-      </div>
+    <div class="steps rv">
+      <div class="step"><div class="step-num">01</div><h3>Pick a game</h3><p>Choose from four titles, each with its own pace and skill curve. No installs — open and play instantly in any browser.</p></div>
+      <div class="step"><div class="step-num">02</div><h3>Earn XP &amp; coins</h3><p>Every run feeds your single arcade-wide profile. Performance in any game contributes to the same progress bar.</p></div>
+      <div class="step"><div class="step-num">03</div><h3>Level up forever</h3><p>Your level climbs as XP builds. Saved locally — exactly as you left it, every time you return.</p></div>
     </div>
   </section>
 
   <!-- FEATURES -->
-  <section id="features" style="padding-top:0">
+  <section style="padding-top:0">
     <div class="sec-head">
       <div>
-        <span class="sec-eye reveal">Under the Hood</span>
-        <h2 class="sec-title reveal reveal-delay-1">Built like a real product</h2>
+        <span class="sec-eye rv">Under the Hood</span>
+        <h2 class="sec-title rv d1">Built like a real product</h2>
       </div>
-      <p class="sec-sub reveal" style="text-align:right;max-width:280px">The small details that separate an arcade from a folder of game files.</p>
     </div>
     <div class="feats">
-      <div class="feat reveal"><div class="feat-icon">⚡</div><h3>Instant Load</h3><p>No bundlers, no heavy frameworks. Every game opens straight in the browser, on desktop or mobile, in under a second.</p></div>
-      <div class="feat reveal reveal-delay-1"><div class="feat-icon">🪪</div><h3>Shared Profile</h3><p>One name, one level, one XP bar — across all four games, not four separate save files.</p></div>
-      <div class="feat reveal reveal-delay-2"><div class="feat-icon">💾</div><h3>Local-First Save</h3><p>Progress is stored right in your browser. No account required, nothing lost if a server goes down.</p></div>
-      <div class="feat reveal"><div class="feat-icon">🎮</div><h3>Real 3D Engines</h3><p>Two of the four games run on full Three.js 3D engines — not canvas sprites pretending to be 3D.</p></div>
-      <div class="feat reveal reveal-delay-1"><div class="feat-icon">🔊</div><h3>Ambient Soundtrack</h3><p>A looping arcade score plays softly in the background, designed to stay out of the way during gameplay.</p></div>
-      <div class="feat reveal reveal-delay-2"><div class="feat-icon">📱</div><h3>Responsive by Default</h3><p>The arcade and every game in it resize cleanly from a desktop monitor down to a phone screen.</p></div>
+      <div class="feat rv"><div class="feat-icon">⚡</div><h3>Instant Load</h3><p>No bundlers, no frameworks. Every game opens in the browser in under a second, on any device.</p></div>
+      <div class="feat rv d1"><div class="feat-icon">🪪</div><h3>Shared Profile</h3><p>One name, one level, one XP bar — across all four games, not four separate save files.</p></div>
+      <div class="feat rv d2"><div class="feat-icon">💾</div><h3>Local-First Save</h3><p>Progress lives in your browser. No account required, nothing lost if a server goes down.</p></div>
+      <div class="feat rv"><div class="feat-icon">🎮</div><h3>Real 3D Engines</h3><p>Two games run on full Three.js — not canvas sprites pretending to be 3D.</p></div>
+      <div class="feat rv d1"><div class="feat-icon">🔊</div><h3>Ambient Soundtrack</h3><p>A looping arcade score plays softly — designed to stay out of the way during gameplay.</p></div>
+      <div class="feat rv d2"><div class="feat-icon">📱</div><h3>Responsive by Default</h3><p>The arcade and every game resize cleanly from monitor to phone screen.</p></div>
     </div>
   </section>
 
   <!-- PROFILE -->
-  <section id="profile" style="padding-top:0">
+  <section style="padding-top:0" id="profile">
     <div class="sec-head">
       <div>
-        <span class="sec-eye reveal">Membership</span>
-        <h2 class="sec-title reveal reveal-delay-1">Your player profile</h2>
+        <span class="sec-eye rv">Membership</span>
+        <h2 class="sec-title rv d1">Your player profile</h2>
       </div>
-      <p class="sec-sub reveal" style="text-align:right;max-width:280px">Your progress carries across every game in the arcade, automatically.</p>
+      <p class="sec-sub rv" style="text-align:right;max-width:280px">Your progress carries across every game, automatically.</p>
     </div>
-    <div class="profile-wrap reveal">
+    <div class="profile-wrap rv">
       <div class="profile-main">
-        <div class="member-label">Member Card</div>
-        <div class="member-name" id="playerName">—</div>
+        <div class="plabel">Member Card</div>
+        <div class="pname" id="playerName">—</div>
         <div class="pstat"><span>Level</span><strong id="playerLevel">—</strong></div>
         <div class="pstat"><span>Coins</span><strong id="playerCoins">—</strong></div>
         <div class="pstat"><span>Experience</span><strong id="playerXP">—</strong></div>
@@ -736,7 +827,7 @@ footer{border-top:1px solid var(--border)}
       </div>
       <div class="profile-aside">
         <p>Rename your card at any time — your level, coins and XP stay exactly as they are.</p>
-        <button class="btn-ghost" style="align-self:flex-start;padding:13px 28px;font-size:13.5px" onclick="changeName()">Change Name</button>
+        <button class="btn-g" style="align-self:flex-start;padding:14px 28px;font-size:13.5px" onclick="changeName()">Change Name</button>
       </div>
     </div>
   </section>
@@ -746,7 +837,7 @@ footer{border-top:1px solid var(--border)}
     <div class="footer-main">
       <div class="footer-brand">
         <div class="nav-logo"><span class="logo-gem"></span>Yuvraj Soni Arcade</div>
-        <p>An independent arcade, designed and built by one person — four games, one evolving player profile, zero shortcuts.</p>
+        <p>An independent arcade — four games, one evolving player profile, zero shortcuts. Designed and built in-house.</p>
       </div>
       <div class="footer-col">
         <h4>Arcade</h4>
@@ -763,357 +854,314 @@ footer{border-top:1px solid var(--border)}
         <a onclick="location.href='xo.html'">X/O Bot Duel</a>
       </div>
     </div>
-    <div class="footer-bottom">
+    <div class="footer-btm">
       <span><span class="gem">◆</span> 2026 Yuvraj Soni Arcade</span>
       <span>Designed &amp; developed in-house · All rights reserved</span>
     </div>
   </footer>
 
-</div><!-- /content -->
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
 <script>
-/* ════════════════════════════════════════════
-   THREE.JS BACKGROUND — Deep space with
-   parallax starfield + floating crystal shards
-   + volumetric nebula orbs + mouse parallax
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   LOADING SCREEN
+══════════════════════════════════════ */
 (function(){
-  const bg = document.getElementById('bg3d');
-  const W = () => window.innerWidth, H = () => window.innerHeight;
+  const bar=document.getElementById('lbar');
+  const pct=document.getElementById('lpct');
+  const loader=document.getElementById('loader');
+  let p=0;
+  const iv=setInterval(()=>{
+    p+=Math.random()*14+3;
+    if(p>=100){p=100;clearInterval(iv);setTimeout(()=>{loader.classList.add('done');heroIn();},300);}
+    bar.style.width=p+'%';
+    pct.textContent=Math.floor(p)+'%';
+  },80);
+})();
 
-  const scene = new THREE.Scene();
-  const cam = new THREE.PerspectiveCamera(65, W()/H(), 0.1, 300);
-  cam.position.set(0, 0, 0);
+/* ══════════════════════════════════════
+   HERO ENTRANCE
+══════════════════════════════════════ */
+function heroIn(){
+  document.getElementById('eyebrow').classList.add('in');
+  setTimeout(()=>{
+    document.querySelectorAll('#headline .line-inner').forEach(el=>el.classList.add('in'));
+  },150);
+  setTimeout(()=>document.getElementById('herosub').classList.add('in'),400);
+  setTimeout(()=>document.getElementById('heroactions').classList.add('in'),600);
+}
 
-  const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(W(), H());
-  renderer.setClearColor(0x03030a, 1);
+/* ══════════════════════════════════════
+   THREE.JS BACKGROUND
+══════════════════════════════════════ */
+(function(){
+  const bg=document.getElementById('bg3d');
+  const W=()=>window.innerWidth, H=()=>window.innerHeight;
+
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(65,W()/H(),.1,300);
+  cam.position.set(0,0,0);
+
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(W(),H());
+  renderer.setClearColor(0x02020a,1);
   bg.appendChild(renderer.domElement);
 
   // Lighting
-  scene.add(new THREE.AmbientLight(0x0a0a20, 1.0));
-  const pL1 = new THREE.PointLight(0x00e5ff, 1.5, 120);
-  pL1.position.set(-30, 20, -40);
-  scene.add(pL1);
-  const pL2 = new THREE.PointLight(0x7c4dff, 1.2, 100);
-  pL2.position.set(30, -15, -60);
-  scene.add(pL2);
-  const pL3 = new THREE.PointLight(0xff2d78, 0.6, 80);
-  pL3.position.set(0, 30, -80);
-  scene.add(pL3);
+  scene.add(new THREE.AmbientLight(0x080818,1));
+  const pl1=new THREE.PointLight(0x00e5ff,1.6,130);pl1.position.set(-30,20,-45);scene.add(pl1);
+  const pl2=new THREE.PointLight(0x7c4dff,1.3,110);pl2.position.set(32,-16,-65);scene.add(pl2);
+  const pl3=new THREE.PointLight(0xff2d78,.7,90);pl3.position.set(0,30,-85);scene.add(pl3);
 
-  /* ── Stars: 3 layers of depth ── */
-  function makeStarLayer(count, zRange, size, opacity) {
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      pos[i*3]   = (Math.random() - .5) * 200;
-      pos[i*3+1] = (Math.random() - .5) * 120;
-      pos[i*3+2] = -Math.random() * zRange - 10;
-      const t = Math.random();
-      if (t < .5) { col[i*3]=.85; col[i*3+1]=.9; col[i*3+2]=1; }
-      else if (t < .75) { col[i*3]=1; col[i*3+1]=.95; col[i*3+2]=.7; }
-      else { col[i*3]=1; col[i*3+1]=.65; col[i*3+2]=.45; }
+  // Stars — 3 layers
+  function starLayer(n,zr,sz,op){
+    const pos=new Float32Array(n*3),col=new Float32Array(n*3);
+    for(let i=0;i<n;i++){
+      pos[i*3]=(Math.random()-.5)*200;
+      pos[i*3+1]=(Math.random()-.5)*120;
+      pos[i*3+2]=-Math.random()*zr-8;
+      const t=Math.random();
+      if(t<.5){col[i*3]=.85;col[i*3+1]=.9;col[i*3+2]=1;}
+      else if(t<.75){col[i*3]=1;col[i*3+1]=.95;col[i*3+2]=.65;}
+      else{col[i*3]=1;col[i*3+1]=.6;col[i*3+2]=.4;}
     }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const m = new THREE.PointsMaterial({size, vertexColors: true, transparent: true, opacity, sizeAttenuation: true});
-    return new THREE.Points(g, m);
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    g.setAttribute('color',new THREE.BufferAttribute(col,3));
+    return new THREE.Points(g,new THREE.PointsMaterial({size:sz,vertexColors:true,transparent:true,opacity:op,sizeAttenuation:true}));
   }
+  const s1=starLayer(700,80,.13,.92);
+  const s2=starLayer(1000,160,.09,.7);
+  const s3=starLayer(500,240,.06,.5);
+  scene.add(s1,s2,s3);
 
-  const stars1 = makeStarLayer(600,  80, 0.12, 0.9); // near
-  const stars2 = makeStarLayer(900,  160, 0.09, 0.7); // mid
-  const stars3 = makeStarLayer(500,  240, 0.06, 0.5); // far
-  scene.add(stars1, stars2, stars3);
-
-  /* ── Nebula volumetric blobs ── */
-  const nebDefs = [
-    {c:0x001836, x:-35, y:12, z:-95, r:28},
-    {c:0x180828, x:40,  y:-8, z:-120, r:22},
-    {c:0x001428, x:10,  y:25, z:-80,  r:18},
-    {c:0x200830, x:-20, y:-20, z:-70, r:16},
-    {c:0x0a0028, x:55,  y:10, z:-110, r:24},
-  ];
-  nebDefs.forEach(d => {
-    const m = new THREE.Mesh(
-      new THREE.SphereGeometry(d.r, 16, 16),
-      new THREE.MeshBasicMaterial({color: d.c, transparent: true, opacity: 0.65, depthWrite: false, side: THREE.BackSide})
-    );
-    m.position.set(d.x, d.y, d.z);
-    scene.add(m);
+  // Nebula blobs
+  [
+    {c:0x00183a,x:-38,y:13,z:-98,r:30},
+    {c:0x1a0830,x:44,y:-9,z:-125,r:24},
+    {c:0x001428,x:12,y:28,z:-82,r:20},
+    {c:0x1e0832,x:-22,y:-22,z:-72,r:18},
+    {c:0x080028,x:58,y:12,z:-115,r:26},
+  ].forEach(d=>{
+    const m=new THREE.Mesh(new THREE.SphereGeometry(d.r,16,16),
+      new THREE.MeshBasicMaterial({color:d.c,transparent:true,opacity:.65,depthWrite:false,side:THREE.BackSide}));
+    m.position.set(d.x,d.y,d.z);scene.add(m);
   });
 
-  /* ── Distant planets ── */
-  const planetDefs = [
-    {r:10, c:0x0d2040, ec:0x0044aa, x:-55, y:18, z:-160, ring:true},
-    {r:5,  c:0x2a0e08, ec:0x662200, x:62,  y:-22, z:-130, ring:false},
-    {r:3,  c:0x081420, ec:0x002244, x:20,  y:40,  z:-145, ring:false},
-  ];
-  planetDefs.forEach(d => {
-    const mat = new THREE.MeshStandardMaterial({color:d.c, emissive:d.ec, emissiveIntensity:.12, roughness:.9, metalness:.05});
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(d.r, 32, 32), mat);
-    mesh.position.set(d.x, d.y, d.z);
-    if (d.ring) {
-      const rg = new THREE.TorusGeometry(d.r*1.6, d.r*.22, 4, 64);
-      const rm = new THREE.MeshBasicMaterial({color:0x1a3a5c, transparent:true, opacity:.4});
-      const ring = new THREE.Mesh(rg, rm);
-      ring.rotation.x = Math.PI * .38;
-      mesh.add(ring);
+  // Planets
+  const planets=[];
+  [
+    {r:11,c:0x0c1e3c,ec:0x003688,x:-58,y:20,z:-168,ring:true,rs:.006},
+    {r:5.5,c:0x28100a,ec:0x5a2200,x:66,y:-24,z:-138,ring:false,rs:.009},
+    {r:3.2,c:0x081820,ec:0x002840,x:22,y:44,z:-152,ring:false,rs:.012},
+  ].forEach(d=>{
+    const mat=new THREE.MeshStandardMaterial({color:d.c,emissive:d.ec,emissiveIntensity:.13,roughness:.9,metalness:.05});
+    const mesh=new THREE.Mesh(new THREE.SphereGeometry(d.r,32,32),mat);
+    mesh.position.set(d.x,d.y,d.z);
+    if(d.ring){
+      const rm=new THREE.Mesh(new THREE.TorusGeometry(d.r*1.65,d.r*.22,4,64),
+        new THREE.MeshBasicMaterial({color:0x1a3a5c,transparent:true,opacity:.4}));
+      rm.rotation.x=Math.PI*.38;mesh.add(rm);
     }
-    scene.add(mesh);
+    scene.add(mesh);planets.push({mesh,rs:d.rs});
   });
 
-  /* ── Floating crystal shards ── */
-  const shards = [];
-  const shardMats = [
-    new THREE.MeshStandardMaterial({color:0x00e5ff, emissive:0x00e5ff, emissiveIntensity:.5, metalness:.7, roughness:.15, transparent:true, opacity:.55}),
-    new THREE.MeshStandardMaterial({color:0x7c4dff, emissive:0x7c4dff, emissiveIntensity:.5, metalness:.7, roughness:.15, transparent:true, opacity:.45}),
-    new THREE.MeshStandardMaterial({color:0xff2d78, emissive:0xff2d78, emissiveIntensity:.4, metalness:.7, roughness:.2,  transparent:true, opacity:.35}),
-    new THREE.MeshStandardMaterial({color:0xffc93c, emissive:0xffc93c, emissiveIntensity:.5, metalness:.6, roughness:.2,  transparent:true, opacity:.4}),
+  // Crystal shards
+  const shards=[];
+  const shardMats=[
+    new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.55,metalness:.7,roughness:.15,transparent:true,opacity:.5}),
+    new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.55,metalness:.7,roughness:.15,transparent:true,opacity:.42}),
+    new THREE.MeshStandardMaterial({color:0xff2d78,emissive:0xff2d78,emissiveIntensity:.45,metalness:.7,roughness:.2,transparent:true,opacity:.35}),
+    new THREE.MeshStandardMaterial({color:0xffc93c,emissive:0xffc93c,emissiveIntensity:.5,metalness:.6,roughness:.2,transparent:true,opacity:.38}),
   ];
 
-  for (let i = 0; i < 28; i++) {
-    const h = 0.04 + Math.random() * 0.22;
-    const geom = new THREE.OctahedronGeometry(h, 0);
-    // Slightly deform each shard for uniqueness
-    const pos = geom.attributes.position;
-    for (let j = 0; j < pos.count; j++) {
-      pos.setXYZ(j, pos.getX(j)*(0.7+Math.random()*.6), pos.getY(j)*(0.7+Math.random()*.6), pos.getZ(j)*(0.7+Math.random()*.6));
+  for(let i=0;i<32;i++){
+    const h=.04+Math.random()*.24;
+    const geom=new THREE.OctahedronGeometry(h,0);
+    const p=geom.attributes.position;
+    for(let j=0;j<p.count;j++){
+      p.setXYZ(j,p.getX(j)*(.65+Math.random()*.7),p.getY(j)*(.65+Math.random()*.7),p.getZ(j)*(.65+Math.random()*.7));
     }
     geom.computeVertexNormals();
-    const mat = shardMats[Math.floor(Math.random()*shardMats.length)];
-    const mesh = new THREE.Mesh(geom, mat);
-    mesh.position.set(
-      (Math.random()-.5)*50,
-      (Math.random()-.5)*30,
-      -8 - Math.random()*40
-    );
-    mesh.rotation.set(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
+    const mesh=new THREE.Mesh(geom,shardMats[Math.floor(Math.random()*shardMats.length)]);
+    const bx=(Math.random()-.5)*52,by=(Math.random()-.5)*32,bz=-8-Math.random()*44;
+    mesh.position.set(bx,by,bz);
+    mesh.rotation.set(Math.random()*Math.PI*2,Math.random()*Math.PI*2,Math.random()*Math.PI*2);
     scene.add(mesh);
     shards.push({
-      mesh,
-      floatSpeed: 0.12 + Math.random()*.18,
-      floatAmp: 0.4 + Math.random()*0.8,
-      floatOffset: Math.random()*Math.PI*2,
-      rotSpeed: new THREE.Vector3((Math.random()-.5)*.4, (Math.random()-.5)*.4, (Math.random()-.5)*.25),
-      baseY: mesh.position.y,
-      depth: mesh.position.z,
+      mesh,bx,by,bz,
+      fs:.12+Math.random()*.2,fa:.5+Math.random()*1.0,fo:Math.random()*Math.PI*2,
+      rv:new THREE.Vector3((Math.random()-.5)*.45,(Math.random()-.5)*.45,(Math.random()-.5)*.28),
     });
   }
 
-  /* ── Mouse parallax ── */
-  let mx=0, my=0, camX=0, camY=0;
-  window.addEventListener('mousemove', e => {
-    mx = (e.clientX/W()-.5)*2;
-    my = (e.clientY/H()-.5)*2;
-  });
+  // Mouse & scroll
+  let mx=0,my=0,cX=0,cY=0,scrollY=0;
+  window.addEventListener('mousemove',e=>{mx=(e.clientX/W()-.5)*2;my=(e.clientY/H()-.5)*2;});
+  window.addEventListener('scroll',()=>{scrollY=window.scrollY;},{passive:true});
+  window.addEventListener('resize',()=>{renderer.setSize(W(),H());cam.aspect=W()/H();cam.updateProjectionMatrix();});
 
-  // Scroll parallax: shards shift forward/back on scroll
-  let scrollY = 0;
-  window.addEventListener('scroll', () => { scrollY = window.scrollY; }, {passive:true});
-
-  /* ── Resize ── */
-  window.addEventListener('resize', () => {
-    renderer.setSize(W(), H());
-    cam.aspect = W()/H();
-    cam.updateProjectionMatrix();
-  });
-
-  /* ── Animate ── */
-  const clock = new THREE.Clock();
-  function animate() {
+  const clock=new THREE.Clock();
+  (function animate(){
     requestAnimationFrame(animate);
-    const t = clock.getElapsedTime();
-    const dt = clock.getDelta();
+    const t=clock.getElapsedTime();
+    cX+=(mx*1.3-cX)*.028;cY+=(-my*.85-cY)*.028;
+    cam.position.x=cX;cam.position.y=cY;
 
-    // Camera mouse parallax (smooth)
-    camX += (mx*1.2 - camX)*.028;
-    camY += (-my*.8 - camY)*.028;
-    cam.position.x = camX;
-    cam.position.y = camY;
+    const sf=scrollY/(Math.max(document.body.scrollHeight-window.innerHeight,1));
+    s1.position.z=sf*14;s2.position.z=sf*7;s3.position.z=sf*3.5;
+    s1.material.opacity=.85+Math.sin(t*.7)*.07;
 
-    // Stars slow scroll with page
-    const scrollFrac = scrollY / (document.body.scrollHeight - window.innerHeight || 1);
-    stars1.position.z = scrollFrac*12;
-    stars2.position.z = scrollFrac*6;
-    stars3.position.z = scrollFrac*3;
-
-    // Stars twinkle (vary opacity slightly)
-    stars1.material.opacity = 0.82 + Math.sin(t*.7)*.06;
-
-    // Floating shards
-    shards.forEach(s => {
-      s.mesh.position.y = s.baseY + Math.sin(t*s.floatSpeed+s.floatOffset)*s.floatAmp;
-      s.mesh.rotation.x += s.rotSpeed.x * .016;
-      s.mesh.rotation.y += s.rotSpeed.y * .016;
-      s.mesh.rotation.z += s.rotSpeed.z * .016;
-      // Parallax depth on scroll
-      s.mesh.position.z = s.depth + scrollFrac*20;
-      // Mouse parallax per shard (depth-based)
-      s.mesh.position.x += (mx*(Math.abs(s.depth)*.012) - s.mesh.position.x + s.mesh.position.x) * .003;
+    shards.forEach(s=>{
+      s.mesh.position.y=s.by+Math.sin(t*s.fs+s.fo)*s.fa;
+      s.mesh.rotation.x+=s.rv.x*.016;
+      s.mesh.rotation.y+=s.rv.y*.016;
+      s.mesh.rotation.z+=s.rv.z*.016;
+      s.mesh.position.z=s.bz+sf*22;
+      // mouse depth parallax
+      const d=Math.abs(s.bz);
+      s.mesh.position.x=s.bx+mx*(d*.014);
     });
 
-    // Slow planet rotation
-    planetDefs.forEach((_, i) => {
-      const child = scene.children.find((c, idx) => c.type==="Mesh" && c.geometry.type==="SphereGeometry" && Math.abs(c.position.z - planetDefs[i].z) < 1);
-      if (child) child.rotation.y += .0018 * (i+1);
-    });
-
-    // Point light color-cycle for subtle scene shift
-    pL1.intensity = 1.3 + Math.sin(t*.4)*.4;
-    pL2.intensity = 1.0 + Math.cos(t*.35)*.3;
-    pL3.intensity = 0.5 + Math.sin(t*.28)*.2;
-
-    renderer.render(scene, cam);
-  }
-  animate();
+    planets.forEach(p=>{p.mesh.rotation.y+=p.rs*.016;});
+    pl1.intensity=1.4+Math.sin(t*.4)*.45;
+    pl2.intensity=1.1+Math.cos(t*.35)*.32;
+    pl3.intensity=.6+Math.sin(t*.28)*.22;
+    renderer.render(scene,cam);
+  })();
 })();
 
-/* ════════════════════════════════════════════
-   CSS PARTICLE FIELD (extra ambience)
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   MARQUEE BUILD
+══════════════════════════════════════ */
 (function(){
-  const field = document.getElementById('particles');
-  const colors = ['#00e5ff','#7c4dff','#ff2d78','#ffc93c'];
-  for(let i=0;i<18;i++){
+  const items=[
+    {t:'Eagle Flight',s:'🦅'},{t:'Void Interceptor',s:'🚀'},
+    {t:'Neon Drift Racer',s:'🚗'},{t:'X/O Bot Duel',s:'❌'},
+    {t:'Yuvraj Soni Arcade',s:'◆'},{t:'No Account Required',s:'◆'},
+    {t:'Local Save · Zero Setup',s:'◆'},{t:'Full 3D · Browser-Native',s:'◆'},
+  ];
+  const track=document.getElementById('mtrack');
+  // duplicate for seamless loop
+  [...items,...items].forEach(item=>{
     const el=document.createElement('div');
-    const size=3+Math.random()*7;
-    const color=colors[Math.floor(Math.random()*colors.length)];
-    const dur=14+Math.random()*14;
-    const delay=-Math.random()*20;
-    Object.assign(el.style,{
-      position:'absolute',
-      width:size+'px',height:size+'px',
-      borderRadius:'50%',
-      background:color,
-      boxShadow:`0 0 ${size*2}px ${color}`,
-      left:Math.random()*100+'%',
-      top:Math.random()*100+'%',
-      opacity:.35,
-      animation:`particleDrift ${dur}s ease-in-out ${delay}s infinite`,
-      pointerEvents:'none',
-    });
-    field.appendChild(el);
-  }
-  const style=document.createElement('style');
-  style.textContent=`
-    @keyframes particleDrift{
-      0%{transform:translate(0,0) scale(1)}
-      25%{transform:translate(${20+Math.random()*30}px,${-30-Math.random()*20}px) scale(1.2)}
-      50%{transform:translate(${-15-Math.random()*20}px,${-50-Math.random()*30}px) scale(0.9)}
-      75%{transform:translate(${-25-Math.random()*20}px,${-20-Math.random()*15}px) scale(1.1)}
-      100%{transform:translate(0,0) scale(1)}
-    }
-  `;
-  document.head.appendChild(style);
+    el.className='marquee-item';
+    el.innerHTML=`<span>${item.s}</span>${item.t}`;
+    track.appendChild(el);
+  });
 })();
 
-/* ════════════════════════════════════════════
-   PLAYER SYSTEM (same as before, untouched)
-════════════════════════════════════════════ */
-const LS='yuvraj_player_data_v1';
-let playerData={name:'',coins:0,xp:0,level:1};
+/* ══════════════════════════════════════
+   CUSTOM CURSOR + TRAIL
+══════════════════════════════════════ */
+(function(){
+  const dot=document.getElementById('cursor-dot');
+  const ring=document.getElementById('cursor-ring');
+  let cx=0,cy=0,rx=0,ry=0;
+  const trailColors=['#00e5ff','#7c4dff','#ff2d78','#ffc93c'];
+  let tIdx=0;
 
-function loadPlayerData(){
-  const s=localStorage.getItem(LS);
-  if(s){try{playerData=JSON.parse(s);}catch(e){}}
-}
-function savePlayerData(){
-  try{localStorage.setItem(LS,JSON.stringify(playerData));}catch(e){}
-}
-function updateUI(){
-  document.getElementById('playerName').textContent=playerData.name||'—';
-  document.getElementById('playerCoins').textContent=playerData.coins||0;
-  document.getElementById('playerXP').textContent=playerData.xp||0;
-  document.getElementById('playerLevel').textContent=playerData.level||1;
-  const pct=(playerData.xp%100)||0;
-  document.getElementById('xpFill').style.width=pct+'%';
-}
-function changeName(){
-  const n=prompt('Enter new name:');
-  if(n&&n.trim()){playerData.name=n.trim();savePlayerData();updateUI();}
-}
-function goTo(id){
-  const el=document.getElementById(id);
-  if(el)el.scrollIntoView({behavior:'smooth'});
-}
+  document.addEventListener('mousemove',e=>{
+    cx=e.clientX;cy=e.clientY;
+    dot.style.left=cx+'px';dot.style.top=cy+'px';
+    // trail particle
+    tIdx=(tIdx+1)%4;
+    if(tIdx===0){
+      const p=document.createElement('div');
+      p.className='trail-particle';
+      p.style.cssText=`left:${cx}px;top:${cy}px;background:${trailColors[Math.floor(Math.random()*4)]}`;
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),800);
+    }
+  });
 
-loadPlayerData();
-if(!playerData.name){playerData.name='Yuvraj Soni';savePlayerData();}
-updateUI();
+  (function animRing(){
+    requestAnimationFrame(animRing);
+    rx+=(cx-rx)*.12;ry+=(cy-ry)*.12;
+    ring.style.left=rx+'px';ring.style.top=ry+'px';
+  })();
+})();
 
-/* ════════════════════════════════════════════
-   BACKGROUND MUSIC
-════════════════════════════════════════════ */
-const bgm=new Audio('bgm.mp3');
-bgm.loop=true;bgm.volume=0.3;
-let musicStarted=false;
-function startMusic(){
-  if(musicStarted)return;musicStarted=true;
-  bgm.play().catch(()=>{});
-}
-document.addEventListener('click',startMusic);
-document.addEventListener('touchstart',startMusic);
-
-/* ════════════════════════════════════════════
-   NAV SCROLL EFFECT
-════════════════════════════════════════════ */
-const navEl=document.getElementById('nav');
+/* ══════════════════════════════════════
+   SCROLL REVEAL + NAV
+══════════════════════════════════════ */
+const nav=document.getElementById('nav');
 window.addEventListener('scroll',()=>{
-  navEl.classList.toggle('scrolled',window.scrollY>60);
+  nav.classList.toggle('solid',window.scrollY>60);
 },{passive:true});
 
-/* ════════════════════════════════════════════
-   SCROLL REVEAL
-════════════════════════════════════════════ */
 const io=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
-},{threshold:0.12});
-document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+},{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 
-/* ════════════════════════════════════════════
-   COUNTER ANIMATION (stats)
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   COUNTER ANIMATION
+══════════════════════════════════════ */
 const cio=new IntersectionObserver(entries=>{
   entries.forEach(e=>{
     if(!e.isIntersecting)return;
     e.target.querySelectorAll('[data-count]').forEach(el=>{
-      const target=parseInt(el.dataset.count);
-      let start=0;const dur=1200;const startTime=performance.now();
-      const step=now=>{
-        const p=Math.min((now-startTime)/dur,1);
+      const target=+el.dataset.count,suf=el.dataset.suf||'';
+      let start=0;const dur=1400;const t0=performance.now();
+      (function step(now){
+        const p=Math.min((now-t0)/dur,1);
         const ease=1-Math.pow(1-p,3);
-        el.textContent=Math.round(ease*target)+(el.dataset.suffix||'');
+        el.textContent=Math.round(ease*target)+suf;
         if(p<1)requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
+      })(performance.now());
     });
     cio.unobserve(e.target);
   });
 },{threshold:.5});
 document.querySelectorAll('.stats').forEach(el=>cio.observe(el));
 
-/* ════════════════════════════════════════════
-   GAME CARD 3D TILT
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   GAME CARD 3D TILT + MAGNETIC HOVER
+══════════════════════════════════════ */
 document.querySelectorAll('.gcard').forEach(card=>{
   card.addEventListener('mousemove',e=>{
     const r=card.getBoundingClientRect();
     const x=e.clientX-r.left,y=e.clientY-r.top;
     const cx=r.width/2,cy=r.height/2;
-    const rx=((y-cy)/cy)*-6;
-    const ry=((x-cx)/cx)*6;
-    card.style.transform=`perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)`;
+    card.style.transform=`perspective(900px) rotateX(${((y-cy)/cy)*-6}deg) rotateY(${((x-cx)/cx)*6}deg) translateZ(6px)`;
     card.style.setProperty('--mx',(x/r.width*100)+'%');
     card.style.setProperty('--my',(y/r.height*100)+'%');
   });
   card.addEventListener('mouseleave',()=>{
-    card.style.transform='perspective(800px) rotateX(0) rotateY(0) translateZ(0)';
+    card.style.transform='perspective(900px) rotateX(0) rotateY(0) translateZ(0)';
   });
 });
+
+/* ══════════════════════════════════════
+   PLAYER SYSTEM
+══════════════════════════════════════ */
+const LS='yuvraj_player_data_v1';
+let pd={name:'',coins:0,xp:0,level:1};
+function loadPD(){try{const s=localStorage.getItem(LS);if(s)pd=JSON.parse(s);}catch(e){}}
+function savePD(){try{localStorage.setItem(LS,JSON.stringify(pd));}catch(e){}}
+function updateUI(){
+  document.getElementById('playerName').textContent=pd.name||'—';
+  document.getElementById('playerCoins').textContent=pd.coins||0;
+  document.getElementById('playerXP').textContent=pd.xp||0;
+  document.getElementById('playerLevel').textContent=pd.level||1;
+  document.getElementById('xpFill').style.width=(pd.xp%100)+'%';
+}
+function changeName(){const n=prompt('Enter new name:');if(n&&n.trim()){pd.name=n.trim();savePD();updateUI();}}
+function goTo(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});}
+loadPD();if(!pd.name){pd.name='Yuvraj Soni';savePD();}updateUI();
+
+/* ══════════════════════════════════════
+   BACKGROUND MUSIC
+══════════════════════════════════════ */
+const bgm=new Audio('bgm.mp3');
+bgm.loop=true;bgm.volume=0.3;
+let ms=false;
+function startM(){if(ms)return;ms=true;bgm.play().catch(()=>{});}
+document.addEventListener('click',startM);
+document.addEventListener('touchstart',startM);
 </script>
 </body>
 </html>
