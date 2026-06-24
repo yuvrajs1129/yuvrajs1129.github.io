@@ -1,1024 +1,1258 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Yuvraj Soni Arcade</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --c:#00e5ff;--v:#7c4dff;--m:#ff2d78;--g:#ffc93c;
-  --bg:#02020a;--t:#f0f3fa;--td:#52596a;--tm:#8a90a0;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{font-size:16px;overflow-x:hidden}
-body{
-  font-family:'Space Grotesk',sans-serif;
-  background:var(--bg);color:var(--t);
-  overflow-x:hidden;
-}
-::selection{background:var(--c);color:#000}
-a{color:inherit;text-decoration:none}
+  <meta charset="UTF-8">
+  <title>Neon Drift Racer — Yuvraj Soni Arcade</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Neon Drift Racer — a 3D highway racing game by Yuvraj Soni. Dodge traffic on a neon city highway and chase the highest distance.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-/* ── CURSOR ── */
-#cur{position:fixed;inset:0;z-index:9999;pointer-events:none}
-#cd{
-  position:absolute;width:8px;height:8px;border-radius:50%;
-  background:#fff;transform:translate(-50%,-50%);
-  mix-blend-mode:difference;will-change:transform;
-}
-#cr{
-  position:absolute;width:38px;height:38px;border-radius:50%;
-  border:1px solid rgba(255,255,255,.45);transform:translate(-50%,-50%);
-  mix-blend-mode:difference;transition:width .35s,height .35s,opacity .35s;
-  will-change:transform;
-}
-.hovering #cr{width:60px;height:60px;opacity:.4}
-@media(max-width:768px){#cur{display:none}body{cursor:auto}}
+  <style>
+    :root{
+      --void:#050507;
+      --void-soft:#0a0a10;
+      --glass:rgba(255,255,255,0.05);
+      --glass-border:rgba(255,255,255,0.10);
+      --cyan:#00e5ff;
+      --cyan-soft:rgba(0,229,255,0.35);
+      --violet:#7c4dff;
+      --violet-soft:rgba(124,77,255,0.35);
+      --ink:#eef1f6;
+      --ink-dim:#8a8f9c;
+      --danger:#ff4d6d;
+      --good:#3ddc84;
+    }
 
-/* ── LOADER ── */
-#ldr{
-  position:fixed;inset:0;z-index:8000;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
-  transition:opacity .7s ease,visibility .7s ease;
-}
-#ldr.done{opacity:0;visibility:hidden;pointer-events:none}
-.ldr-name{
-  font-size:22px;font-weight:700;letter-spacing:-.01em;
-  background:linear-gradient(120deg,var(--c),var(--v),var(--m));
-  background-size:200%;-webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;animation:lShim 2s linear infinite;
-}
-@keyframes lShim{0%{background-position:0%}100%{background-position:200%}}
-.ldr-bar{width:180px;height:2px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
-.ldr-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--c),var(--v));transition:width .05s linear}
-.ldr-pct{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--td)}
+    *{box-sizing:border-box}
 
-/* ── NAV ── */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:200;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:22px 56px;
-  transition:background .5s,border-color .5s,padding .4s;
-  border-bottom:1px solid transparent;
-}
-nav.solid{
-  padding:15px 56px;
-  background:rgba(2,2,10,.78);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-color:rgba(255,255,255,.07);
-}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
-.gem{
-  width:10px;height:10px;border-radius:2px;
-  background:linear-gradient(135deg,var(--c),var(--v));
-  transform:rotate(45deg);
-  box-shadow:0 0 14px rgba(0,229,255,.5);
-  animation:gpulse 3s ease-in-out infinite;
-}
-@keyframes gpulse{
-  0%,100%{box-shadow:0 0 14px rgba(0,229,255,.4)}
-  50%{box-shadow:0 0 28px rgba(0,229,255,.7),0 0 50px rgba(124,77,255,.3)}
-}
-.navl{display:flex;align-items:center;gap:36px}
-.navl a{
-  font-size:13px;font-weight:500;color:var(--td);cursor:pointer;
-  position:relative;padding-bottom:3px;transition:color .25s;
-}
-.navl a::after{
-  content:"";position:absolute;bottom:0;left:0;
-  width:0;height:1px;background:var(--c);
-  transition:width .3s ease;
-}
-.navl a:hover{color:var(--t)}
-.navl a:hover::after{width:100%}
-.ncta{
-  font-size:13px;font-weight:600;padding:10px 22px;border-radius:10px;
-  background:linear-gradient(135deg,var(--c),var(--v));
-  color:#000;border:none;cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,229,255,.24);
-  transition:transform .25s,box-shadow .25s;
-  position:relative;overflow:hidden;
-}
-.ncta::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
-  transform:translateX(-100%);transition:transform .5s;
-}
-.ncta:hover::before{transform:translateX(100%)}
-.ncta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,.42)}
-@media(max-width:768px){nav,.nav.solid{padding:14px 20px}.navl{display:none}}
+    body{
+      margin:0;
+      padding:18px 16px 28px;
+      background:radial-gradient(ellipse 90% 60% at 50% 0%, #0d0d16 0%, var(--void) 60%);
+      font-family:'Inter',system-ui,sans-serif;
+      color:var(--ink);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      min-height:100vh;
+    }
 
-/* ── HERO ── */
-.hero{
-  height:100vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  text-align:center;padding:0 24px;position:relative;overflow:hidden;
-}
-#heroBg{position:absolute;inset:0;z-index:0}
-.hero-inner{position:relative;z-index:1}
-.hero-eye{
-  display:inline-flex;align-items:center;gap:10px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:11px;letter-spacing:.26em;text-transform:uppercase;
-  color:var(--c);margin-bottom:34px;
-  opacity:0;transform:translateY(14px);
-}
-.hero-eye.in{animation:fadeUp .8s .1s cubic-bezier(.16,1,.3,1) forwards}
-.edot{width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);animation:eblink 2s ease-in-out infinite}
-@keyframes eblink{0%,100%{opacity:1}50%{opacity:.12}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    a{color:inherit;text-decoration:none}
 
-.hero h1{
-  font-size:clamp(60px,10vw,118px);
-  font-weight:700;letter-spacing:-.04em;line-height:.9;
-}
-.hl{display:block;overflow:hidden}
-.hli{display:block;transform:translateY(110%);transition:transform .9s cubic-bezier(.16,1,.3,1)}
-.hli.in{transform:none}
-.hl:nth-child(2) .hli{transition-delay:.12s}
-.hl:nth-child(3) .hli{transition-delay:.24s}
-.gw{
-  background:linear-gradient(120deg,var(--c),var(--v) 50%,var(--m));
-  background-size:200%;
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  animation:gwShim 6s ease-in-out infinite;
-}
-@keyframes gwShim{0%,100%{background-position:0%}50%{background-position:100%}}
+    .top-link{
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:18px;
+      cursor:pointer;
+      transition:color 0.25s;
+    }
+    .top-link:hover{color:var(--cyan)}
 
-.hero-sub{
-  max-width:480px;font-size:clamp(15px,1.7vw,17px);
-  line-height:1.82;color:var(--tm);margin:32px auto 0;
-  opacity:0;transform:translateY(14px);
-}
-.hero-sub.in{animation:fadeUp .8s .5s cubic-bezier(.16,1,.3,1) forwards}
-.hero-btns{
-  margin-top:50px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
-  opacity:0;transform:translateY(14px);
-}
-.hero-btns.in{animation:fadeUp .8s .7s cubic-bezier(.16,1,.3,1) forwards}
-.bp{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:14.5px;font-weight:600;
-  padding:17px 40px;border-radius:12px;border:none;
-  background:linear-gradient(135deg,var(--c),var(--v));
-  color:#000;cursor:pointer;
-  box-shadow:0 8px 30px rgba(0,229,255,.28);
-  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;
-  position:relative;overflow:hidden;
-}
-.bp::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
-  transform:translateX(-100%);transition:transform .5s;
-}
-.bp:hover::before{transform:translateX(100%)}
-.bp:hover{transform:translateY(-3px);box-shadow:0 18px 48px rgba(0,229,255,.44)}
-.bg2{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:14.5px;font-weight:500;
-  padding:17px 40px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.13);
-  background:rgba(255,255,255,.04);
-  color:var(--t);cursor:pointer;backdrop-filter:blur(10px);
-  transition:border-color .3s,background .3s,transform .3s;
-}
-.bg2:hover{border-color:var(--c);background:rgba(0,229,255,.1);transform:translateY(-3px)}
+    .brand-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:4px;
+    }
 
-.scroll-cue{
-  position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  font-family:'JetBrains Mono',monospace;font-size:9.5px;
-  letter-spacing:.22em;text-transform:uppercase;color:var(--td);
-  opacity:0;animation:fadeIn 1s 1.4s forwards;
-}
-@keyframes fadeIn{to{opacity:1}}
-.scl{width:1px;height:40px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
-.scl::after{
-  content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;
-  background:linear-gradient(180deg,transparent,var(--c));
-  animation:sdrop 2s ease-in-out infinite;
-}
-@keyframes sdrop{0%{top:-100%}65%{top:100%}100%{top:100%}}
+    .mark{
+      width:9px;height:9px;background:var(--cyan);border-radius:2px;
+      box-shadow:0 0 10px var(--cyan), 0 0 20px var(--cyan-soft);
+      transform:rotate(45deg);
+      flex-shrink:0;
+    }
 
-/* ── MARQUEE ── */
-.mq{
-  overflow:hidden;
-  border-top:1px solid rgba(255,255,255,.06);
-  border-bottom:1px solid rgba(255,255,255,.06);
-  padding:15px 0;background:rgba(0,229,255,.015);
-}
-.mqt{display:flex;gap:52px;width:max-content;animation:mqScroll 28s linear infinite}
-.mq:hover .mqt{animation-play-state:paused}
-@keyframes mqScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.mqi{
-  font-family:'JetBrains Mono',monospace;font-size:11px;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--td);
-  display:flex;align-items:center;gap:12px;white-space:nowrap;
-}
-.mqi b{color:var(--c);font-weight:400;font-size:13px}
+    h1{
+      margin:0 0 6px;
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:clamp(22px,4vw,30px);
+      text-align:center;
+      letter-spacing:-0.01em;
+    }
 
-/* ── STATS ── */
-.stats-wrap{max-width:1100px;margin:0 auto;padding:80px 52px 0}
-.stats{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  border:1px solid rgba(255,255,255,.07);border-radius:18px;
-  overflow:hidden;background:rgba(255,255,255,.014);
-  backdrop-filter:blur(20px);
-}
-.stat{
-  padding:34px 24px;text-align:center;
-  border-right:1px solid rgba(255,255,255,.07);
-  position:relative;overflow:hidden;cursor:default;transition:background .4s;
-}
-.stat::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(0,229,255,.09),rgba(124,77,255,.09));
-  opacity:0;transition:opacity .4s;
-}
-.stat:last-child{border-right:none}
-.stat:hover::before{opacity:1}
-.stn{
-  font-size:clamp(28px,3.8vw,46px);font-weight:700;
-  background:linear-gradient(120deg,var(--c),var(--v));
-  -webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;display:block;position:relative;z-index:1;
-}
-.stl{
-  font-family:'JetBrains Mono',monospace;font-size:10px;
-  letter-spacing:.13em;text-transform:uppercase;color:var(--td);
-  margin-top:7px;position:relative;z-index:1;
-}
-@media(max-width:768px){
-  .stats-wrap{padding:60px 20px 0}
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .stat:nth-child(2){border-right:none}
-}
+    h1 .glow{
+      background:linear-gradient(120deg, var(--cyan), var(--violet));
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    }
 
-/* ══════════════════════════════════════════
-   GAMES — SCROLL-PINNED SECTION
-   Exactly like terminal-industries.com:
-   page scrolls down, sticky container stays,
-   content panels swap in/out as user scrolls.
-══════════════════════════════════════════ */
-.games-section{
-  /* 5 "screens" of scroll — 1 per game + 1 intro */
-  height:550vh;
-  position:relative;
-}
-.games-sticky{
-  position:sticky;top:0;height:100vh;
-  overflow:hidden;display:flex;
-}
+    #subtitle{
+      font-size:13px;
+      color:var(--ink-dim);
+      text-align:center;
+      margin-bottom:18px;
+      max-width:520px;
+      line-height:1.6;
+    }
 
-/* Left panel: always visible title strip */
-.games-left{
-  width:38%;min-width:300px;
-  display:flex;flex-direction:column;justify-content:center;
-  padding:80px 0 80px 60px;
-  position:relative;z-index:2;flex-shrink:0;
-}
-.games-eye{
-  font-family:'JetBrains Mono',monospace;font-size:10.5px;
-  letter-spacing:.24em;text-transform:uppercase;color:var(--c);
-  margin-bottom:18px;display:block;
-}
-.games-heading{
-  font-size:clamp(32px,3.8vw,52px);
-  font-weight:700;letter-spacing:-.03em;line-height:1.04;
-  margin-bottom:32px;
-}
-/* Numbered game pills */
-.game-pills{display:flex;flex-direction:column;gap:10px}
-.gpill{
-  display:flex;align-items:center;gap:14px;
-  padding:14px 20px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.07);
-  background:rgba(255,255,255,.02);
-  cursor:pointer;transition:border-color .3s,background .3s,transform .3s;
-  position:relative;overflow:hidden;
-}
-.gpill::before{
-  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,var(--c),var(--v));
-  transform:scaleY(0);transform-origin:bottom;transition:transform .4s cubic-bezier(.16,1,.3,1);
-}
-.gpill.active{
-  border-color:rgba(0,229,255,.4);
-  background:rgba(0,229,255,.06);
-  transform:translateX(6px);
-}
-.gpill.active::before{transform:scaleY(1)}
-.gpill-num{
-  font-family:'JetBrains Mono',monospace;font-size:11px;
-  letter-spacing:.1em;color:var(--td);flex-shrink:0;
-}
-.gpill.active .gpill-num{color:var(--c)}
-.gpill-icon{font-size:18px;flex-shrink:0}
-.gpill-title{font-size:14px;font-weight:500}
+    #subtitle strong{color:var(--ink);font-weight:600}
 
-/* Right panel: the big animated game display */
-.games-right{
-  flex:1;position:relative;overflow:hidden;
-}
-.game-slide{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:flex-start;
-  padding:80px 60px;
-  opacity:0;
-  transform:translateY(30px);
-  transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1);
-  pointer-events:none;
-}
-.game-slide.active{
-  opacity:1;transform:none;pointer-events:auto;
-}
-/* Full-bleed game bg */
-.game-slide-bg{
-  position:absolute;inset:0;z-index:0;
-  background:radial-gradient(ellipse 80% 70% at 60% 40%, var(--slide-col-a,.1), transparent 70%),
-             radial-gradient(ellipse 50% 50% at 80% 80%, var(--slide-col-b,.05), transparent 60%);
-  transition:opacity .7s ease;
-}
-/* Grid lines inside panel */
-.game-slide-bg::before{
-  content:"";position:absolute;inset:0;
-  background:
-    linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);
-  background-size:44px 44px;
-  opacity:.5;
-}
-.game-slide-content{position:relative;z-index:1;max-width:520px}
-.gs-tag{
-  font-family:'JetBrains Mono',monospace;font-size:10.5px;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--c);
-  margin-bottom:18px;display:flex;align-items:center;gap:10px;
-}
-.gs-icon{
-  font-size:64px;margin-bottom:28px;display:block;
-  filter:drop-shadow(0 12px 28px rgba(0,0,0,.6));
-  animation:gsFloat 4s ease-in-out infinite;
-}
-@keyframes gsFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.gs-badge{
-  display:inline-block;font-family:'JetBrains Mono',monospace;
-  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
-  padding:4px 12px;border-radius:99px;
-  background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.28);
-  color:var(--c);margin-bottom:10px;
-}
-.game-slide h2{
-  font-size:clamp(32px,4vw,52px);
-  font-weight:700;letter-spacing:-.03em;margin-bottom:18px;
-  line-height:1.04;
-}
-.game-slide p{
-  font-size:15.5px;line-height:1.82;
-  color:var(--tm);margin-bottom:36px;
-}
-.gs-meta{
-  display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px;
-}
-.gs-chip{
-  font-family:'JetBrains Mono',monospace;font-size:10.5px;
-  letter-spacing:.08em;text-transform:uppercase;
-  padding:6px 14px;border-radius:99px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.1);color:var(--tm);
-}
-.gs-play{
-  display:inline-flex;align-items:center;gap:10px;
-  font-size:14px;font-weight:600;
-  padding:15px 36px;border-radius:11px;
-  background:linear-gradient(135deg,var(--c),var(--v));
-  color:#000;border:none;cursor:pointer;
-  box-shadow:0 6px 24px rgba(0,229,255,.25);
-  transition:transform .3s,box-shadow .3s;
-}
-.gs-play:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(0,229,255,.42)}
-/* Progress bar on right side */
-.games-progress{
-  position:absolute;right:24px;top:50%;transform:translateY(-50%);
-  display:flex;flex-direction:column;gap:8px;z-index:3;
-}
-.gp-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,.2);
-  transition:background .4s,transform .4s;cursor:pointer;
-}
-.gp-dot.active{
-  background:var(--c);
-  box-shadow:0 0 8px var(--c);
-  transform:scale(1.4);
-}
+    .canvas-wrapper{
+      position:relative;
+      width:100%;
+      max-width:480px;
+      aspect-ratio:2/3;
+      border-radius:22px;
+      overflow:hidden;
+      border:1px solid var(--glass-border);
+      box-shadow:0 30px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,229,255,0.05);
+      background:var(--void);
+    }
 
-/* ── ABOUT ── */
-.about-wrap{
-  display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;
-  padding:140px 60px;max-width:1180px;margin:auto;
-}
-@media(max-width:860px){.about-wrap{grid-template-columns:1fr;gap:48px;padding:80px 20px}}
-.about-vis{
-  aspect-ratio:1;border-radius:24px;
-  background:rgba(255,255,255,.018);border:1px solid rgba(255,255,255,.07);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;
-}
-.about-vis::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(rgba(0,229,255,.035) 1px,transparent 1px),
-             linear-gradient(90deg,rgba(0,229,255,.035) 1px,transparent 1px);
-  background-size:38px 38px;
-}
-.aorb{
-  width:130px;height:130px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,var(--c),var(--v) 55%,var(--m));
-  box-shadow:0 0 80px rgba(0,229,255,.45),0 0 150px rgba(124,77,255,.2);
-  animation:aop 5s ease-in-out infinite;z-index:1;
-}
-@keyframes aop{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.ar{position:absolute;border-radius:50%;border:1px solid rgba(0,229,255,.18)}
-.ar1{width:200px;height:200px;animation:sCW 18s linear infinite}
-.ar2{width:270px;height:270px;border-color:rgba(124,77,255,.12);animation:sCCW 27s linear infinite}
-.ar3{width:340px;height:340px;border-color:rgba(255,45,120,.07);animation:sCW 40s linear infinite}
-@keyframes sCW{to{transform:rotate(360deg)}}
-@keyframes sCCW{to{transform:rotate(-360deg)}}
-.about-copy .eye{
-  font-family:'JetBrains Mono',monospace;font-size:10.5px;
-  letter-spacing:.24em;text-transform:uppercase;color:var(--c);
-  display:block;margin-bottom:18px;
-}
-.about-copy h2{font-size:clamp(30px,4vw,50px);font-weight:700;letter-spacing:-.03em;line-height:1.04;margin-bottom:24px}
-.about-copy p{color:var(--tm);font-size:15px;line-height:1.88;margin-bottom:16px}
-.about-copy strong{color:var(--t);font-weight:600}
+    /* Desktop / laptop: switch to a wide landscape frame so the game
+       actually uses screen width instead of stretching tall and thin */
+    @media (min-width:860px) and (min-height:560px){
+      .canvas-wrapper{
+        max-width:1040px;
+        aspect-ratio:16/9;
+      }
+    }
 
-/* ── STEPS ── */
-.section{padding:140px 60px;max-width:1180px;margin:auto}
-@media(max-width:768px){.section{padding:80px 20px}}
-.sec-eye{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--c);display:block;margin-bottom:18px}
-.sec-title{font-size:clamp(30px,4vw,50px);font-weight:700;letter-spacing:-.03em;margin-bottom:64px}
-.sec-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:64px;gap:24px;flex-wrap:wrap}
-.sec-sub{color:var(--tm);font-size:14.5px;line-height:1.78;max-width:260px;text-align:right}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:18px;overflow:hidden}
-@media(max-width:768px){.steps{grid-template-columns:1fr}}
-.step{background:rgba(255,255,255,.016);padding:50px 38px;position:relative;transition:background .35s;overflow:hidden}
-.step::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--c),var(--v));transform:scaleX(0);transform-origin:left;transition:transform .55s cubic-bezier(.16,1,.3,1)}
-.step:hover{background:rgba(255,255,255,.03)}
-.step:hover::before{transform:scaleX(1)}
-.snum{font-size:56px;font-weight:700;background:linear-gradient(120deg,var(--c),var(--v));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;opacity:.38;line-height:1;margin-bottom:24px}
-.step h3{font-size:20px;font-weight:600;margin-bottom:13px}
-.step p{color:var(--tm);font-size:14px;line-height:1.75}
+    #threeContainer{position:absolute;inset:0}
 
-/* ── FEATURES ── */
-.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:860px){.feats{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:540px){.feats{grid-template-columns:1fr}}
-.feat{background:rgba(255,255,255,.022);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:30px 26px;transition:border-color .35s,transform .35s,box-shadow .35s}
-.feat:hover{border-color:rgba(124,77,255,.5);transform:translateY(-6px);box-shadow:0 24px 52px rgba(0,0,0,.4),0 0 36px rgba(124,77,255,.07)}
-.fi{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,rgba(0,229,255,.1),rgba(124,77,255,.1));border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:20px}
-.feat h3{font-size:16.5px;font-weight:600;margin-bottom:9px}
-.feat p{color:var(--td);font-size:13.5px;line-height:1.72}
+    canvas{display:block;width:100%;height:100%}
 
-/* ── PROFILE ── */
-.prof{display:grid;grid-template-columns:1.2fr .8fr;border:1px solid rgba(255,255,255,.07);border-radius:20px;overflow:hidden;position:relative;background:rgba(255,255,255,.014)}
-@media(max-width:768px){.prof{grid-template-columns:1fr}}
-.prof::before{content:"";position:absolute;top:-30%;right:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(124,77,255,.1),transparent 70%);filter:blur(40px);pointer-events:none}
-.pm{padding:54px;position:relative;z-index:1}
-.pa{padding:54px 40px;border-left:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1}
-@media(max-width:768px){.pa{border-left:none;border-top:1px solid rgba(255,255,255,.07)}}
-.pl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:8px}
-.pn{font-size:34px;font-weight:700;margin-bottom:34px;letter-spacing:-.01em}
-.pr{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.07)}
-.pr:last-of-type{border:none}
-.pr span:first-child{color:var(--td);font-size:13px}
-.pr strong{font-family:'JetBrains Mono',monospace;font-size:17px;color:var(--c)}
-.xpt{height:5px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:20px;overflow:hidden}
-.xpf{height:100%;background:linear-gradient(90deg,var(--c),var(--v));box-shadow:0 0 10px rgba(0,229,255,.38);border-radius:99px;width:0%;transition:width 1s cubic-bezier(.16,1,.3,1)}
-.pa p{color:var(--td);font-size:14px;line-height:1.78;margin-bottom:22px}
-.pb{font-size:13.5px;font-weight:500;padding:13px 26px;border-radius:11px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;transition:border-color .3s,background .3s}
-.pb:hover{border-color:var(--c);background:rgba(0,229,255,.1)}
+    /* HUD */
+    #hud{
+      position:absolute;
+      inset:0;
+      padding:14px;
+      pointer-events:none;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
 
-/* ── FOOTER ── */
-footer{border-top:1px solid rgba(255,255,255,.07)}
-.ftm{max-width:1180px;margin:auto;padding:84px 60px 50px;display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:52px}
-@media(max-width:768px){.ftm{grid-template-columns:1fr;gap:36px;padding:60px 20px 40px}}
-.fb .logo{margin-bottom:18px}
-.fb p{color:var(--td);font-size:14px;line-height:1.82;max-width:300px}
-.fc h4{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--td);margin-bottom:20px}
-.fc a{display:block;font-size:14px;color:var(--tm);margin-bottom:13px;cursor:pointer;transition:color .25s}
-.fc a:hover{color:var(--c)}
-.fbt{max-width:1180px;margin:auto;padding:22px 60px 46px;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td)}
-@media(max-width:768px){.fbt{padding:20px 20px 40px}}
-.fgem{color:var(--c)}
+    .hud-panel{
+      background:rgba(5,5,7,0.55);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      border:1px solid var(--glass-border);
+      border-radius:14px;
+      padding:10px 14px;
+    }
 
-/* ── SCROLL REVEAL ── */
-.rv{opacity:0;transform:translateY(26px);transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1)}
-.rv.in{opacity:1;transform:none}
-.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}
-</style>
+    #hud-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+
+    #hud-left{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .hud-label{
+      font-family:'JetBrains Mono',monospace;
+      font-size:9.5px;
+      letter-spacing:0.1em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+    }
+
+    .hud-value{
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:18px;
+      color:var(--ink);
+    }
+
+    .hud-value.accent{
+      background:linear-gradient(120deg, var(--cyan), var(--violet));
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    }
+
+    #hud-right{
+      text-align:right;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:2px;
+    }
+
+    #speedDisplay{
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;
+      color:var(--ink-dim);
+    }
+
+    #speedValue{
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:22px;
+      color:var(--cyan);
+    }
+
+    #comboBadge{
+      position:absolute;
+      top:14px;
+      left:50%;
+      transform:translateX(-50%) translateY(-10px);
+      background:rgba(61,220,132,0.12);
+      border:1px solid rgba(61,220,132,0.5);
+      color:var(--good);
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;
+      font-weight:500;
+      letter-spacing:0.06em;
+      padding:6px 14px;
+      border-radius:999px;
+      opacity:0;
+      transition:opacity 0.25s ease, transform 0.25s ease;
+      pointer-events:none;
+      white-space:nowrap;
+    }
+
+    #comboBadge.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+
+    #pauseBtn{
+      pointer-events:auto;
+      align-self:flex-end;
+      margin-top:8px;
+      width:36px;height:36px;
+      border-radius:10px;
+      background:rgba(5,5,7,0.55);
+      backdrop-filter:blur(12px);
+      border:1px solid var(--glass-border);
+      color:var(--ink);
+      font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition:0.25s;
+    }
+    #pauseBtn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+    #hud-bottom{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      align-items:center;
+    }
+
+    #hintBox{
+      font-family:'JetBrains Mono',monospace;
+      font-size:10.5px;
+      color:var(--ink-dim);
+      text-align:center;
+      letter-spacing:0.02em;
+    }
+
+    /* Overlays */
+    .overlay{
+      position:absolute;
+      inset:0;
+      background:rgba(5,5,7,0.78);
+      backdrop-filter:blur(6px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
+      padding:20px;
+      animation:overlayFade 0.25s ease-out;
+    }
+    .overlay.hidden{display:none}
+    @keyframes overlayFade{from{opacity:0} to{opacity:1}}
+
+    .modal{
+      width:100%;
+      max-width:300px;
+      border-radius:20px;
+      padding:26px 24px 22px;
+      background:var(--void-soft);
+      border:1px solid var(--glass-border);
+      box-shadow:0 30px 70px rgba(0,0,0,0.7), 0 0 60px rgba(0,229,255,0.06);
+      text-align:center;
+      animation:modalIn 0.3s cubic-bezier(.16,1,.3,1);
+    }
+    @keyframes modalIn{
+      from{transform:translateY(16px) scale(0.96); opacity:0}
+      to{transform:translateY(0) scale(1); opacity:1}
+    }
+
+    .modal-eyebrow{
+      font-family:'JetBrains Mono',monospace;
+      font-size:10px;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      color:var(--cyan);
+      margin-bottom:10px;
+    }
+
+    .modal-title{
+      font-family:'Space Grotesk',sans-serif;
+      font-size:21px;
+      font-weight:700;
+      color:var(--ink);
+      margin-bottom:8px;
+      letter-spacing:-0.01em;
+    }
+
+    .modal-text{
+      font-size:13px;
+      color:var(--ink-dim);
+      line-height:1.6;
+      margin-bottom:18px;
+    }
+
+    .choice-label{
+      font-family:'JetBrains Mono',monospace;
+      font-size:10.5px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+      margin-bottom:8px;
+      text-align:left;
+    }
+
+    .choice-row{
+      display:flex;
+      gap:8px;
+      justify-content:center;
+      margin-bottom:18px;
+    }
+
+    .choice-btn{
+      flex:1;
+      padding:10px 8px;
+      border-radius:12px;
+      border:1px solid var(--glass-border);
+      background:var(--glass);
+      color:var(--ink);
+      font-size:12.5px;
+      font-weight:500;
+      cursor:pointer;
+      transition:0.2s ease;
+      font-family:'Inter',sans-serif;
+    }
+    .choice-btn:hover{border-color:rgba(0,229,255,0.4)}
+    .choice-btn.active{
+      border-color:var(--cyan);
+      background:linear-gradient(120deg, rgba(0,229,255,0.18), rgba(124,77,255,0.18));
+      color:var(--ink);
+      box-shadow:0 0 0 1px rgba(0,229,255,0.3) inset;
+    }
+
+    .primary-btn-row{
+      display:flex;
+      gap:10px;
+    }
+
+    .primary-btn{
+      flex:1;
+      padding:13px 14px;
+      border-radius:12px;
+      border:none;
+      background:linear-gradient(120deg, var(--cyan), var(--violet));
+      color:#04060a;
+      font-size:13.5px;
+      font-weight:600;
+      cursor:pointer;
+      font-family:'Inter',sans-serif;
+      box-shadow:0 10px 30px rgba(0,229,255,0.25);
+      transition:0.2s ease;
+    }
+    .primary-btn:hover{transform:translateY(-2px); box-shadow:0 14px 36px rgba(0,229,255,0.35)}
+
+    .secondary-btn{
+      flex:1;
+      padding:13px 14px;
+      border-radius:12px;
+      border:1px solid var(--glass-border);
+      background:var(--glass);
+      color:var(--ink);
+      font-size:13.5px;
+      font-weight:500;
+      cursor:pointer;
+      font-family:'Inter',sans-serif;
+      transition:0.2s ease;
+    }
+    .secondary-btn:hover{border-color:var(--cyan); color:var(--cyan)}
+
+    .result-stats{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:20px;
+      padding:14px;
+      background:var(--glass);
+      border:1px solid var(--glass-border);
+      border-radius:12px;
+    }
+
+    .result-stat{flex:1}
+
+    .result-stat .num{
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:18px;
+      color:var(--cyan);
+    }
+
+    .result-stat .label{
+      font-family:'JetBrains Mono',monospace;
+      font-size:9px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:var(--ink-dim);
+      margin-top:3px;
+    }
+
+    .new-best-tag{
+      display:inline-block;
+      font-family:'JetBrains Mono',monospace;
+      font-size:10px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:var(--good);
+      background:rgba(61,220,132,0.12);
+      border:1px solid rgba(61,220,132,0.4);
+      padding:4px 10px;
+      border-radius:999px;
+      margin-bottom:14px;
+    }
+
+    #footerName{
+      margin-top:14px;
+      font-family:'JetBrains Mono',monospace;
+      font-size:11px;
+      color:var(--ink-dim);
+      text-align:center;
+      letter-spacing:0.04em;
+    }
+    #footerName strong{color:var(--ink)}
+  </style>
 </head>
 <body>
 
-<!-- CURSOR -->
-<div id="cur"><div id="cd"></div><div id="cr"></div></div>
+  <a class="top-link" href="index.html">← Back to Arcade</a>
 
-<!-- LOADER -->
-<div id="ldr">
-  <div class="ldr-name">Yuvraj Soni Arcade</div>
-  <div class="ldr-bar"><div class="ldr-fill" id="lf"></div></div>
-  <div class="ldr-pct" id="lt">0%</div>
-</div>
-
-<!-- NAV -->
-<nav id="nav">
-  <div class="logo"><span class="gem"></span>Yuvraj Soni Arcade</div>
-  <div class="navl">
-    <a onclick="smoothGoTo(0)">Home</a>
-    <a onclick="smoothGoTo(document.querySelector('.games-section').offsetTop)">Games</a>
-    <a onclick="smoothGoTo(document.querySelector('.about-wrap').offsetTop)">About</a>
-    <a onclick="smoothGoTo(document.querySelector('.prof').offsetTop-200)">Profile</a>
+  <div class="brand-row">
+    <span class="mark"></span>
   </div>
-  <button class="ncta" onclick="smoothGoTo(document.querySelector('.games-section').offsetTop)">Play Now</button>
-</nav>
-
-<!-- HERO -->
-<section class="hero">
-  <canvas id="heroBg"></canvas>
-  <div class="hero-inner">
-    <div class="hero-eye" id="heye"><span class="edot"></span>Independent Arcade · Est. 2026</div>
-    <h1>
-      <span class="hl"><span class="hli">Play in</span></span>
-      <span class="hl"><span class="hli gw">another</span></span>
-      <span class="hl"><span class="hli">dimension.</span></span>
-    </h1>
-    <p class="hero-sub" id="hsub">A hand-built collection of four arcade games — designed and developed end-to-end by Yuvraj Soni, with a leveling system that remembers every player who walks in.</p>
-    <div class="hero-btns" id="hbtns">
-      <button class="bp" onclick="smoothGoTo(document.querySelector('.games-section').offsetTop)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Enter the Arcade
-      </button>
-      <button class="bg2" onclick="smoothGoTo(document.querySelector('.about-wrap').offsetTop)">Our Story</button>
-    </div>
+  <h1>Neon <span class="glow">Drift</span> Racer</h1>
+  <div id="subtitle">
+    A 3D neon highway run. Dodge traffic, chain near-misses, and push your distance as far as it'll go.<br>
+    <strong>PC:</strong> ← / → or A / D &nbsp;·&nbsp; <strong>Mobile:</strong> drag left-right on the road.
   </div>
-  <div class="scroll-cue"><span>Scroll</span><div class="scl"></div></div>
-</section>
 
-<!-- MARQUEE -->
-<div class="mq"><div class="mqt" id="mqt"></div></div>
+  <div class="canvas-wrapper">
+    <div id="threeContainer"></div>
 
-<!-- STATS -->
-<div class="stats-wrap"><div class="stats rv" id="statsEl">
-  <div class="stat"><span class="stn" data-c="4">0</span><div class="stl">Games Live</div></div>
-  <div class="stat"><span class="stn">1</span><div class="stl">Solo Developer</div></div>
-  <div class="stat"><span class="stn">∞</span><div class="stl">XP To Earn</div></div>
-  <div class="stat"><span class="stn" data-c="100" data-s="%">0</span><div class="stl">Browser-Based</div></div>
-</div></div>
-
-<!-- ════════════════════════════════════
-     GAMES — SCROLL-PINNED SECTION
-     Exactly like terminal-industries.com
-════════════════════════════════════ -->
-<div class="games-section" id="gamesSection">
-  <div class="games-sticky">
-
-    <!-- Left: pill nav -->
-    <div class="games-left" id="gamesLeft">
-      <span class="games-eye">The Collection</span>
-      <h2 class="games-heading">Four games,<br>built by hand.</h2>
-      <div class="game-pills" id="gamePills">
-        <div class="gpill active" data-idx="0" onclick="jumpToGame(0)">
-          <span class="gpill-num">01</span><span class="gpill-icon">🦅</span><span class="gpill-title">Eagle Flight</span>
+    <div id="hud">
+      <div id="hud-top">
+        <div class="hud-panel" id="hud-left">
+          <div class="hud-label">Distance</div>
+          <div class="hud-value accent" id="hud-distance">0m</div>
+          <div class="hud-label" style="margin-top:6px">Best</div>
+          <div class="hud-value" id="hud-best" style="font-size:14px">0m</div>
         </div>
-        <div class="gpill" data-idx="1" onclick="jumpToGame(1)">
-          <span class="gpill-num">02</span><span class="gpill-icon">🚀</span><span class="gpill-title">Void Interceptor</span>
-        </div>
-        <div class="gpill" data-idx="2" onclick="jumpToGame(2)">
-          <span class="gpill-num">03</span><span class="gpill-icon">🚗</span><span class="gpill-title">Neon Drift Racer</span>
-        </div>
-        <div class="gpill" data-idx="3" onclick="jumpToGame(3)">
-          <span class="gpill-num">04</span><span class="gpill-icon">❌</span><span class="gpill-title">X/O Bot Duel</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- Right: big slides -->
-    <div class="games-right" id="gamesRight">
-
-      <div class="game-slide active" data-idx="0">
-        <div class="game-slide-bg" style="--slide-col-a:rgba(0,229,255,.12);--slide-col-b:rgba(124,77,255,.08)"></div>
-        <div class="game-slide-content">
-          <div class="gs-tag"><span class="gs-badge">Endless · Skill</span></div>
-          <span class="gs-icon">🦅</span>
-          <h2>Eagle Flight</h2>
-          <p>Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and higher multipliers. Every run is a different challenge.</p>
-          <div class="gs-meta">
-            <span class="gs-chip">Reflex</span>
-            <span class="gs-chip">Endless</span>
-            <span class="gs-chip">High Score</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <div class="hud-panel" id="hud-right">
+            <div id="speedDisplay">SPEED</div>
+            <div id="speedValue">0<span style="font-size:11px;color:var(--ink-dim)"> km/h</span></div>
           </div>
-          <button class="gs-play" onclick="location.href='eagle.html'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Play Now
-          </button>
+          <button id="pauseBtn" title="Pause">❚❚</button>
         </div>
       </div>
 
-      <div class="game-slide" data-idx="1">
-        <div class="game-slide-bg" style="--slide-col-a:rgba(124,77,255,.14);--slide-col-b:rgba(0,229,255,.07)"></div>
-        <div class="game-slide-content">
-          <div class="gs-tag"><span class="gs-badge">3D · Wave Shooter</span></div>
-          <span class="gs-icon">🚀</span>
-          <h2>Void Interceptor</h2>
-          <p>A full Three.js 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, upgrade your ship between waves, and defeat the Void Sentinel boss.</p>
-          <div class="gs-meta">
-            <span class="gs-chip">3D Engine</span>
-            <span class="gs-chip">Boss Fights</span>
-            <span class="gs-chip">Upgrades</span>
+      <div id="comboBadge"></div>
+
+      <div id="hud-bottom">
+        <div class="hud-panel" id="hintBox">Loading 3D models…</div>
+      </div>
+    </div>
+
+    <!-- Difficulty popup -->
+    <div id="setupOverlay" class="overlay hidden">
+      <div class="modal">
+        <div class="modal-eyebrow">Pre-Race</div>
+        <div class="modal-title">Start your run</div>
+        <div class="modal-text">Pick a difficulty. Higher difficulty means faster traffic and tighter gaps.</div>
+        <div class="choice-label">Difficulty</div>
+        <div class="choice-row">
+          <button class="choice-btn active" data-diff="easy" id="btnDiffEasy">Easy</button>
+          <button class="choice-btn" data-diff="medium" id="btnDiffMedium">Medium</button>
+          <button class="choice-btn" data-diff="hard" id="btnDiffHard">Hard</button>
+        </div>
+        <div class="primary-btn-row">
+          <button class="primary-btn" id="btnStartRace" type="button">Start race</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause popup -->
+    <div id="pauseOverlay" class="overlay hidden">
+      <div class="modal">
+        <div class="modal-eyebrow">Paused</div>
+        <div class="modal-title">Take a breath</div>
+        <div class="modal-text">Your run is on hold. Resume whenever you're ready.</div>
+        <div class="primary-btn-row">
+          <button class="primary-btn" id="btnResume" type="button">Resume</button>
+          <button class="secondary-btn" id="btnPauseQuit" type="button">Quit run</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result popup -->
+    <div id="resultOverlay" class="overlay hidden">
+      <div class="modal">
+        <div class="modal-eyebrow" id="resultEyebrow">Run Ended</div>
+        <div class="modal-title" id="resultTitle">You crashed</div>
+        <div id="newBestTag" class="new-best-tag" style="display:none">New best distance</div>
+        <div class="result-stats">
+          <div class="result-stat">
+            <div class="num" id="statDistance">0m</div>
+            <div class="label">Distance</div>
           </div>
-          <button class="gs-play" onclick="location.href='space.html'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Play Now
-          </button>
-        </div>
-      </div>
-
-      <div class="game-slide" data-idx="2">
-        <div class="game-slide-bg" style="--slide-col-a:rgba(255,201,60,.1);--slide-col-b:rgba(255,45,120,.07)"></div>
-        <div class="game-slide-content">
-          <div class="gs-tag"><span class="gs-badge">3D · Racing</span></div>
-          <span class="gs-icon">🚗</span>
-          <h2>Neon Drift Racer</h2>
-          <p>Race through a neon city highway in full 3D. Dodge oncoming traffic, chain near-misses for combo bonuses, and push your distance record as far as it will go.</p>
-          <div class="gs-meta">
-            <span class="gs-chip">3D Engine</span>
-            <span class="gs-chip">Near-Miss Combos</span>
-            <span class="gs-chip">Distance Run</span>
+          <div class="result-stat">
+            <div class="num" id="statBest">0m</div>
+            <div class="label">Best</div>
           </div>
-          <button class="gs-play" onclick="location.href='drift.html'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Play Now
-          </button>
-        </div>
-      </div>
-
-      <div class="game-slide" data-idx="3">
-        <div class="game-slide-bg" style="--slide-col-a:rgba(255,45,120,.12);--slide-col-b:rgba(124,77,255,.08)"></div>
-        <div class="game-slide-content">
-          <div class="gs-tag"><span class="gs-badge">Strategy · 1v1</span></div>
-          <span class="gs-icon">❌</span>
-          <h2>X/O Bot Duel</h2>
-          <p>A tactical battle against an AI opponent that adapts to every move you make. Simple to understand, genuinely hard to master — the thinking person's arcade game.</p>
-          <div class="gs-meta">
-            <span class="gs-chip">AI Opponent</span>
-            <span class="gs-chip">Strategy</span>
-            <span class="gs-chip">1v1</span>
+          <div class="result-stat">
+            <div class="num" id="statCombo">0</div>
+            <div class="label">Max Combo</div>
           </div>
-          <button class="gs-play" onclick="location.href='xo.html'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Play Now
-          </button>
+        </div>
+        <div class="primary-btn-row">
+          <button class="primary-btn" id="btnResultAgain" type="button">Race again</button>
+          <button class="secondary-btn" id="btnResultChange" type="button">Change difficulty</button>
         </div>
       </div>
-
-      <!-- Progress dots -->
-      <div class="games-progress" id="gamesDots">
-        <div class="gp-dot active"></div>
-        <div class="gp-dot"></div>
-        <div class="gp-dot"></div>
-        <div class="gp-dot"></div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ABOUT -->
-<div class="about-wrap">
-  <div class="about-vis rv">
-    <div class="ar ar3"></div><div class="ar ar2"></div><div class="ar ar1"></div>
-    <div class="aorb"></div>
-  </div>
-  <div class="about-copy">
-    <span class="eye rv">The Story</span>
-    <h2 class="rv d1">One developer.<br>Four worlds.<br>Zero shortcuts.</h2>
-    <p class="rv d2">Most online arcades are templates wearing different skins. <strong>Yuvraj Soni Arcade</strong> is the opposite — every game here is written, tuned, and shipped by a single person, end to end, with no asset packs and no recycled engines.</p>
-    <p class="rv d3">The goal isn't to have the most games. It's to have <strong>four that feel considered</strong> — distinct mechanics, distinct moods, and a shared profile system that ties your progress into one evolving identity.</p>
-  </div>
-</div>
-
-<!-- HOW -->
-<div class="section" style="padding-top:0">
-  <div class="sec-head">
-    <div><span class="sec-eye rv">The Loop</span><div class="sec-title rv d1">How the arcade works</div></div>
-    <p class="sec-sub rv">One profile, one XP bar — every game feeds into it.</p>
-  </div>
-  <div class="steps rv">
-    <div class="step"><div class="snum">01</div><h3>Pick a game</h3><p>Four titles, each with its own pace. No installs — open and play instantly in any browser on any device.</p></div>
-    <div class="step"><div class="snum">02</div><h3>Earn XP &amp; coins</h3><p>Every run feeds your arcade-wide profile. Performance in any game contributes to the same progress bar.</p></div>
-    <div class="step"><div class="snum">03</div><h3>Level up forever</h3><p>Your level climbs as XP builds. Saved locally — exactly as you left it, every time you return.</p></div>
-  </div>
-</div>
-
-<!-- FEATURES -->
-<div class="section" style="padding-top:0">
-  <div class="sec-head">
-    <div><span class="sec-eye rv">Under the Hood</span><div class="sec-title rv d1">Built like a real product</div></div>
-  </div>
-  <div class="feats">
-    <div class="feat rv"><div class="fi">⚡</div><h3>Instant Load</h3><p>No bundlers, no frameworks. Every game opens in under a second.</p></div>
-    <div class="feat rv d1"><div class="fi">🪪</div><h3>Shared Profile</h3><p>One name, one level, one XP bar — across all four games.</p></div>
-    <div class="feat rv d2"><div class="fi">💾</div><h3>Local-First Save</h3><p>Progress lives in your browser. No account, nothing lost.</p></div>
-    <div class="feat rv"><div class="fi">🎮</div><h3>Real 3D Engines</h3><p>Two games run on full Three.js — not fake canvas 3D.</p></div>
-    <div class="feat rv d1"><div class="fi">🔊</div><h3>Ambient Soundtrack</h3><p>A looping score plays softly — designed to stay unobtrusive.</p></div>
-    <div class="feat rv d2"><div class="fi">📱</div><h3>Fully Responsive</h3><p>Arcade and every game resize cleanly from monitor to phone.</p></div>
-  </div>
-</div>
-
-<!-- PROFILE -->
-<div class="section" style="padding-top:0">
-  <div class="sec-head">
-    <div><span class="sec-eye rv">Membership</span><div class="sec-title rv d1">Your player profile</div></div>
-    <p class="sec-sub rv">Carries across every game, automatically.</p>
-  </div>
-  <div class="prof rv">
-    <div class="pm">
-      <div class="pl">Member Card</div>
-      <div class="pn" id="playerName">—</div>
-      <div class="pr"><span>Level</span><strong id="playerLevel">—</strong></div>
-      <div class="pr"><span>Coins</span><strong id="playerCoins">—</strong></div>
-      <div class="pr"><span>Experience</span><strong id="playerXP">—</strong></div>
-      <div class="xpt"><div class="xpf" id="xpFill"></div></div>
-    </div>
-    <div class="pa">
-      <p>Rename your card at any time — your level, coins and XP stay exactly as they are.</p>
-      <button class="pb" onclick="changeName()">Change Name</button>
     </div>
   </div>
-</div>
 
-<!-- FOOTER -->
-<footer>
-  <div class="ftm">
-    <div class="fb">
-      <div class="logo"><span class="gem"></span>Yuvraj Soni Arcade</div>
-      <p>An independent arcade — four games, one evolving player profile, zero shortcuts. Designed and built in-house.</p>
-    </div>
-    <div class="fc">
-      <h4>Arcade</h4>
-      <a onclick="smoothGoTo(0)">Home</a>
-      <a onclick="smoothGoTo(document.querySelector('.about-wrap').offsetTop)">About</a>
-      <a onclick="smoothGoTo(document.querySelector('.prof').offsetTop-200)">Profile</a>
-    </div>
-    <div class="fc">
-      <h4>Games</h4>
-      <a onclick="location.href='eagle.html'">Eagle Flight</a>
-      <a onclick="location.href='space.html'">Void Interceptor</a>
-      <a onclick="location.href='drift.html'">Neon Drift Racer</a>
-      <a onclick="location.href='xo.html'">X/O Bot Duel</a>
-    </div>
-  </div>
-  <div class="fbt">
-    <span><span class="fgem">◆</span> 2026 Yuvraj Soni Arcade</span>
-    <span>Designed &amp; developed in-house · All rights reserved</span>
-  </div>
-</footer>
+  <div id="footerName">Game owner: <strong>Yuvraj Soni</strong></div>
 
-<script>
-/* ══ LOADER ══ */
-(function(){
-  const lf=document.getElementById('lf'),lt=document.getElementById('lt'),ldr=document.getElementById('ldr');
-  let p=0;
-  const msgs=['Initialising…','Loading shaders…','Building world…','Ready!'];
-  const iv=setInterval(()=>{
-    p+=Math.random()*13+4;if(p>100)p=100;
-    lf.style.width=p+'%';
-    lt.textContent=msgs[Math.min(3,Math.floor(p/26))]+' '+Math.floor(p)+'%';
-    if(p>=100){clearInterval(iv);setTimeout(()=>{ldr.classList.add('done');heroIn();},300);}
-  },65);
-})();
+  <!-- Three.js + GLTFLoader -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-function heroIn(){
-  document.getElementById('heye').classList.add('in');
-  setTimeout(()=>document.querySelectorAll('.hli').forEach(e=>e.classList.add('in')),150);
-  setTimeout(()=>document.getElementById('hsub').classList.add('in'),400);
-  setTimeout(()=>document.getElementById('hbtns').classList.add('in'),600);
-}
+  <script>
+    // ===== DOM =====
+    const container   = document.getElementById("threeContainer");
+    const hintEl      = document.getElementById("hintBox");
+    const hudDistance = document.getElementById("hud-distance");
+    const hudBest     = document.getElementById("hud-best");
+    const speedValueEl= document.getElementById("speedValue");
+    const comboBadge  = document.getElementById("comboBadge");
 
-/* ══ HERO CANVAS (gpu-efficient star + particle field) ══ */
-(function(){
-  const canvas=document.getElementById('heroBg');
-  const ctx=canvas.getContext('2d');
-  let W,H,stars=[];
+    const setupOverlay   = document.getElementById("setupOverlay");
+    const resultOverlay  = document.getElementById("resultOverlay");
+    const pauseOverlay   = document.getElementById("pauseOverlay");
+    const btnDiffEasy    = document.getElementById("btnDiffEasy");
+    const btnDiffMedium  = document.getElementById("btnDiffMedium");
+    const btnDiffHard    = document.getElementById("btnDiffHard");
+    const btnStartRace   = document.getElementById("btnStartRace");
+    const btnResultAgain = document.getElementById("btnResultAgain");
+    const btnResultChange= document.getElementById("btnResultChange");
+    const btnPause       = document.getElementById("pauseBtn");
+    const btnResume      = document.getElementById("btnResume");
+    const btnPauseQuit   = document.getElementById("btnPauseQuit");
 
-  function resize(){
-    W=canvas.width=canvas.offsetWidth;
-    H=canvas.height=canvas.offsetHeight;
-    // Rebuild stars on resize
-    stars=[];
-    for(let i=0;i<220;i++){
-      stars.push({
-        x:Math.random()*W,y:Math.random()*H,
-        r:Math.random()<0.04?1.8:Math.random()*.9+.2,
-        sp:Math.random()*0.3+0.05,
-        a:Math.random()*.8+.2,
-        hue:Math.random()<.5?'190,229,255':Math.random()<.5?'230,220,200':'200,160,120'
-      });
+    const resultTitle   = document.getElementById("resultTitle");
+    const resultEyebrow = document.getElementById("resultEyebrow");
+    const newBestTag    = document.getElementById("newBestTag");
+    const statDistance  = document.getElementById("statDistance");
+    const statBest      = document.getElementById("statBest");
+    const statCombo     = document.getElementById("statCombo");
+
+    // ===== Sounds =====
+    const engineSound = new Audio("drift-engine.mp3");
+    const crashSound  = new Audio("explosion.mp3");
+    engineSound.loop   = true;
+    engineSound.volume = 0.5;
+    crashSound.volume  = 0.9;
+    let audioUnlocked = false;
+
+    function unlockAudio(){
+      if(audioUnlocked) return;
+      audioUnlocked = true;
+      try{
+        crashSound.currentTime = 0;
+        crashSound.play().then(()=>{ crashSound.pause(); crashSound.currentTime=0; }).catch(()=>{});
+      }catch(e){}
     }
-  }
+    function playSound(s){
+      if(!s) return;
+      try{ s.currentTime=0; s.play().catch(()=>{}); }catch(e){}
+    }
+    function startEngine(){
+      try{ engineSound.currentTime=0; engineSound.play().catch(()=>{}); }catch(e){}
+    }
+    function stopEngine(){
+      try{ engineSound.pause(); }catch(e){}
+    }
 
-  // Floating shards (cheap canvas, not WebGL)
-  const shards=[];
-  for(let i=0;i<14;i++){
-    shards.push({
-      x:Math.random()*100,y:Math.random()*100, // percentage
-      size:3+Math.random()*8,
-      color:['#00e5ff','#7c4dff','#ff2d78','#ffc93c'][Math.floor(Math.random()*4)],
-      vy:-0.02-Math.random()*.03,
-      vx:(Math.random()-.5)*.02,
-      rot:Math.random()*360,vr:(Math.random()-.5)*0.5,
-      alpha:0.25+Math.random()*.35,
+    // ===== Score / persistence =====
+    let distance=0, bestDist=0, maxCombo=0, combo=0;
+    const LS_DRIFT3D_BEST="drift3d_best_distance_v1";
+
+    function loadProgress(){
+      try{ const s=localStorage.getItem(LS_DRIFT3D_BEST); if(s) bestDist=parseInt(s,10)||0; }catch(e){}
+      hudBest.textContent=Math.floor(bestDist)+"m";
+    }
+    function saveProgress(){
+      try{ localStorage.setItem(LS_DRIFT3D_BEST,String(bestDist)); }catch(e){}
+    }
+    function updateDistanceHUD(){
+      hudDistance.textContent=Math.floor(distance)+"m";
+      hudBest.textContent=Math.floor(bestDist)+"m";
+    }
+    function updateSpeedHUD(kmh){
+      speedValueEl.innerHTML=Math.round(kmh)+'<span style="font-size:11px;color:var(--ink-dim)"> km/h</span>';
+    }
+
+    let comboHideTimer=null;
+    function showCombo(n){
+      comboBadge.textContent="Near-miss ×"+n;
+      comboBadge.classList.add("show");
+      clearTimeout(comboHideTimer);
+      comboHideTimer=setTimeout(()=>comboBadge.classList.remove("show"),900);
+    }
+
+    // ===== Three.js core =====
+    let scene,camera,renderer,clock;
+    const obstacles=[];
+    const laneLineSegments=[];
+    const sideObjects=[];
+    const passedThisFrame=new Set();
+
+    const ROAD_WIDTH=8;
+    const ROAD_LENGTH=200;
+    const LANE_COUNT=3;
+    const LANE_WIDTH=ROAD_WIDTH/LANE_COUNT;
+    const LANE_X=[
+      -ROAD_WIDTH/2+LANE_WIDTH*0.5,
+      0,
+      ROAD_WIDTH/2-LANE_WIDTH*0.5
+    ];
+
+    const car={ mesh:null, width:1.6, length:3.8 };
+    let headlightL=null, headlightR=null;
+    let explosion=null;
+
+    // ===== Game state =====
+    let gameState="loading"; // loading, ready, running, paused, over
+    let speed=40, baseSpeed=40, spawnTimer=0, baseSpawnInterval=1.0;
+    let baseFov=60;
+    let cameraLookY=2;
+
+    const DIFF_CONFIG={
+      easy:   {label:"Easy",   speedBase:40,speedMax:110,spawnBase:1.3,laneFactor:0.22},
+      medium: {label:"Medium", speedBase:55,speedMax:140,spawnBase:0.9,laneFactor:0.30},
+      hard:   {label:"Hard",   speedBase:70,speedMax:170,spawnBase:0.6,laneFactor:0.38}
+    };
+    let difficulty="easy";
+
+    let pointerDown=false, pointerStartX=0, carStartX=0;
+
+    let playerCarBase=null;
+    let trafficCarBase=null, trafficTruckBase=null;
+    let trafficCarSize=null, trafficTruckSize=null;
+    let modelsLoaded=false;
+
+    function isOverlayVisible(el){ return el && !el.classList.contains("hidden"); }
+    function openSetupOverlay(){ setupOverlay.classList.remove("hidden"); }
+    function closeSetupOverlay(){ setupOverlay.classList.add("hidden"); }
+
+    function openResultOverlay(crashed){
+      const cfg=DIFF_CONFIG[difficulty];
+      const isNewBest = distance>=bestDist && distance>0;
+      resultEyebrow.textContent = crashed ? "Run Ended" : "Run Complete";
+      resultTitle.textContent = crashed ? "You crashed" : "Run finished";
+      newBestTag.style.display = isNewBest ? "inline-block" : "none";
+      statDistance.textContent = Math.floor(distance)+"m";
+      statBest.textContent = Math.floor(bestDist)+"m";
+      statCombo.textContent = maxCombo;
+      resultOverlay.classList.remove("hidden");
+    }
+    function closeResultOverlay(){ resultOverlay.classList.add("hidden"); }
+
+    function setDifficulty(diff){
+      difficulty=diff;
+      btnDiffEasy.classList.toggle("active",diff==="easy");
+      btnDiffMedium.classList.toggle("active",diff==="medium");
+      btnDiffHard.classList.toggle("active",diff==="hard");
+    }
+
+    function normalizeModel(root,targetWidth,targetLength,minHeight){
+      const box=new THREE.Box3().setFromObject(root);
+      const center=new THREE.Vector3();
+      const size=new THREE.Vector3();
+      box.getCenter(center);
+      box.getSize(size);
+      root.position.sub(center);
+      const scaleXZ=Math.min(targetWidth/size.x,targetLength/size.z);
+      let scaleY=scaleXZ;
+      if(size.y*scaleY<minHeight) scaleY=minHeight/size.y;
+      root.scale.set(scaleXZ,scaleY,scaleXZ);
+      const newBox=new THREE.Box3().setFromObject(root);
+      const newSize=new THREE.Vector3();
+      newBox.getSize(newSize);
+      return {width:newSize.x,height:newSize.y,length:newSize.z};
+    }
+
+    function initThree(){
+      scene=new THREE.Scene();
+      scene.background=new THREE.Color(0x050507);
+      scene.fog=new THREE.Fog(0x050507,18,120);
+
+      const aspect=container.clientWidth/container.clientHeight;
+      camera=new THREE.PerspectiveCamera(60,aspect,0.1,200);
+      camera.position.set(0,6.3,12);
+      camera.lookAt(0,2,-10);
+
+      renderer=new THREE.WebGLRenderer({antialias:true});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+      renderer.setSize(container.clientWidth,container.clientHeight);
+      container.appendChild(renderer.domElement);
+
+      clock=new THREE.Clock();
+
+      const ambient=new THREE.AmbientLight(0x9fb4ff,0.35);
+      scene.add(ambient);
+      const dirLight=new THREE.DirectionalLight(0xffffff,0.55);
+      dirLight.position.set(10,20,10);
+      scene.add(dirLight);
+      const hemi=new THREE.HemisphereLight(0x00e5ff,0x050507,0.3);
+      scene.add(hemi);
+
+      // Road
+      const roadGeom=new THREE.BoxGeometry(ROAD_WIDTH,0.2,ROAD_LENGTH);
+      const roadMat=new THREE.MeshStandardMaterial({color:0x0c0c14,metalness:0.5,roughness:0.7});
+      const road=new THREE.Mesh(roadGeom,roadMat);
+      road.position.set(0,0,-ROAD_LENGTH/2+20);
+      scene.add(road);
+
+      // Neon edge strips along the road
+      const edgeGeom=new THREE.BoxGeometry(0.08,0.05,ROAD_LENGTH);
+      const edgeMatCyan=new THREE.MeshBasicMaterial({color:0x00e5ff});
+      const edgeMatViolet=new THREE.MeshBasicMaterial({color:0x7c4dff});
+      const edgeL=new THREE.Mesh(edgeGeom,edgeMatCyan);
+      edgeL.position.set(-ROAD_WIDTH/2-0.05,0.11,-ROAD_LENGTH/2+20);
+      scene.add(edgeL);
+      const edgeR=new THREE.Mesh(edgeGeom,edgeMatViolet);
+      edgeR.position.set(ROAD_WIDTH/2+0.05,0.11,-ROAD_LENGTH/2+20);
+      scene.add(edgeR);
+
+      // Lane dashes
+      const lineGeom=new THREE.BoxGeometry(0.12,0.04,2.2);
+      const lineMat=new THREE.MeshBasicMaterial({color:0x4b5568});
+      const SEG_COUNT=18,SEG_SPACING=6;
+      for(let laneIndex=1;laneIndex<LANE_COUNT;laneIndex++){
+        const x=-ROAD_WIDTH/2+LANE_WIDTH*laneIndex;
+        for(let i=0;i<SEG_COUNT;i++){
+          const m=new THREE.Mesh(lineGeom,lineMat);
+          m.position.set(x,0.12,-i*SEG_SPACING);
+          laneLineSegments.push(m);
+          scene.add(m);
+        }
+      }
+
+      initSideObjects();
+      onWindowResize();
+      window.addEventListener("resize",onWindowResize);
+
+      loadModels();
+    }
+
+    function initSideObjects(){
+      const poleGeom=new THREE.CylinderGeometry(0.06,0.08,2.2,8);
+      const poleMat=new THREE.MeshStandardMaterial({color:0x14141c,metalness:0.5,roughness:0.5});
+      const lampGeom=new THREE.SphereGeometry(0.15,12,12);
+      const lampMatCyan=new THREE.MeshBasicMaterial({color:0x00e5ff});
+      const lampMatViolet=new THREE.MeshBasicMaterial({color:0x7c4dff});
+
+      const sideCount=10,zSpacing=18;
+      for(let i=0;i<sideCount;i++){
+        const baseZ=-i*zSpacing-10;
+
+        const leftGroup=new THREE.Group();
+        const lp=new THREE.Mesh(poleGeom,poleMat);
+        lp.position.set(-ROAD_WIDTH/2-1.5,1.1,baseZ);
+        const ll=new THREE.Mesh(lampGeom,lampMatCyan);
+        ll.position.set(-ROAD_WIDTH/2-1.5,2.2,baseZ);
+        leftGroup.add(lp,ll);
+        scene.add(leftGroup);
+        sideObjects.push(leftGroup);
+
+        const rightGroup=new THREE.Group();
+        const rp=lp.clone();
+        rp.position.x=ROAD_WIDTH/2+1.5;
+        const rl=new THREE.Mesh(lampGeom,lampMatViolet);
+        rl.position.set(ROAD_WIDTH/2+1.5,2.2,baseZ);
+        rightGroup.add(rp,rl);
+        scene.add(rightGroup);
+        sideObjects.push(rightGroup);
+
+        const bLeft=createBuilding(-ROAD_WIDTH/2-6,baseZ-4);
+        const bRight=createBuilding(ROAD_WIDTH/2+6,baseZ-10);
+        scene.add(bLeft,bRight);
+        sideObjects.push(bLeft,bRight);
+      }
+    }
+
+    function createBuilding(x,z){
+      const width=3+Math.random()*3;
+      const height=6+Math.random()*12;
+      const depth=5+Math.random()*4;
+      const group=new THREE.Group();
+
+      const baseGeom=new THREE.BoxGeometry(width,height,depth);
+      const baseMat=new THREE.MeshStandardMaterial({color:0x07070b,metalness:0.4,roughness:0.75});
+      const base=new THREE.Mesh(baseGeom,baseMat);
+      base.position.set(0,height/2,0);
+      group.add(base);
+
+      // Neon trim along the rooftop edge — small brand signature touch
+      const trimColor = Math.random()<0.5 ? 0x00e5ff : 0x7c4dff;
+      const trimGeom=new THREE.BoxGeometry(width+0.05,0.06,0.06);
+      const trimMat=new THREE.MeshBasicMaterial({color:trimColor});
+      const trim=new THREE.Mesh(trimGeom,trimMat);
+      trim.position.set(0,height+0.02,depth/2);
+      group.add(trim);
+
+      const winGeom=new THREE.PlaneGeometry(0.3,0.4);
+      const litColor=0xffd166, darkColor=0x0d0d14;
+      const rows=Math.floor(height/1.2);
+      const cols=Math.floor(width/0.8);
+
+      for(let i=0;i<rows;i++){
+        for(let j=0;j<cols;j++){
+          if(Math.random()<0.4) continue;
+          const mat=new THREE.MeshBasicMaterial({
+            color:(Math.random()<0.65)?litColor:darkColor,
+            side:THREE.FrontSide
+          });
+          const w=new THREE.Mesh(winGeom,mat);
+          const wx=-width/2+0.5+j*0.7;
+          const wy=0.8+i*0.9;
+          const wz=depth/2+0.01;
+          w.position.set(wx,wy,wz);
+          group.add(w);
+        }
+      }
+
+      group.position.set(x,0,z);
+      return group;
+    }
+
+    function onWindowResize(){
+      if(!renderer||!camera) return;
+      const width=container.clientWidth||400;
+      const height=container.clientHeight||600;
+      renderer.setSize(width,height);
+      camera.aspect=width/height;
+      // Wide (landscape/desktop) frames see more horizontal space than tall
+      // frames at the same FOV, which makes the road look small and far away.
+      // Narrow the FOV a bit on wide aspect ratios to keep the road feeling
+      // the same size and the camera feeling equally "close" either way.
+      const isWide = (width/height) > 1.2;
+      baseFov = isWide ? 50 : 60;
+      camera.fov = baseFov;
+
+      // A tall viewport has lots of vertical headroom, so the camera can sit
+      // high and look steeply down without losing the player's car off the
+      // bottom edge. A wide viewport has much less vertical coverage at the
+      // same FOV, so the same camera position crops the car out of frame.
+      // Pull the camera lower and closer, and level the look-at point, so
+      // the car stays fully visible on wide/desktop screens.
+      if(isWide){
+        camera.position.set(0,4.4,9.5);
+        cameraLookY=1.6;
+      } else {
+        camera.position.set(0,6.3,12);
+        cameraLookY=2;
+      }
+      camera.updateProjectionMatrix();
+    }
+
+    function loadModels(){
+      const loader=new THREE.GLTFLoader();
+      let toLoad=3, failed=false;
+
+      function doneOne(){
+        toLoad--;
+        if(toLoad<=0){
+          if(!playerCarBase){
+            console.error("Player car model missing, cannot start game.");
+            hintEl.textContent="Couldn't load player-car.glb — check the file is in the same folder.";
+            gameState="loading";
+            return;
+          }
+          createPlayerCar();
+          modelsLoaded=true;
+          hintEl.textContent="Tap Start, then steer with ← / → or drag the road.";
+          openSetupOverlay();
+        }
+      }
+
+      loader.load("player-car.glb",
+        (gltf)=>{
+          const root=gltf.scene;
+          const size=normalizeModel(root,1.6,3.8,1.0);
+          root.rotation.y=Math.PI;
+          root.traverse(n=>{ if(n.isMesh){ n.castShadow=false; } });
+          playerCarBase=root;
+          car.width=size.width;
+          car.length=size.length;
+          doneOne();
+        },
+        undefined,
+        (err)=>{ console.error("Failed to load player-car.glb",err); doneOne(); }
+      );
+
+      loader.load("traffic-car.glb",
+        (gltf)=>{
+          const root=gltf.scene;
+          const size=normalizeModel(root,1.4,3.0,1.4);
+          root.rotation.y=Math.PI;
+          trafficCarBase=root;
+          trafficCarSize=size;
+          doneOne();
+        },
+        undefined,
+        (err)=>{ console.error("Failed to load traffic-car.glb",err); doneOne(); }
+      );
+
+      loader.load("traffic-truck.glb",
+        (gltf)=>{
+          const root=gltf.scene;
+          const size=normalizeModel(root,1.8,6.0,2.0);
+          root.rotation.y=Math.PI;
+          trafficTruckBase=root;
+          trafficTruckSize=size;
+          doneOne();
+        },
+        undefined,
+        (err)=>{ console.error("Failed to load traffic-truck.glb",err); doneOne(); }
+      );
+    }
+
+    function createPlayerCar(){
+      if(!playerCarBase) return;
+      if(car.mesh) scene.remove(car.mesh);
+      const clone=playerCarBase.clone(true);
+      clone.position.set(0,0,4);
+      scene.add(clone);
+      car.mesh=clone;
+
+      // Tail-lights: small glowing markers behind the player car (pure cosmetic, brand-consistent)
+      const tailGeom=new THREE.SphereGeometry(0.06,8,8);
+      const tailMat=new THREE.MeshBasicMaterial({color:0xff4d6d});
+      headlightL=new THREE.Mesh(tailGeom,tailMat);
+      headlightR=new THREE.Mesh(tailGeom,tailMat);
+      headlightL.position.set(-car.width*0.35,0.5,car.length*0.5+0.05);
+      headlightR.position.set(car.width*0.35,0.5,car.length*0.5+0.05);
+      clone.add(headlightL);
+      clone.add(headlightR);
+    }
+
+    function createObstacle(){
+      if(!trafficCarBase||!trafficTruckBase||!trafficCarSize||!trafficTruckSize) return;
+      const laneIndex=Math.floor(Math.random()*LANE_COUNT);
+      const laneX=LANE_X[laneIndex];
+      const isTruck=Math.random()<0.35;
+      const base=isTruck?trafficTruckBase:trafficCarBase;
+      const size=isTruck?trafficTruckSize:trafficCarSize;
+      const clone=base.clone(true);
+      clone.position.set(laneX,0,-80-Math.random()*40);
+      scene.add(clone);
+      const id=Math.random().toString(36).slice(2);
+      clone.userData.id=id;
+      obstacles.push({mesh:clone,isTruck,width:size.width,length:size.length,id,passed:false});
+    }
+
+    function updateObstacles(dt){
+      for(let i=obstacles.length-1;i>=0;i--){
+        const o=obstacles[i];
+        o.mesh.position.z+=speed*dt;
+
+        // Near-miss detection: obstacle just passed the player without colliding
+        if(!o.passed && o.mesh.position.z>car.mesh.position.z+car.length*0.5){
+          o.passed=true;
+          const dx=Math.abs(o.mesh.position.x-car.mesh.position.x);
+          if(dx < (o.width*0.5+car.width*0.5)+0.9){
+            combo++;
+            if(combo>maxCombo) maxCombo=combo;
+            if(combo>=2) showCombo(combo);
+          } else {
+            combo=0;
+          }
+        }
+
+        if(o.mesh.position.z>25){
+          scene.remove(o.mesh);
+          obstacles.splice(i,1);
+        }
+      }
+    }
+
+    function checkCollisions(){
+      if(!car.mesh) return;
+      const cx=car.mesh.position.x;
+      const cz=car.mesh.position.z;
+      const cHalfW=car.width*0.42;
+      const cHalfL=car.length*0.42;
+      for(const o of obstacles){
+        const ox=o.mesh.position.x;
+        const oz=o.mesh.position.z;
+        const oHalfW=o.width*0.42;
+        const oHalfL=o.length*0.42;
+        const dx=Math.abs(cx-ox);
+        const dz=Math.abs(cz-oz);
+        if(dx<(cHalfW+oHalfW) && dz<(cHalfL+oHalfL)){
+          handleCrash();
+          return;
+        }
+      }
+    }
+
+    function updateSideObjects(dt){
+      const loopZ=18*10;
+      for(const obj of sideObjects){
+        obj.position.z+=speed*0.4*dt;
+        if(obj.position.z>24){
+          obj.position.z-=loopZ;
+        }
+      }
+    }
+
+    function triggerExplosion(){
+      if(explosion && explosion.mesh){ scene.remove(explosion.mesh); }
+      const geom=new THREE.SphereGeometry(0.5,16,16);
+      const mat=new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:1});
+      const mesh=new THREE.Mesh(geom,mat);
+      if(car.mesh) mesh.position.copy(car.mesh.position);
+      scene.add(mesh);
+      explosion={mesh,radius:0.5,alpha:1};
+      playSound(crashSound);
+    }
+
+    function updateExplosion(dt){
+      if(!explosion) return;
+      explosion.radius+=10*dt;
+      explosion.alpha-=2.0*dt;
+      if(explosion.alpha<=0){
+        scene.remove(explosion.mesh);
+        explosion=null;
+        return;
+      }
+      explosion.mesh.scale.setScalar(explosion.radius);
+      explosion.mesh.material.opacity=Math.max(0,explosion.alpha);
+    }
+
+    function resetGameState(){
+      const cfg=DIFF_CONFIG[difficulty];
+      distance=0;
+      combo=0;
+      maxCombo=0;
+      baseSpeed=cfg.speedBase;
+      speed=baseSpeed;
+      baseSpawnInterval=cfg.spawnBase;
+      spawnTimer=0;
+      for(const o of obstacles){ scene.remove(o.mesh); }
+      obstacles.length=0;
+      if(car.mesh){ car.mesh.position.set(0,0,4); }
+      if(explosion){ scene.remove(explosion.mesh); explosion=null; }
+      gameState="ready";
+      updateDistanceHUD();
+      updateSpeedHUD(0);
+    }
+
+    function startGame(){
+      if(!modelsLoaded){ console.warn("Models not loaded yet."); return; }
+      resetGameState();
+      gameState="running";
+      startEngine();
+      closeSetupOverlay();
+      closeResultOverlay();
+      pauseOverlay.classList.add("hidden");
+    }
+
+    function handleCrash(){
+      if(gameState==="over") return;
+      gameState="over";
+      stopEngine();
+      triggerExplosion();
+      if(distance>bestDist){ bestDist=distance; saveProgress(); }
+      updateDistanceHUD();
+      openResultOverlay(true);
+    }
+
+    function togglePause(){
+      if(gameState==="running"){
+        gameState="paused";
+        stopEngine();
+        pauseOverlay.classList.remove("hidden");
+      } else if(gameState==="paused"){
+        gameState="running";
+        startEngine();
+        pauseOverlay.classList.add("hidden");
+      }
+    }
+
+    function updateGame(dt){
+      if(gameState!=="running"){
+        updateExplosion(dt);
+        return;
+      }
+      const cfg=DIFF_CONFIG[difficulty];
+      distance+=speed*dt*0.7;
+      if(distance>bestDist){ bestDist=distance; }
+      updateDistanceHUD();
+      updateSpeedHUD(speed*2.2);
+
+      const targetSpeed=cfg.speedBase+distance*0.01;
+      speed=Math.min(targetSpeed,cfg.speedMax);
+
+      for(const seg of laneLineSegments){
+        seg.position.z+=speed*cfg.laneFactor*dt;
+        if(seg.position.z>10){ seg.position.z-=6*18; }
+      }
+
+      updateSideObjects(dt);
+
+      spawnTimer-=dt;
+      if(spawnTimer<=0){
+        createObstacle();
+        const minI=baseSpawnInterval*0.6;
+        const maxI=baseSpawnInterval*1.2;
+        spawnTimer=minI+Math.random()*(maxI-minI);
+      }
+
+      updateObstacles(dt);
+      checkCollisions();
+      updateExplosion(dt);
+
+      const speedFactor=(speed-cfg.speedBase)/(cfg.speedMax-cfg.speedBase);
+      const shakeAmp=Math.max(0,Math.min(speedFactor,1))*0.08;
+      const carX=car.mesh?car.mesh.position.x:0;
+      camera.position.x=carX*0.25+Math.sin(performance.now()*0.003)*shakeAmp;
+      camera.position.y=6.3+Math.sin(performance.now()*0.002)*shakeAmp*0.7;
+      // subtle FOV widening at speed for a sense of velocity
+      camera.fov=baseFov+Math.max(0,Math.min(speedFactor,1))*6;
+      camera.updateProjectionMatrix();
+      camera.lookAt(0,cameraLookY,-10);
+    }
+
+    function render(){ renderer.render(scene,camera); }
+
+    function animate(){
+      requestAnimationFrame(animate);
+      const dt=Math.min(clock.getDelta(),0.05);
+      updateGame(dt);
+      render();
+    }
+
+    // ===== INPUT =====
+    document.addEventListener("keydown",(e)=>{
+      if(e.code==="Space"){
+        e.preventDefault();
+        unlockAudio();
+        if(isOverlayVisible(setupOverlay)||isOverlayVisible(resultOverlay)){ startGame(); return; }
+      }
+      if(e.code==="Escape" && (gameState==="running"||gameState==="paused")){
+        togglePause();
+        return;
+      }
+      if((e.code==="ArrowLeft"||e.key==="a"||e.key==="A")
+        && gameState==="running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)){
+        unlockAudio();
+        const minX=-ROAD_WIDTH/2+car.width*0.7;
+        car.mesh.position.x=Math.max(minX,car.mesh.position.x-0.6);
+      }
+      if((e.code==="ArrowRight"||e.key==="d"||e.key==="D")
+        && gameState==="running" && car.mesh && !isOverlayVisible(setupOverlay) && !isOverlayVisible(resultOverlay)){
+        unlockAudio();
+        const maxX= ROAD_WIDTH/2-car.width*0.7;
+        car.mesh.position.x=Math.min(maxX,car.mesh.position.x+0.6);
+      }
     });
-  }
 
-  let t=0;
-  function draw(){
-    requestAnimationFrame(draw);
-    ctx.clearRect(0,0,W,H);
-    // Background gradient
-    const bg=ctx.createRadialGradient(W*.5,H*.3,0,W*.5,H*.5,Math.max(W,H)*.85);
-    bg.addColorStop(0,'#06061a');
-    bg.addColorStop(.5,'#03030e');
-    bg.addColorStop(1,'#02020a');
-    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    function startPointerDrag(clientX){
+      if(isOverlayVisible(setupOverlay)||isOverlayVisible(resultOverlay)||isOverlayVisible(pauseOverlay)) return;
+      unlockAudio();
+      if(gameState!=="running"||!car.mesh) return;
+      const rect=container.getBoundingClientRect();
+      pointerDown=true;
+      pointerStartX=clientX-rect.left;
+      carStartX=car.mesh.position.x;
+    }
+    function updatePointerDrag(clientX){
+      if(!pointerDown||gameState!=="running"||!car.mesh) return;
+      const rect=container.getBoundingClientRect();
+      const xCanvas=clientX-rect.left;
+      const dx=xCanvas-pointerStartX;
+      let newX=carStartX+dx*(ROAD_WIDTH/rect.width);
+      const minX=-ROAD_WIDTH/2+car.width*0.7;
+      const maxX= ROAD_WIDTH/2-car.width*0.7;
+      if(newX<minX) newX=minX;
+      if(newX>maxX) newX=maxX;
+      car.mesh.position.x=newX;
+    }
+    function endPointerDrag(){ pointerDown=false; }
 
-    // Stars
-    stars.forEach(s=>{
-      const flicker=s.a+Math.sin(t*s.sp*3+s.x)*.12;
-      ctx.beginPath();
-      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${s.hue},${Math.max(.1,Math.min(1,flicker))})`;
-      ctx.fill();
+    container.addEventListener("mousedown",(e)=>{ startPointerDrag(e.clientX); });
+    document.addEventListener("mousemove",(e)=>{ updatePointerDrag(e.clientX); });
+    document.addEventListener("mouseup",()=>{ endPointerDrag(); });
+    container.addEventListener("touchstart",(e)=>{
+      e.preventDefault();
+      const t=e.touches[0];
+      startPointerDrag(t.clientX);
+    },{passive:false});
+    document.addEventListener("touchmove",(e)=>{
+      if(!pointerDown) return;
+      e.preventDefault();
+      const t=e.touches[0];
+      updatePointerDrag(t.clientX);
+    },{passive:false});
+    document.addEventListener("touchend",()=>{ endPointerDrag(); });
+
+    // Difficulty buttons
+    btnDiffEasy.addEventListener("click",  ()=>setDifficulty("easy"));
+    btnDiffMedium.addEventListener("click",()=>setDifficulty("medium"));
+    btnDiffHard.addEventListener("click",  ()=>setDifficulty("hard"));
+    btnStartRace.addEventListener("click", ()=>{ unlockAudio(); startGame(); });
+    btnResultAgain.addEventListener("click",()=>{ unlockAudio(); startGame(); });
+    btnResultChange.addEventListener("click",()=>{
+      closeResultOverlay();
+      openSetupOverlay();
+    });
+    btnPause.addEventListener("click",()=>{ if(gameState==="running") togglePause(); });
+    btnResume.addEventListener("click",()=>{ togglePause(); });
+    btnPauseQuit.addEventListener("click",()=>{
+      pauseOverlay.classList.add("hidden");
+      gameState="over";
+      stopEngine();
+      if(distance>bestDist){ bestDist=distance; saveProgress(); }
+      updateDistanceHUD();
+      openResultOverlay(false);
     });
 
-    // Nebula blobs (cheap radial gradients)
-    [[.2,.25,'0,229,255',.06],[.75,.6,'124,77,255',.06],[.5,.8,'255,45,120',.04]].forEach(([cx,cy,col,op])=>{
-      const g=ctx.createRadialGradient(cx*W,cy*H,0,cx*W,cy*H,W*.3);
-      g.addColorStop(0,`rgba(${col},${op})`);g.addColorStop(1,'transparent');
-      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-    });
-
-    // Floating shards
-    shards.forEach(s=>{
-      s.x+=s.vx;s.y+=s.vy;s.rot+=s.vr;
-      if(s.y<-5){s.y=105;s.x=Math.random()*100;}
-      ctx.save();
-      ctx.translate(s.x/100*W,s.y/100*H);
-      ctx.rotate(s.rot*Math.PI/180);
-      ctx.globalAlpha=s.alpha*(0.7+Math.sin(t*.4+s.x)*.3);
-      ctx.fillStyle=s.color;
-      ctx.beginPath();
-      // Diamond shape
-      ctx.moveTo(0,-s.size);ctx.lineTo(s.size*.6,0);
-      ctx.lineTo(0,s.size);ctx.lineTo(-s.size*.6,0);
-      ctx.closePath();ctx.fill();
-      ctx.restore();
-    });
-
-    t+=.016;
-  }
-  window.addEventListener('resize',resize);
-  resize();draw();
-})();
-
-/* ══ MARQUEE ══ */
-(function(){
-  const items=[
-    {t:'Eagle Flight',s:'🦅'},{t:'Void Interceptor',s:'🚀'},
-    {t:'Neon Drift Racer',s:'🚗'},{t:'X/O Bot Duel',s:'❌'},
-    {t:'Yuvraj Soni Arcade',s:'◆'},{t:'No Account Required',s:'◆'},
-    {t:'100% Browser Native',s:'◆'},{t:'Full 3D · Built in-house',s:'◆'},
-  ];
-  const track=document.getElementById('mqt');
-  [...items,...items].forEach(d=>{
-    const el=document.createElement('div');el.className='mqi';
-    el.innerHTML=`<b>${d.s}</b>${d.t}`;track.appendChild(el);
-  });
-})();
-
-/* ══ CUSTOM CURSOR ══ */
-(function(){
-  const dot=document.getElementById('cd'),ring=document.getElementById('cr'),cur=document.getElementById('cur');
-  let cx=0,cy=0,rx=0,ry=0;
-  document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;dot.style.left=cx+'px';dot.style.top=cy+'px';});
-  document.querySelectorAll('.gpill,.ncta,.bp,.bg2,.gs-play,.pb').forEach(el=>{
-    el.addEventListener('mouseenter',()=>cur.classList.add('hovering'));
-    el.addEventListener('mouseleave',()=>cur.classList.remove('hovering'));
-  });
-  (function loop(){requestAnimationFrame(loop);rx+=(cx-rx)*.1;ry+=(cy-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';})();
-})();
-
-/* ══ NAV ══ */
-window.addEventListener('scroll',()=>{
-  document.getElementById('nav').classList.toggle('solid',window.scrollY>60);
-},{passive:true});
-
-/* ══ SCROLL REVEAL ══ */
-const io=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
-},{threshold:.12});
-document.querySelectorAll('.rv').forEach(el=>io.observe(el));
-
-/* ══ COUNTER ══ */
-const cio=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(!e.isIntersecting)return;
-    e.target.querySelectorAll('[data-c]').forEach(el=>{
-      const target=+el.dataset.c,suf=el.dataset.s||'';
-      const t0=performance.now(),dur=1400;
-      (function step(now){
-        const p=Math.min((now-t0)/dur,1);
-        el.textContent=Math.round((1-Math.pow(1-p,3))*target)+suf;
-        if(p<1)requestAnimationFrame(step);
-      })(performance.now());
-    });
-    cio.unobserve(e.target);
-  });
-},{threshold:.5});
-document.querySelectorAll('.stats').forEach(el=>cio.observe(el));
-
-/* ══════════════════════════════════════════
-   GAMES SCROLL-PINNED SECTION
-   Same mechanic as terminal-industries.com:
-   - Section is 5x viewport height
-   - Sticky container stays fixed
-   - As user scrolls through those 5 heights,
-     we map scroll progress → active slide
-══════════════════════════════════════════ */
-const gameSection=document.getElementById('gamesSection');
-const slides=document.querySelectorAll('.game-slide');
-const pills=document.querySelectorAll('.gpill');
-const dots=document.querySelectorAll('.gp-dot');
-const TOTAL_GAMES=4;
-let activeGame=0;
-
-function setGame(idx){
-  if(idx===activeGame)return;
-  activeGame=idx;
-  slides.forEach((s,i)=>s.classList.toggle('active',i===idx));
-  pills.forEach((p,i)=>p.classList.toggle('active',i===idx));
-  dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
-}
-
-function jumpToGame(idx){
-  // Scroll to the corresponding point in the section
-  const sectionTop=gameSection.offsetTop;
-  const sectionH=gameSection.offsetHeight;
-  const vh=window.innerHeight;
-  const scrollable=sectionH-vh;
-  const targetScroll=sectionTop+(scrollable/TOTAL_GAMES)*idx;
-  window.scrollTo({top:targetScroll,behavior:'smooth'});
-}
-
-function updateGamesOnScroll(){
-  const rect=gameSection.getBoundingClientRect();
-  const sectionH=gameSection.offsetHeight;
-  const vh=window.innerHeight;
-  const scrollable=sectionH-vh;
-  // -rect.top = how far we've scrolled into the section
-  const scrolled=-rect.top;
-  if(scrolled<0||scrolled>scrollable)return;
-  const progress=scrolled/scrollable;
-  const idx=Math.min(TOTAL_GAMES-1,Math.floor(progress*TOTAL_GAMES));
-  setGame(idx);
-}
-
-window.addEventListener('scroll',updateGamesOnScroll,{passive:true});
-updateGamesOnScroll();
-
-function smoothGoTo(top){window.scrollTo({top,behavior:'smooth'});}
-
-/* ══ PLAYER ══ */
-const LS='yuvraj_player_data_v1';
-let pd={name:'',coins:0,xp:0,level:1};
-function loadPD(){try{const s=localStorage.getItem(LS);if(s)pd=JSON.parse(s);}catch(e){}}
-function savePD(){try{localStorage.setItem(LS,JSON.stringify(pd));}catch(e){}}
-function updateUI(){
-  document.getElementById('playerName').textContent=pd.name||'—';
-  document.getElementById('playerCoins').textContent=pd.coins||0;
-  document.getElementById('playerXP').textContent=pd.xp||0;
-  document.getElementById('playerLevel').textContent=pd.level||1;
-  document.getElementById('xpFill').style.width=(pd.xp%100)+'%';
-}
-function changeName(){const n=prompt('Enter new name:');if(n&&n.trim()){pd.name=n.trim();savePD();updateUI();}}
-loadPD();if(!pd.name){pd.name='Yuvraj Soni';savePD();}updateUI();
-
-/* ══ MUSIC ══ */
-const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=.3;
-let ms=false;
-document.addEventListener('click',()=>{if(!ms){ms=true;bgm.play().catch(()=>{});}});
-</script>
+    // ===== INIT =====
+    loadProgress();
+    initThree();
+    clock=new THREE.Clock();
+    clock.start();
+    animate();
+  </script>
 </body>
 </html>
