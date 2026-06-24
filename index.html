@@ -4,1140 +4,842 @@
 <meta charset="UTF-8">
 <title>Yuvraj Soni Arcade</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Yuvraj Soni Arcade — hand-built 3D games, one evolving player profile.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════
-   TOKENS
-══════════════════════════════════════ */
-:root{
-  --bg:#02020a;
-  --s1:rgba(255,255,255,0.03);
-  --b1:rgba(255,255,255,0.07);
-  --b2:rgba(255,255,255,0.14);
-  --c:#00e5ff;
-  --cg:rgba(0,229,255,0.18);
-  --cgl:rgba(0,229,255,0.35);
-  --v:#7c4dff;
-  --vg:rgba(124,77,255,0.18);
-  --m:#ff2d78;
-  --g:#ffc93c;
-  --t:#f0f3fa;
-  --td:#6b7280;
-  --tm:#9ca3af;
-  --r:18px;
-}
+:root{--c:#00e5ff;--v:#7c4dff;--m:#ff2d78;--g:#ffc93c;--bg:#02020a;--t:#f0f4ff;--td:#4a5060;--tm:#7a8090}
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  font-family:'Inter',sans-serif;
-  background:var(--bg);
-  color:var(--t);
-  overflow-x:hidden;
-  cursor:none; /* custom cursor */
-}
+html{overflow:hidden;width:100%;height:100%}
+body{width:100%;height:100%;background:var(--bg);color:var(--t);font-family:'Space Grotesk',sans-serif;overflow:hidden;cursor:none}
 ::selection{background:var(--c);color:#000}
-a{color:inherit;text-decoration:none}
 
-/* ══════════════════════════════════════
-   CUSTOM CURSOR
-══════════════════════════════════════ */
-#cursor{
-  position:fixed;top:0;left:0;z-index:9999;
-  pointer-events:none;mix-blend-mode:difference;
-}
-#cursor-dot{
-  width:8px;height:8px;border-radius:50%;
-  background:#fff;
-  position:absolute;transform:translate(-50%,-50%);
-  transition:transform .1s;
-}
-#cursor-ring{
-  width:36px;height:36px;border-radius:50%;
-  border:1px solid rgba(255,255,255,0.55);
-  position:absolute;transform:translate(-50%,-50%);
-  transition:width .3s,height .3s,opacity .3s;
-}
-body:has(.gcard:hover) #cursor-ring,
-body:has(.nav-cta:hover) #cursor-ring{
-  width:56px;height:56px;opacity:.5;
-}
+/* ─── CUSTOM CURSOR ─── */
+#cur-dot{position:fixed;width:7px;height:7px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:transform .1s}
+#cur-ring{position:fixed;width:36px;height:36px;border:1px solid rgba(255,255,255,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .35s,height .35s,opacity .35s;mix-blend-mode:difference}
+@media(max-width:768px){#cur-dot,#cur-ring{display:none}body{cursor:auto}}
 
-/* ══════════════════════════════════════
-   LOADING SCREEN
-══════════════════════════════════════ */
-#loader{
-  position:fixed;inset:0;z-index:8000;
-  background:var(--bg);
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:32px;
-  transition:opacity .7s ease, visibility .7s ease;
-}
-#loader.done{opacity:0;visibility:hidden}
-.loader-logo{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;
-  letter-spacing:-.01em;
-  background:linear-gradient(120deg,var(--c),var(--v),var(--m));
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  background-size:300% 100%;
-  animation:shimmer 2.5s ease-in-out infinite;
-}
-@keyframes shimmer{0%,100%{background-position:0%}50%{background-position:100%}}
-.loader-bar-wrap{
-  width:220px;height:2px;
-  background:rgba(255,255,255,0.07);
-  border-radius:99px;overflow:hidden;
-}
-.loader-bar-fill{
-  height:100%;width:0%;
-  background:linear-gradient(90deg,var(--c),var(--v));
-  border-radius:99px;
-  box-shadow:0 0 12px var(--cgl);
-  transition:width .05s linear;
-}
-.loader-pct{
-  font-family:'JetBrains Mono',monospace;font-size:12px;
-  letter-spacing:.14em;color:var(--td);
-}
+/* ─── LOADER ─── */
+#loader{position:fixed;inset:0;z-index:7000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;transition:opacity .8s ease,visibility .8s ease}
+#loader.hide{opacity:0;visibility:hidden;pointer-events:none}
+.ld-logo{font-size:20px;font-weight:700;letter-spacing:-.01em;background:linear-gradient(120deg,var(--c),var(--v),var(--m));background-size:300%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:lsh 2s linear infinite}
+@keyframes lsh{0%{background-position:0%}100%{background-position:200%}}
+.ld-bar{width:160px;height:1.5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.ld-prog{height:100%;width:0;background:linear-gradient(90deg,var(--c),var(--v));transition:width .04s linear}
+.ld-pct{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--td)}
 
-/* ══════════════════════════════════════
-   THREE.JS BG
-══════════════════════════════════════ */
-#bg3d{position:fixed;inset:0;z-index:0}
-#bg3d canvas{width:100%!important;height:100%!important;display:block}
+/* ─── CANVAS ─── */
+#c3d{position:fixed;inset:0;z-index:0;display:block}
 
-/* ══════════════════════════════════════
-   CURSOR TRAIL PARTICLES
-══════════════════════════════════════ */
-.trail-particle{
-  position:fixed;
-  width:4px;height:4px;border-radius:50%;
-  pointer-events:none;z-index:9000;
-  animation:trailFade .8s ease-out forwards;
-}
-@keyframes trailFade{
-  0%{opacity:.7;transform:translate(-50%,-50%) scale(1)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(0)}
-}
+/* ─── SCROLL DRIVER ─── */
+#scroller{position:fixed;inset:0;z-index:1;overflow-y:scroll;overflow-x:hidden}
+#scroller::-webkit-scrollbar{display:none}
+#scroll-content{height:900vh;width:100%;pointer-events:none}
 
-/* ══════════════════════════════════════
-   CONTENT
-══════════════════════════════════════ */
-#content{position:relative;z-index:10}
+/* ─── NAV ─── */
+#nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:24px 56px;transition:background .5s,border-color .5s,padding .4s;border-bottom:1px solid transparent}
+#nav.solid{padding:15px 56px;background:rgba(2,2,10,.75);backdrop-filter:blur(20px);border-color:rgba(255,255,255,.07)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.gem{width:10px;height:10px;border-radius:2px;background:linear-gradient(135deg,var(--c),var(--v));transform:rotate(45deg);box-shadow:0 0 14px rgba(0,229,255,.5);animation:gp 3s ease-in-out infinite}
+@keyframes gp{0%,100%{box-shadow:0 0 14px rgba(0,229,255,.4)}50%{box-shadow:0 0 28px rgba(0,229,255,.7),0 0 50px rgba(124,77,255,.3)}}
+.navl{display:flex;gap:34px}
+.navl a{font-size:13px;font-weight:500;color:var(--td);cursor:pointer;position:relative;padding-bottom:2px;transition:color .25s}
+.navl a::after{content:"";position:absolute;bottom:0;left:0;width:0;height:1px;background:var(--c);transition:width .3s}
+.navl a:hover{color:var(--t)}
+.navl a:hover::after{width:100%}
+.ncta{font-size:13px;font-weight:600;padding:10px 22px;border-radius:10px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,255,.24);transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden}
+.ncta::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transform:translateX(-100%);transition:transform .5s}
+.ncta:hover::before{transform:translateX(100%)}
+.ncta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,.42)}
+@media(max-width:768px){#nav,#nav.solid{padding:14px 20px}.navl{display:none}}
 
-/* ══════════════════════════════════════
-   NAV
-══════════════════════════════════════ */
-.nav{
-  position:fixed;top:0;left:0;right:0;z-index:500;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:22px 56px;
-  transition:padding .4s,background .4s,border-color .4s;
-  border-bottom:1px solid transparent;
-}
-.nav.solid{
-  padding:16px 56px;
-  background:rgba(2,2,10,.72);
-  backdrop-filter:blur(22px);
-  border-color:var(--b1);
-}
-.nav-logo{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;
-  display:flex;align-items:center;gap:10px;
-  letter-spacing:-.01em;
-}
-.logo-gem{
-  width:10px;height:10px;border-radius:2px;
-  background:linear-gradient(135deg,var(--c),var(--v));
-  transform:rotate(45deg);
-  box-shadow:0 0 14px var(--cgl);
-  animation:gemPulse 3s ease-in-out infinite;
-}
-@keyframes gemPulse{0%,100%{box-shadow:0 0 14px var(--cgl)}50%{box-shadow:0 0 28px var(--cgl),0 0 48px rgba(124,77,255,.3)}}
-.nav-links{display:flex;align-items:center;gap:38px}
-.nav-links a{
-  font-size:13px;font-weight:500;color:var(--td);letter-spacing:.02em;
-  cursor:pointer;position:relative;padding-bottom:3px;transition:color .25s;
-}
-.nav-links a::after{
-  content:"";position:absolute;bottom:0;left:0;width:0;height:1px;
-  background:var(--c);box-shadow:0 0 8px var(--c);transition:width .3s ease;
-}
-.nav-links a:hover{color:var(--t)}
-.nav-links a:hover::after{width:100%}
-.nav-cta{
-  font-size:13px;font-weight:600;
-  padding:10px 22px;border-radius:10px;
-  background:linear-gradient(135deg,var(--c),var(--v));
-  color:#020408;border:none;cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,229,255,.25);
-  transition:transform .25s,box-shadow .25s;
-  position:relative;overflow:hidden;
-}
-.nav-cta::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,.22),transparent 70%);
-  transform:translateX(-100%);transition:transform .5s;
-}
-.nav-cta:hover::before{transform:translateX(100%)}
-.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,229,255,.4)}
+/* ─── UI OVERLAYS (all position:fixed so they float above WebGL) ─── */
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none}
 
-/* ══════════════════════════════════════
-   HERO
-══════════════════════════════════════ */
-.hero{
-  min-height:100vh;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  text-align:center;
-  padding:120px 24px 80px;
-  position:relative;
-}
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:10px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:11px;letter-spacing:.28em;text-transform:uppercase;
-  color:var(--c);margin-bottom:36px;
-  opacity:0;transform:translateY(20px);
-  transition:opacity .8s .1s,transform .8s .1s cubic-bezier(.16,1,.3,1);
-}
-.hero-eyebrow.in{opacity:1;transform:none}
-.edot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--c);box-shadow:0 0 10px var(--c);
-  animation:blink 2s ease-in-out infinite;
-}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-
-/* Big headline with clip reveal */
-.hero-headline{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;
-  font-size:clamp(56px,9vw,112px);
-  line-height:.93;letter-spacing:-.035em;
-  overflow:hidden;
-}
-.hero-headline .line{
-  display:block;overflow:hidden;
-}
-.hero-headline .line-inner{
-  display:block;
-  transform:translateY(110%);
-  transition:transform .9s cubic-bezier(.16,1,.3,1);
-}
-.hero-headline .line-inner.in{transform:translateY(0)}
-.hero-headline .line:nth-child(2) .line-inner{transition-delay:.12s}
-.hero-headline .line:nth-child(3) .line-inner{transition-delay:.24s}
-
-.gradient-word{
-  background:linear-gradient(120deg,var(--c) 0%,var(--v) 45%,var(--m) 100%);
-  background-size:200% 100%;
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  animation:wordShimmer 5s ease-in-out infinite;
-}
-@keyframes wordShimmer{0%,100%{background-position:0%}50%{background-position:100%}}
-
-.hero-sub{
-  max-width:500px;font-size:clamp(15px,1.8vw,17px);line-height:1.82;
-  color:var(--tm);margin:32px auto 0;
-  opacity:0;transform:translateY(22px);
-  transition:opacity .8s .5s,transform .8s .5s cubic-bezier(.16,1,.3,1);
-}
-.hero-sub.in{opacity:1;transform:none}
-
-.hero-actions{
-  margin-top:52px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
-  opacity:0;transform:translateY(22px);
-  transition:opacity .8s .7s,transform .8s .7s cubic-bezier(.16,1,.3,1);
-}
-.hero-actions.in{opacity:1;transform:none}
-
-.btn-p{
-  display:inline-flex;align-items:center;gap:9px;
-  font-size:14.5px;font-weight:600;
-  padding:18px 40px;border-radius:12px;border:none;
-  background:linear-gradient(135deg,var(--c),var(--v));
-  color:#020408;cursor:pointer;
-  box-shadow:0 8px 32px rgba(0,229,255,.28);
-  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;
-  position:relative;overflow:hidden;
-}
-.btn-p::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,.2),transparent 70%);
-  transform:translateX(-100%);transition:transform .5s;
-}
-.btn-p:hover::before{transform:translateX(100%)}
-.btn-p:hover{transform:translateY(-3px);box-shadow:0 18px 50px rgba(0,229,255,.42)}
-.btn-g{
-  display:inline-flex;align-items:center;gap:9px;
-  font-size:14.5px;font-weight:500;
-  padding:18px 40px;border-radius:12px;
-  border:1px solid var(--b2);background:var(--s1);
-  color:var(--t);cursor:pointer;backdrop-filter:blur(10px);
-  transition:border-color .3s,background .3s,transform .3s;
-}
-.btn-g:hover{border-color:var(--c);background:var(--cg);transform:translateY(-3px)}
-
-.scroll-cue{
-  position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;gap:9px;
-  font-family:'JetBrains Mono',monospace;font-size:9.5px;
-  letter-spacing:.22em;text-transform:uppercase;color:var(--td);
-  opacity:0;animation:fadeIn 1s 1.4s forwards;
-}
+/* Hero text */
+#hero-ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;transition:opacity .5s}
+.h-eye{display:inline-flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--c);margin-bottom:32px;opacity:0;transform:translateY(14px)}
+.h-eye.in{animation:fup .8s .1s cubic-bezier(.16,1,.3,1) forwards}
+.edot{width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
+@keyframes fup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.h1{font-size:clamp(60px,9.5vw,115px);font-weight:800;letter-spacing:-.045em;line-height:.9}
+.hl{display:block;overflow:hidden}
+.hli{display:block;transform:translateY(110%);transition:transform .9s cubic-bezier(.16,1,.3,1)}
+.hli.in{transform:none}
+.hl:nth-child(2) .hli{transition-delay:.12s}
+.hl:nth-child(3) .hli{transition-delay:.24s}
+.gw{background:linear-gradient(120deg,var(--c),var(--v) 50%,var(--m));background-size:200%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gws 6s ease-in-out infinite}
+@keyframes gws{0%,100%{background-position:0%}50%{background-position:100%}}
+.h-sub{max-width:480px;font-size:clamp(15px,1.7vw,17px);line-height:1.82;color:var(--tm);margin:30px auto 0;opacity:0;transform:translateY(14px)}
+.h-sub.in{animation:fup .8s .5s cubic-bezier(.16,1,.3,1) forwards}
+.h-btns{margin-top:48px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;opacity:0;transform:translateY(14px)}
+.h-btns.in{animation:fup .8s .7s cubic-bezier(.16,1,.3,1) forwards}
+.bp{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;padding:17px 40px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--c),var(--v));color:#000;cursor:pointer;box-shadow:0 8px 30px rgba(0,229,255,.28);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;position:relative;overflow:hidden;pointer-events:auto}
+.bp::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:translateX(-100%);transition:transform .5s}
+.bp:hover::before{transform:translateX(100%)}
+.bp:hover{transform:translateY(-3px);box-shadow:0 18px 48px rgba(0,229,255,.44)}
+.bg2{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:500;padding:17px 40px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;backdrop-filter:blur(10px);transition:border-color .3s,background .3s,transform .3s;pointer-events:auto}
+.bg2:hover{border-color:var(--c);background:rgba(0,229,255,.09);transform:translateY(-3px)}
+.scroll-cue{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--td);opacity:0;animation:fadeIn 1s 1.5s forwards}
 @keyframes fadeIn{to{opacity:1}}
-.scl{width:1px;height:42px;background:var(--b2);position:relative;overflow:hidden}
-.scl::after{
-  content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;
-  background:linear-gradient(180deg,transparent,var(--c));
-  animation:sdrop 2s ease-in-out infinite;
-}
-@keyframes sdrop{0%{top:-100%}60%{top:100%}100%{top:100%}}
+.scl{width:1px;height:40px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
+.scl::after{content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;background:linear-gradient(180deg,transparent,var(--c));animation:sdrop 2s ease-in-out infinite}
+@keyframes sdrop{0%{top:-100%}65%{top:100%}100%{top:100%}}
 
-/* ══════════════════════════════════════
-   MARQUEE STRIP
-══════════════════════════════════════ */
-.marquee-wrap{
-  overflow:hidden;border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);
-  padding:18px 0;background:rgba(0,229,255,.02);
-  margin-bottom:0;
+/* ─── GAME PANELS (scroll-driven, like terminal-industries) ─── */
+.game-panel{
+  position:absolute;inset:0;
+  display:flex;align-items:center;
+  padding:0 8%;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .7s cubic-bezier(.16,1,.3,1);
 }
-.marquee-track{
-  display:flex;gap:60px;width:max-content;
-  animation:marquee 28s linear infinite;
-}
-.marquee-wrap:hover .marquee-track{animation-play-state:paused}
-@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.marquee-item{
-  font-family:'JetBrains Mono',monospace;font-size:11px;
-  letter-spacing:.18em;text-transform:uppercase;
-  color:var(--td);display:flex;align-items:center;gap:16px;white-space:nowrap;
-}
-.marquee-item span{color:var(--c);font-size:14px}
+.game-panel.active{opacity:1;pointer-events:auto}
+.gp-content{max-width:520px}
+.gp-eye{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--c);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.gp-num{font-family:'JetBrains Mono',monospace;font-size:80px;font-weight:700;line-height:1;letter-spacing:-.05em;background:linear-gradient(120deg,var(--c),var(--v));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;opacity:.18;position:absolute;top:60px;right:8%;user-select:none}
+.gp-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:99px;background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.3);color:var(--c);margin-bottom:12px}
+.gp-title{font-size:clamp(36px,5vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:20px}
+.gp-desc{font-size:15.5px;line-height:1.82;color:var(--tm);margin-bottom:32px}
+.gp-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:36px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--tm)}
+.gp-play{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600;padding:15px 36px;border-radius:11px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(0,229,255,.25);transition:transform .3s,box-shadow .3s;pointer-events:auto}
+.gp-play:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(0,229,255,.42)}
 
-/* ══════════════════════════════════════
-   STATS
-══════════════════════════════════════ */
-.stats-section{max-width:1100px;margin:0 auto;padding:100px 52px 0}
-.stats{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;
-  background:rgba(255,255,255,.015);backdrop-filter:blur(20px);
-}
-.stat{
-  padding:36px 28px;text-align:center;
-  border-right:1px solid var(--b1);
-  position:relative;overflow:hidden;cursor:default;
-  transition:background .4s;
-}
-.stat::before{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(135deg,var(--cg),var(--vg));
-  opacity:0;transition:opacity .4s;
-}
-.stat:last-child{border-right:none}
-.stat:hover::before{opacity:1}
-.stat:hover .stat-num{filter:drop-shadow(0 0 12px var(--cgl))}
-.stat-num{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;
-  font-size:clamp(32px,4vw,48px);
-  background:linear-gradient(120deg,var(--c),var(--v));
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  display:block;transition:filter .4s;
-}
-.stat-label{
-  font-family:'JetBrains Mono',monospace;font-size:10px;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--td);margin-top:8px;
-  position:relative;z-index:1;
-}
+/* Scroll progress indicator */
+#scroll-indicator{position:fixed;right:32px;top:50%;transform:translateY(-50%);z-index:200;display:flex;flex-direction:column;gap:10px;align-items:center}
+.si-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:background .3s,transform .3s;pointer-events:auto}
+.si-dot.active{background:var(--c);box-shadow:0 0 8px var(--c);transform:scale(1.5)}
+.si-line{width:1px;height:40px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
+.si-fill{position:absolute;top:0;left:0;width:100%;height:0%;background:linear-gradient(180deg,var(--c),var(--v));transition:height .1s linear}
 
-/* ══════════════════════════════════════
-   SECTIONS
-══════════════════════════════════════ */
-section{padding:140px 52px;max-width:1180px;margin:auto}
-.sec-eye{
-  font-family:'JetBrains Mono',monospace;font-size:10.5px;
-  letter-spacing:.26em;text-transform:uppercase;color:var(--c);
-  display:block;margin-bottom:18px;
-}
-.sec-title{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;
-  font-size:clamp(34px,4.5vw,56px);letter-spacing:-.025em;line-height:1.04;
-}
-.sec-sub{color:var(--tm);font-size:15.5px;line-height:1.8;max-width:540px;margin-top:18px}
-.sec-head{
-  display:flex;justify-content:space-between;align-items:flex-end;
-  margin-bottom:64px;gap:24px;flex-wrap:wrap;
-}
+/* Section label (shows which section we're in) */
+#sec-label{position:fixed;left:32px;bottom:32px;z-index:200;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--td);transition:opacity .4s}
 
-/* ══════════════════════════════════════
-   GAME CARDS
-══════════════════════════════════════ */
-.games-grid{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:20px;
-}
-.gcard{
-  position:relative;border-radius:20px;
-  border:1px solid var(--b1);
-  background:rgba(255,255,255,.022);
-  padding:46px 38px 40px;cursor:pointer;overflow:hidden;
-  transform-style:preserve-3d;
-  transition:border-color .4s,box-shadow .4s,transform .12s ease-out;
-  will-change:transform;
-}
-.gcard::before{
-  content:"";position:absolute;inset:0;border-radius:20px;
-  background:radial-gradient(360px circle at var(--mx,50%) var(--my,50%),rgba(0,229,255,.13),transparent 65%);
-  opacity:0;transition:opacity .3s;pointer-events:none;
-}
-.gcard::after{
-  content:"";position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--c),transparent);
-  transform:scaleX(0);transition:transform .5s cubic-bezier(.16,1,.3,1);
-}
-.gcard:hover::before{opacity:1}
-.gcard:hover::after{transform:scaleX(1)}
-.gcard:hover{
-  border-color:rgba(0,229,255,.4);
-  box-shadow:0 28px 70px rgba(0,0,0,.55),0 0 50px rgba(0,229,255,.07);
-}
-.gcard-num{
-  position:absolute;top:-8px;right:18px;
-  font-family:'Space Grotesk',sans-serif;font-weight:700;
-  font-size:130px;line-height:1;letter-spacing:-.05em;
-  color:rgba(255,255,255,.022);user-select:none;pointer-events:none;
-  transition:color .4s;
-}
-.gcard:hover .gcard-num{color:rgba(0,229,255,.045)}
-.gcard-badge{
-  position:absolute;top:22px;right:22px;
-  font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
-  padding:5px 12px;border-radius:99px;
-  background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.28);color:var(--c);
-}
-.gcard-icon{
-  font-size:44px;margin-bottom:24px;display:block;
-  filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));
-  transition:transform .4s cubic-bezier(.16,1,.3,1);
-}
-.gcard:hover .gcard-icon{transform:translateY(-7px) scale(1.12)}
-.gcard-tag{
-  font-family:'JetBrains Mono',monospace;font-size:10px;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--c);
-  margin-bottom:12px;display:block;
-}
-.gcard h3{
-  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:24px;
-  margin-bottom:13px;letter-spacing:-.01em;
-}
-.gcard p{color:var(--tm);font-size:14px;line-height:1.72;margin-bottom:30px}
-.gcard-arrow{
-  display:flex;align-items:center;gap:8px;
-  font-size:13px;font-weight:500;color:var(--td);
-  transition:color .3s,gap .3s;
-}
-.gcard:hover .gcard-arrow{color:var(--c);gap:14px}
-
-/* ══════════════════════════════════════
-   ABOUT
-══════════════════════════════════════ */
-.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
-.about-visual{
-  aspect-ratio:1;border-radius:24px;
-  background:rgba(255,255,255,.018);border:1px solid var(--b1);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;
-}
-.about-visual::before{
-  content:"";position:absolute;inset:0;
-  background:
-    linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);
-  background-size:38px 38px;
-}
-.aorb{
-  width:130px;height:130px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,var(--c),var(--v) 55%,var(--m));
-  box-shadow:0 0 80px rgba(0,229,255,.45),0 0 150px rgba(124,77,255,.22);
-  animation:orbPulse 5s ease-in-out infinite;z-index:1;
-}
-@keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.aring{
-  position:absolute;border-radius:50%;border:1px solid rgba(0,229,255,.18);
-}
-.aring-1{width:200px;height:200px;animation:sCW 18s linear infinite}
-.aring-2{width:270px;height:270px;border-color:rgba(124,77,255,.13);animation:sCCW 27s linear infinite}
-.aring-3{width:340px;height:340px;border-color:rgba(255,45,120,.08);animation:sCW 40s linear infinite}
-@keyframes sCW{to{transform:rotate(360deg)}}
-@keyframes sCCW{to{transform:rotate(-360deg)}}
-.about-copy .sec-sub{max-width:100%}
-.about-copy p{color:var(--tm);font-size:15px;line-height:1.88;margin-bottom:18px}
-.about-copy p strong{color:var(--t);font-weight:600}
-
-/* ══════════════════════════════════════
-   STEPS
-══════════════════════════════════════ */
-.steps{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:1px;background:var(--b1);
-  border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;
-}
-.step{
-  background:rgba(255,255,255,.016);padding:52px 40px;
-  position:relative;transition:background .35s;overflow:hidden;
-}
-.step::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--c),var(--v));
-  transform:scaleX(0);transform-origin:left;transition:transform .55s cubic-bezier(.16,1,.3,1);
-}
-.step:hover{background:rgba(255,255,255,.032)}
-.step:hover::before{transform:scaleX(1)}
-.step-num{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:60px;
-  background:linear-gradient(120deg,var(--c),var(--v));
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  opacity:.4;line-height:1;margin-bottom:26px;
-}
-.step h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;margin-bottom:14px}
-.step p{color:var(--tm);font-size:14px;line-height:1.75}
-
-/* ══════════════════════════════════════
-   FEATURES
-══════════════════════════════════════ */
-.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.feat{
-  background:rgba(255,255,255,.022);border:1px solid var(--b1);border-radius:var(--r);
-  padding:32px 28px;
-  transition:border-color .35s,transform .35s,box-shadow .35s;
-}
-.feat:hover{
-  border-color:rgba(124,77,255,.5);transform:translateY(-6px);
-  box-shadow:0 24px 52px rgba(0,0,0,.42),0 0 36px rgba(124,77,255,.08);
-}
-.feat-icon{
-  width:48px;height:48px;border-radius:14px;
-  background:linear-gradient(135deg,var(--cg),var(--vg));
-  border:1px solid var(--b1);
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:22px;
-}
-.feat h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin-bottom:10px}
-.feat p{color:var(--td);font-size:13.5px;line-height:1.72}
-
-/* ══════════════════════════════════════
-   PROFILE
-══════════════════════════════════════ */
-.profile-wrap{
-  display:grid;grid-template-columns:1.2fr .8fr;
-  border:1px solid var(--b1);border-radius:20px;overflow:hidden;
-  position:relative;background:rgba(255,255,255,.016);
-}
-.profile-wrap::before{
-  content:"";position:absolute;top:-30%;right:-10%;width:320px;height:320px;
-  background:radial-gradient(circle,rgba(124,77,255,.1),transparent 70%);filter:blur(40px);
-}
-.profile-wrap::after{
-  content:"";position:absolute;bottom:-20%;left:10%;width:240px;height:240px;
-  background:radial-gradient(circle,rgba(0,229,255,.07),transparent 70%);filter:blur(40px);
-}
-.profile-main{padding:56px;position:relative;z-index:1}
-.profile-aside{
-  padding:56px 40px;border-left:1px solid var(--b1);
-  display:flex;flex-direction:column;justify-content:center;
-  position:relative;z-index:1;
-}
-.plabel{
-  font-family:'JetBrains Mono',monospace;font-size:10px;
-  letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:8px;
-}
-.pname{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:38px;
-  margin-bottom:36px;letter-spacing:-.01em;
-}
-.pstat{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:16px 0;border-bottom:1px solid var(--b1);font-size:14px;
-}
-.pstat:last-of-type{border-bottom:none}
-.pstat span:first-child{color:var(--td);font-size:13px;font-weight:500}
-.pstat strong{
-  font-family:'JetBrains Mono',monospace;font-weight:500;font-size:18px;color:var(--c);
-}
-.xp-track{height:5px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:22px;overflow:hidden}
-.xp-fill{
-  height:100%;background:linear-gradient(90deg,var(--c),var(--v));
-  box-shadow:0 0 12px var(--cgl);border-radius:99px;
-  width:0%;transition:width 1s cubic-bezier(.16,1,.3,1);
-}
-.profile-aside p{color:var(--td);font-size:14px;line-height:1.78;margin-bottom:24px}
-
-/* ══════════════════════════════════════
-   FOOTER
-══════════════════════════════════════ */
-footer{border-top:1px solid var(--b1)}
-.footer-main{
-  max-width:1180px;margin:auto;padding:88px 52px 52px;
-  display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:56px;
-}
-.footer-brand .nav-logo{margin-bottom:18px}
-.footer-brand p{color:var(--td);font-size:14px;line-height:1.82;max-width:300px}
-.footer-col h4{
-  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--td);margin-bottom:22px;
-}
-.footer-col a{
-  display:block;font-size:14px;color:var(--tm);margin-bottom:14px;
-  cursor:pointer;transition:color .25s;
-}
-.footer-col a:hover{color:var(--c)}
-.footer-btm{
-  max-width:1180px;margin:auto;padding:24px 52px 48px;
-  border-top:1px solid var(--b1);
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
-  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);
-}
-.footer-btm .gem{color:var(--c)}
-
-/* ══════════════════════════════════════
-   REVEAL
-══════════════════════════════════════ */
-.rv{
-  opacity:0;transform:translateY(32px);
-  transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);
-}
-.rv.in{opacity:1;transform:none}
-.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}
-.rv.d3{transition-delay:.3s}.rv.d4{transition-delay:.4s}
-
-/* ══════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════ */
-@media(max-width:900px){
-  .nav{padding:16px 24px}.nav.solid{padding:14px 24px}
-  section{padding:100px 24px}
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .stat:nth-child(2){border-right:none}
-  .games-grid{grid-template-columns:1fr}
-  .about-grid{grid-template-columns:1fr;gap:48px}
-  .steps{grid-template-columns:1fr}
-  .feats{grid-template-columns:repeat(2,1fr)}
-  .profile-wrap{grid-template-columns:1fr}
-  .profile-aside{border-left:none;border-top:1px solid var(--b1)}
-  .footer-main{grid-template-columns:1fr;gap:40px}
-  .stats-section{padding:80px 24px 0}
-}
-@media(max-width:540px){
-  .nav-links{display:none}
-  .feats{grid-template-columns:1fr}
-  body{cursor:auto}
-  #cursor{display:none}
-}
+/* Profile overlay */
+#profile-panel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:80px 56px;opacity:0;pointer-events:none;transition:opacity .7s}
+#profile-panel.active{opacity:1;pointer-events:auto}
+.prof-card{background:rgba(2,2,10,.7);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:48px;max-width:560px;width:100%;position:relative;overflow:hidden}
+.prof-card::before{content:"";position:absolute;top:-40%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(124,77,255,.15),transparent 70%);filter:blur(30px);pointer-events:none}
+.pl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:8px}
+.pn{font-size:32px;font-weight:700;margin-bottom:32px;letter-spacing:-.02em}
+.pr{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.pr:last-of-type{border:none}
+.pr span:first-child{color:var(--td);font-size:13px}
+.pr strong{font-family:'JetBrains Mono',monospace;font-size:17px;color:var(--c)}
+.xpt{height:4px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:18px;overflow:hidden}
+.xpf{height:100%;background:linear-gradient(90deg,var(--c),var(--v));box-shadow:0 0 8px rgba(0,229,255,.4);border-radius:99px;width:0%;transition:width 1s cubic-bezier(.16,1,.3,1)}
+.pbtns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.pb{font-size:13px;font-weight:500;padding:12px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;transition:border-color .3s,background .3s;pointer-events:auto}
+.pb:hover{border-color:var(--c);background:rgba(0,229,255,.09)}
 </style>
 </head>
 <body>
 
-<!-- Custom cursor -->
-<div id="cursor">
-  <div id="cursor-dot"></div>
-  <div id="cursor-ring"></div>
-</div>
+<!-- CURSOR -->
+<div id="cur-dot"></div>
+<div id="cur-ring"></div>
 
-<!-- Loading screen -->
+<!-- LOADER -->
 <div id="loader">
-  <div class="loader-logo">Yuvraj Soni Arcade</div>
-  <div class="loader-bar-wrap"><div class="loader-bar-fill" id="lbar"></div></div>
-  <div class="loader-pct" id="lpct">0%</div>
+  <div class="ld-logo">Yuvraj Soni Arcade</div>
+  <div class="ld-bar"><div class="ld-prog" id="ldp"></div></div>
+  <div class="ld-pct" id="ldt">0%</div>
 </div>
 
-<!-- Three.js 3D background -->
-<div id="bg3d"></div>
+<!-- WEBGL CANVAS (full screen, always behind) -->
+<canvas id="c3d"></canvas>
 
-<div id="content">
+<!-- SCROLL DRIVER -->
+<div id="scroller"><div id="scroll-content"></div></div>
 
-  <!-- NAV -->
-  <nav class="nav" id="nav">
-    <div class="nav-logo"><span class="logo-gem"></span>Yuvraj Soni Arcade</div>
-    <div class="nav-links">
-      <a onclick="goTo('home')">Home</a>
-      <a onclick="goTo('games')">Games</a>
-      <a onclick="goTo('about')">About</a>
-      <a onclick="goTo('profile')">Profile</a>
+<!-- NAV -->
+<nav id="nav">
+  <div class="logo"><span class="gem"></span>Yuvraj Soni Arcade</div>
+  <div class="navl">
+    <a onclick="jumpTo(0)">Home</a>
+    <a onclick="jumpTo(1)">Games</a>
+    <a onclick="jumpTo(5)">Profile</a>
+  </div>
+  <button class="ncta" onclick="jumpTo(1)">Play Now</button>
+</nav>
+
+<!-- SCROLL INDICATOR -->
+<div id="scroll-indicator">
+  <div class="si-dot active" onclick="jumpTo(0)" title="Home"></div>
+  <div class="si-line"><div class="si-fill" id="sif1"></div></div>
+  <div class="si-dot" onclick="jumpTo(1)" title="Eagle Flight"></div>
+  <div class="si-line"><div class="si-fill" id="sif2"></div></div>
+  <div class="si-dot" onclick="jumpTo(2)" title="Void Interceptor"></div>
+  <div class="si-line"><div class="si-fill" id="sif3"></div></div>
+  <div class="si-dot" onclick="jumpTo(3)" title="Neon Drift Racer"></div>
+  <div class="si-line"><div class="si-fill" id="sif4"></div></div>
+  <div class="si-dot" onclick="jumpTo(4)" title="X/O Bot Duel"></div>
+  <div class="si-line"><div class="si-fill" id="sif5"></div></div>
+  <div class="si-dot" onclick="jumpTo(5)" title="Profile"></div>
+</div>
+
+<div id="sec-label">Section 0 / 5</div>
+
+<!-- UI OVERLAYS -->
+<div id="ui">
+
+  <!-- SECTION 0: HERO -->
+  <div class="game-panel active" id="sec-0">
+    <div id="hero-ui" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px">
+      <div class="h-eye" id="heye"><span class="edot"></span>Independent Arcade · Est. 2026</div>
+      <h1 class="h1">
+        <span class="hl"><span class="hli">Play in</span></span>
+        <span class="hl"><span class="hli gw">another</span></span>
+        <span class="hl"><span class="hli">dimension.</span></span>
+      </h1>
+      <p class="h-sub" id="hsub">A hand-built collection of four arcade games — designed and developed end-to-end by Yuvraj Soni. One profile, infinite progression.</p>
+      <div class="h-btns" id="hbtns">
+        <button class="bp" onclick="jumpTo(1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Enter the Arcade
+        </button>
+        <button class="bg2" onclick="jumpTo(5)">View Profile</button>
+      </div>
+      <div class="scroll-cue"><span>Scroll</span><div class="scl"></div></div>
     </div>
-    <button class="nav-cta" onclick="goTo('games')">Play Now</button>
-  </nav>
+  </div>
 
-  <!-- HERO -->
-  <div class="hero" id="home">
-    <span class="hero-eyebrow" id="eyebrow"><span class="edot"></span>Independent Arcade · Est. 2026</span>
-    <h1 class="hero-headline" id="headline">
-      <span class="line"><span class="line-inner">Play in</span></span>
-      <span class="line"><span class="line-inner gradient-word">another</span></span>
-      <span class="line"><span class="line-inner">dimension.</span></span>
-    </h1>
-    <p class="hero-sub" id="herosub">A hand-built collection of four arcade games — designed and developed end-to-end by Yuvraj Soni, with a leveling system that remembers every player who walks in.</p>
-    <div class="hero-actions" id="heroactions">
-      <button class="btn-p" onclick="goTo('games')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Enter the Arcade
+  <!-- SECTION 1: EAGLE FLIGHT -->
+  <div class="game-panel" id="sec-1">
+    <div class="gp-num">01</div>
+    <div class="gp-content">
+      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--c);display:inline-block;box-shadow:0 0 8px var(--c)"></span>Game One</div>
+      <div class="gp-badge">Endless · Skill</div>
+      <h2 class="gp-title">Eagle<br>Flight</h2>
+      <p class="gp-desc">Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and higher multipliers. Every run is a new challenge — no two alike.</p>
+      <div class="gp-chips"><span class="chip">Reflex</span><span class="chip">Endless</span><span class="chip">High Score</span></div>
+      <button class="gp-play" onclick="location.href='eagle.html'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
       </button>
-      <button class="btn-g" onclick="goTo('about')">Our Story</button>
-    </div>
-    <div class="scroll-cue"><span>Scroll</span><div class="scl"></div></div>
-  </div>
-
-  <!-- MARQUEE -->
-  <div class="marquee-wrap">
-    <div class="marquee-track" id="mtrack"></div>
-  </div>
-
-  <!-- STATS -->
-  <div class="stats-section">
-    <div class="stats rv" id="statsEl">
-      <div class="stat"><span class="stat-num" data-count="4">0</span><div class="stat-label">Games Live</div></div>
-      <div class="stat"><span class="stat-num">1</span><div class="stat-label">Solo Developer</div></div>
-      <div class="stat"><span class="stat-num">∞</span><div class="stat-label">XP To Earn</div></div>
-      <div class="stat"><span class="stat-num" data-count="100" data-suf="%">0</span><div class="stat-label">Browser-Based</div></div>
     </div>
   </div>
 
-  <!-- GAMES -->
-  <section id="games">
-    <div class="sec-head">
-      <div>
-        <span class="sec-eye rv">The Collection</span>
-        <h2 class="sec-title rv d1">Four games,<br>built by hand.</h2>
-        <p class="sec-sub rv d2">Each title is a self-contained world. Tilt the cards — the arcade reacts to you.</p>
-      </div>
+  <!-- SECTION 2: VOID INTERCEPTOR -->
+  <div class="game-panel" id="sec-2">
+    <div class="gp-num">02</div>
+    <div class="gp-content">
+      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--v);display:inline-block;box-shadow:0 0 8px var(--v)"></span>Game Two</div>
+      <div class="gp-badge" style="color:var(--v);border-color:rgba(124,77,255,.3);background:rgba(124,77,255,.09)">3D · Wave Shooter</div>
+      <h2 class="gp-title">Void<br>Interceptor</h2>
+      <p class="gp-desc">A full Three.js 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, upgrade your ship between waves, and defeat the Void Sentinel boss.</p>
+      <div class="gp-chips"><span class="chip">3D Engine</span><span class="chip">Boss Fights</span><span class="chip">Upgrades</span><span class="chip">Power-Ups</span></div>
+      <button class="gp-play" style="background:linear-gradient(135deg,var(--v),var(--m))" onclick="location.href='space.html'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
+      </button>
     </div>
-    <div class="games-grid">
-      <div class="gcard rv" onclick="location.href='eagle.html'">
-        <div class="gcard-num">01</div>
-        <span class="gcard-badge">Endless</span>
-        <span class="gcard-icon">🦅</span>
-        <span class="gcard-tag">Skill · Reflex</span>
-        <h3>Eagle Flight</h3>
-        <p>Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and higher multipliers.</p>
-        <div class="gcard-arrow">Play now <span style="transition:transform .3s">→</span></div>
-      </div>
-      <div class="gcard rv d1" onclick="location.href='space.html'">
-        <div class="gcard-num">02</div>
-        <span class="gcard-badge">3D · Waves</span>
-        <span class="gcard-icon">🚀</span>
-        <span class="gcard-tag">Shooter · Strategy</span>
-        <h3>Void Interceptor</h3>
-        <p>A full 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, defeat wave bosses, and upgrade your ship.</p>
-        <div class="gcard-arrow">Play now <span>→</span></div>
-      </div>
-      <div class="gcard rv d2" onclick="location.href='drift.html'">
-        <div class="gcard-num">03</div>
-        <span class="gcard-badge">3D · Racing</span>
-        <span class="gcard-icon">🚗</span>
-        <span class="gcard-tag">Racing · Precision</span>
-        <h3>Neon Drift Racer</h3>
-        <p>Race through a neon city highway in full 3D. Dodge traffic, chain near-misses for combos, and push your distance record.</p>
-        <div class="gcard-arrow">Play now <span>→</span></div>
-      </div>
-      <div class="gcard rv d3" onclick="location.href='xo.html'">
-        <div class="gcard-num">04</div>
-        <span class="gcard-badge">Strategy</span>
-        <span class="gcard-icon">❌</span>
-        <span class="gcard-tag">1v1 · AI Duel</span>
-        <h3>X/O Bot Duel</h3>
-        <p>A tactical battle against an AI opponent that adapts. Simple to start, genuinely hard to master.</p>
-        <div class="gcard-arrow">Play now <span>→</span></div>
-      </div>
-    </div>
-  </section>
+  </div>
 
-  <!-- ABOUT -->
-  <section id="about">
-    <div class="about-grid">
-      <div class="about-visual rv">
-        <div class="aring aring-3"></div>
-        <div class="aring aring-2"></div>
-        <div class="aring aring-1"></div>
-        <div class="aorb"></div>
-      </div>
-      <div class="about-copy">
-        <span class="sec-eye rv">The Story</span>
-        <h2 class="sec-title rv d1">One developer.<br>Four worlds.<br>Zero shortcuts.</h2>
-        <div style="margin-top:24px">
-          <p class="rv d2">Most online arcades are templates wearing different skins. <strong>Yuvraj Soni Arcade</strong> is different — every game here is written, tuned, and shipped by a single person, end to end, with no asset packs and no recycled engines.</p>
-          <p class="rv d3">The goal isn't the most games. It's to have <strong>four that feel considered</strong> — distinct mechanics, distinct moods, and a shared profile system that ties your progress into one evolving identity.</p>
+  <!-- SECTION 3: NEON DRIFT RACER -->
+  <div class="game-panel" id="sec-3">
+    <div class="gp-num">03</div>
+    <div class="gp-content">
+      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--g);display:inline-block;box-shadow:0 0 8px var(--g)"></span>Game Three</div>
+      <div class="gp-badge" style="color:var(--g);border-color:rgba(255,201,60,.3);background:rgba(255,201,60,.09)">3D · Racing</div>
+      <h2 class="gp-title">Neon Drift<br>Racer</h2>
+      <p class="gp-desc">Race through a neon city highway in full 3D. Dodge oncoming traffic, chain near-misses for combo bonuses, and push your distance record as far as it will go.</p>
+      <div class="gp-chips"><span class="chip">3D Engine</span><span class="chip">Near-Miss Combos</span><span class="chip">Distance Run</span></div>
+      <button class="gp-play" style="background:linear-gradient(135deg,var(--g),#ff8c00);color:#000" onclick="location.href='drift.html'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 4: X/O BOT DUEL -->
+  <div class="game-panel" id="sec-4">
+    <div class="gp-num">04</div>
+    <div class="gp-content">
+      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--m);display:inline-block;box-shadow:0 0 8px var(--m)"></span>Game Four</div>
+      <div class="gp-badge" style="color:var(--m);border-color:rgba(255,45,120,.3);background:rgba(255,45,120,.09)">Strategy · 1v1 AI</div>
+      <h2 class="gp-title">X/O Bot<br>Duel</h2>
+      <p class="gp-desc">A tactical battle against an AI opponent that adapts to every move you make. Simple to understand, genuinely hard to master — the thinking person's arcade game.</p>
+      <div class="gp-chips"><span class="chip">AI Opponent</span><span class="chip">Strategy</span><span class="chip">1v1</span></div>
+      <button class="gp-play" style="background:linear-gradient(135deg,var(--m),var(--v))" onclick="location.href='xo.html'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 5: PROFILE -->
+  <div class="game-panel" id="sec-5">
+    <div id="profile-panel" class="active" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:80px 56px">
+      <div class="prof-card">
+        <div class="pl">Your Member Card</div>
+        <div class="pn" id="playerName">—</div>
+        <div class="pr"><span>Level</span><strong id="playerLevel">—</strong></div>
+        <div class="pr"><span>Coins</span><strong id="playerCoins">—</strong></div>
+        <div class="pr"><span>Experience</span><strong id="playerXP">—</strong></div>
+        <div class="xpt"><div class="xpf" id="xpFill"></div></div>
+        <div class="pbtns">
+          <button class="pb" onclick="changeName()">Change Name</button>
+          <button class="pb" onclick="jumpTo(1)">Play a Game</button>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- HOW IT WORKS -->
-  <section style="padding-top:0" id="how">
-    <div class="sec-head">
-      <div>
-        <span class="sec-eye rv">The Loop</span>
-        <h2 class="sec-title rv d1">How the arcade works</h2>
-      </div>
-      <p class="sec-sub rv" style="text-align:right;max-width:260px">One profile, one XP bar — every game feeds into it.</p>
-    </div>
-    <div class="steps rv">
-      <div class="step"><div class="step-num">01</div><h3>Pick a game</h3><p>Choose from four titles, each with its own pace and skill curve. No installs — open and play instantly in any browser.</p></div>
-      <div class="step"><div class="step-num">02</div><h3>Earn XP &amp; coins</h3><p>Every run feeds your single arcade-wide profile. Performance in any game contributes to the same progress bar.</p></div>
-      <div class="step"><div class="step-num">03</div><h3>Level up forever</h3><p>Your level climbs as XP builds. Saved locally — exactly as you left it, every time you return.</p></div>
-    </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section style="padding-top:0">
-    <div class="sec-head">
-      <div>
-        <span class="sec-eye rv">Under the Hood</span>
-        <h2 class="sec-title rv d1">Built like a real product</h2>
-      </div>
-    </div>
-    <div class="feats">
-      <div class="feat rv"><div class="feat-icon">⚡</div><h3>Instant Load</h3><p>No bundlers, no frameworks. Every game opens in the browser in under a second, on any device.</p></div>
-      <div class="feat rv d1"><div class="feat-icon">🪪</div><h3>Shared Profile</h3><p>One name, one level, one XP bar — across all four games, not four separate save files.</p></div>
-      <div class="feat rv d2"><div class="feat-icon">💾</div><h3>Local-First Save</h3><p>Progress lives in your browser. No account required, nothing lost if a server goes down.</p></div>
-      <div class="feat rv"><div class="feat-icon">🎮</div><h3>Real 3D Engines</h3><p>Two games run on full Three.js — not canvas sprites pretending to be 3D.</p></div>
-      <div class="feat rv d1"><div class="feat-icon">🔊</div><h3>Ambient Soundtrack</h3><p>A looping arcade score plays softly — designed to stay out of the way during gameplay.</p></div>
-      <div class="feat rv d2"><div class="feat-icon">📱</div><h3>Responsive by Default</h3><p>The arcade and every game resize cleanly from monitor to phone screen.</p></div>
-    </div>
-  </section>
-
-  <!-- PROFILE -->
-  <section style="padding-top:0" id="profile">
-    <div class="sec-head">
-      <div>
-        <span class="sec-eye rv">Membership</span>
-        <h2 class="sec-title rv d1">Your player profile</h2>
-      </div>
-      <p class="sec-sub rv" style="text-align:right;max-width:280px">Your progress carries across every game, automatically.</p>
-    </div>
-    <div class="profile-wrap rv">
-      <div class="profile-main">
-        <div class="plabel">Member Card</div>
-        <div class="pname" id="playerName">—</div>
-        <div class="pstat"><span>Level</span><strong id="playerLevel">—</strong></div>
-        <div class="pstat"><span>Coins</span><strong id="playerCoins">—</strong></div>
-        <div class="pstat"><span>Experience</span><strong id="playerXP">—</strong></div>
-        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
-      </div>
-      <div class="profile-aside">
-        <p>Rename your card at any time — your level, coins and XP stay exactly as they are.</p>
-        <button class="btn-g" style="align-self:flex-start;padding:14px 28px;font-size:13.5px" onclick="changeName()">Change Name</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-main">
-      <div class="footer-brand">
-        <div class="nav-logo"><span class="logo-gem"></span>Yuvraj Soni Arcade</div>
-        <p>An independent arcade — four games, one evolving player profile, zero shortcuts. Designed and built in-house.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Arcade</h4>
-        <a onclick="goTo('home')">Home</a>
-        <a onclick="goTo('about')">About</a>
-        <a onclick="goTo('how')">How It Works</a>
-        <a onclick="goTo('profile')">Your Profile</a>
-      </div>
-      <div class="footer-col">
-        <h4>Games</h4>
-        <a onclick="location.href='eagle.html'">Eagle Flight</a>
-        <a onclick="location.href='space.html'">Void Interceptor</a>
-        <a onclick="location.href='drift.html'">Neon Drift Racer</a>
-        <a onclick="location.href='xo.html'">X/O Bot Duel</a>
-      </div>
-    </div>
-    <div class="footer-btm">
-      <span><span class="gem">◆</span> 2026 Yuvraj Soni Arcade</span>
-      <span>Designed &amp; developed in-house · All rights reserved</span>
-    </div>
-  </footer>
-
-</div>
+</div><!-- /ui -->
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
 <script>
-/* ══════════════════════════════════════
-   LOADING SCREEN
-══════════════════════════════════════ */
-(function(){
-  const bar=document.getElementById('lbar');
-  const pct=document.getElementById('lpct');
-  const loader=document.getElementById('loader');
-  let p=0;
-  const iv=setInterval(()=>{
-    p+=Math.random()*14+3;
-    if(p>=100){p=100;clearInterval(iv);setTimeout(()=>{loader.classList.add('done');heroIn();},300);}
-    bar.style.width=p+'%';
-    pct.textContent=Math.floor(p)+'%';
-  },80);
-})();
+/* ════════════════════════════════════════════════
+   YUVRAJ SONI ARCADE — Full 3D Scroll Experience
+   Each scroll section has its own 3D scene that
+   animates in from off-screen, exactly like
+   terminal-industries.com's scroll animations.
+════════════════════════════════════════════════ */
 
-/* ══════════════════════════════════════
-   HERO ENTRANCE
-══════════════════════════════════════ */
-function heroIn(){
-  document.getElementById('eyebrow').classList.add('in');
-  setTimeout(()=>{
-    document.querySelectorAll('#headline .line-inner').forEach(el=>el.classList.add('in'));
-  },150);
-  setTimeout(()=>document.getElementById('herosub').classList.add('in'),400);
-  setTimeout(()=>document.getElementById('heroactions').classList.add('in'),600);
-}
+const SECTIONS = 6; // 0=hero, 1-4=games, 5=profile
+const VH = () => window.innerHeight;
+const VW = () => window.innerWidth;
 
-/* ══════════════════════════════════════
-   THREE.JS BACKGROUND
-══════════════════════════════════════ */
-(function(){
-  const bg=document.getElementById('bg3d');
-  const W=()=>window.innerWidth, H=()=>window.innerHeight;
+/* ── Renderer setup ── */
+const canvas = document.getElementById('c3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(VW(), VH());
+renderer.setClearColor(0x02020a, 1);
+renderer.shadowMap.enabled = false;
 
-  const scene=new THREE.Scene();
-  const cam=new THREE.PerspectiveCamera(65,W()/H(),.1,300);
-  cam.position.set(0,0,0);
+const masterScene = new THREE.Scene();
+const masterCam = new THREE.PerspectiveCamera(60, VW() / VH(), 0.1, 500);
+masterCam.position.z = 18;
 
-  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.setSize(W(),H());
-  renderer.setClearColor(0x02020a,1);
-  bg.appendChild(renderer.domElement);
+/* ── Shared lights ── */
+masterScene.add(new THREE.AmbientLight(0x080818, 1.0));
+const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+keyLight.position.set(8, 12, 10);
+masterScene.add(keyLight);
+const fillLight = new THREE.PointLight(0x00e5ff, 1.4, 80);
+fillLight.position.set(-10, 5, 5);
+masterScene.add(fillLight);
+const rimLight = new THREE.PointLight(0x7c4dff, 1.0, 60);
+rimLight.position.set(10, -5, -10);
+masterScene.add(rimLight);
+const pinkLight = new THREE.PointLight(0xff2d78, 0.5, 60);
+pinkLight.position.set(0, 15, -20);
+masterScene.add(pinkLight);
 
-  // Lighting
-  scene.add(new THREE.AmbientLight(0x080818,1));
-  const pl1=new THREE.PointLight(0x00e5ff,1.6,130);pl1.position.set(-30,20,-45);scene.add(pl1);
-  const pl2=new THREE.PointLight(0x7c4dff,1.3,110);pl2.position.set(32,-16,-65);scene.add(pl2);
-  const pl3=new THREE.PointLight(0xff2d78,.7,90);pl3.position.set(0,30,-85);scene.add(pl3);
-
-  // Stars — 3 layers
-  function starLayer(n,zr,sz,op){
-    const pos=new Float32Array(n*3),col=new Float32Array(n*3);
-    for(let i=0;i<n;i++){
-      pos[i*3]=(Math.random()-.5)*200;
-      pos[i*3+1]=(Math.random()-.5)*120;
-      pos[i*3+2]=-Math.random()*zr-8;
-      const t=Math.random();
-      if(t<.5){col[i*3]=.85;col[i*3+1]=.9;col[i*3+2]=1;}
-      else if(t<.75){col[i*3]=1;col[i*3+1]=.95;col[i*3+2]=.65;}
-      else{col[i*3]=1;col[i*3+1]=.6;col[i*3+2]=.4;}
-    }
-    const g=new THREE.BufferGeometry();
-    g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-    g.setAttribute('color',new THREE.BufferAttribute(col,3));
-    return new THREE.Points(g,new THREE.PointsMaterial({size:sz,vertexColors:true,transparent:true,opacity:op,sizeAttenuation:true}));
+/* ── Starfield (GPU instanced, stays constant) ── */
+(function() {
+  const N = 1400;
+  const pos = new Float32Array(N * 3);
+  const col = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    pos[i*3]   = (Math.random() - .5) * 260;
+    pos[i*3+1] = (Math.random() - .5) * 160;
+    pos[i*3+2] = -20 - Math.random() * 180;
+    const t = Math.random();
+    if (t < .5)      { col[i*3]=.82; col[i*3+1]=.9;  col[i*3+2]=1; }
+    else if (t < .75){ col[i*3]=1;   col[i*3+1]=.95; col[i*3+2]=.65; }
+    else             { col[i*3]=1;   col[i*3+1]=.58; col[i*3+2]=.38; }
   }
-  const s1=starLayer(700,80,.13,.92);
-  const s2=starLayer(1000,160,.09,.7);
-  const s3=starLayer(500,240,.06,.5);
-  scene.add(s1,s2,s3);
-
-  // Nebula blobs
-  [
-    {c:0x00183a,x:-38,y:13,z:-98,r:30},
-    {c:0x1a0830,x:44,y:-9,z:-125,r:24},
-    {c:0x001428,x:12,y:28,z:-82,r:20},
-    {c:0x1e0832,x:-22,y:-22,z:-72,r:18},
-    {c:0x080028,x:58,y:12,z:-115,r:26},
-  ].forEach(d=>{
-    const m=new THREE.Mesh(new THREE.SphereGeometry(d.r,16,16),
-      new THREE.MeshBasicMaterial({color:d.c,transparent:true,opacity:.65,depthWrite:false,side:THREE.BackSide}));
-    m.position.set(d.x,d.y,d.z);scene.add(m);
-  });
-
-  // Planets
-  const planets=[];
-  [
-    {r:11,c:0x0c1e3c,ec:0x003688,x:-58,y:20,z:-168,ring:true,rs:.006},
-    {r:5.5,c:0x28100a,ec:0x5a2200,x:66,y:-24,z:-138,ring:false,rs:.009},
-    {r:3.2,c:0x081820,ec:0x002840,x:22,y:44,z:-152,ring:false,rs:.012},
-  ].forEach(d=>{
-    const mat=new THREE.MeshStandardMaterial({color:d.c,emissive:d.ec,emissiveIntensity:.13,roughness:.9,metalness:.05});
-    const mesh=new THREE.Mesh(new THREE.SphereGeometry(d.r,32,32),mat);
-    mesh.position.set(d.x,d.y,d.z);
-    if(d.ring){
-      const rm=new THREE.Mesh(new THREE.TorusGeometry(d.r*1.65,d.r*.22,4,64),
-        new THREE.MeshBasicMaterial({color:0x1a3a5c,transparent:true,opacity:.4}));
-      rm.rotation.x=Math.PI*.38;mesh.add(rm);
-    }
-    scene.add(mesh);planets.push({mesh,rs:d.rs});
-  });
-
-  // Crystal shards
-  const shards=[];
-  const shardMats=[
-    new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.55,metalness:.7,roughness:.15,transparent:true,opacity:.5}),
-    new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.55,metalness:.7,roughness:.15,transparent:true,opacity:.42}),
-    new THREE.MeshStandardMaterial({color:0xff2d78,emissive:0xff2d78,emissiveIntensity:.45,metalness:.7,roughness:.2,transparent:true,opacity:.35}),
-    new THREE.MeshStandardMaterial({color:0xffc93c,emissive:0xffc93c,emissiveIntensity:.5,metalness:.6,roughness:.2,transparent:true,opacity:.38}),
-  ];
-
-  for(let i=0;i<32;i++){
-    const h=.04+Math.random()*.24;
-    const geom=new THREE.OctahedronGeometry(h,0);
-    const p=geom.attributes.position;
-    for(let j=0;j<p.count;j++){
-      p.setXYZ(j,p.getX(j)*(.65+Math.random()*.7),p.getY(j)*(.65+Math.random()*.7),p.getZ(j)*(.65+Math.random()*.7));
-    }
-    geom.computeVertexNormals();
-    const mesh=new THREE.Mesh(geom,shardMats[Math.floor(Math.random()*shardMats.length)]);
-    const bx=(Math.random()-.5)*52,by=(Math.random()-.5)*32,bz=-8-Math.random()*44;
-    mesh.position.set(bx,by,bz);
-    mesh.rotation.set(Math.random()*Math.PI*2,Math.random()*Math.PI*2,Math.random()*Math.PI*2);
-    scene.add(mesh);
-    shards.push({
-      mesh,bx,by,bz,
-      fs:.12+Math.random()*.2,fa:.5+Math.random()*1.0,fo:Math.random()*Math.PI*2,
-      rv:new THREE.Vector3((Math.random()-.5)*.45,(Math.random()-.5)*.45,(Math.random()-.5)*.28),
-    });
-  }
-
-  // Mouse & scroll
-  let mx=0,my=0,cX=0,cY=0,scrollY=0;
-  window.addEventListener('mousemove',e=>{mx=(e.clientX/W()-.5)*2;my=(e.clientY/H()-.5)*2;});
-  window.addEventListener('scroll',()=>{scrollY=window.scrollY;},{passive:true});
-  window.addEventListener('resize',()=>{renderer.setSize(W(),H());cam.aspect=W()/H();cam.updateProjectionMatrix();});
-
-  const clock=new THREE.Clock();
-  (function animate(){
-    requestAnimationFrame(animate);
-    const t=clock.getElapsedTime();
-    cX+=(mx*1.3-cX)*.028;cY+=(-my*.85-cY)*.028;
-    cam.position.x=cX;cam.position.y=cY;
-
-    const sf=scrollY/(Math.max(document.body.scrollHeight-window.innerHeight,1));
-    s1.position.z=sf*14;s2.position.z=sf*7;s3.position.z=sf*3.5;
-    s1.material.opacity=.85+Math.sin(t*.7)*.07;
-
-    shards.forEach(s=>{
-      s.mesh.position.y=s.by+Math.sin(t*s.fs+s.fo)*s.fa;
-      s.mesh.rotation.x+=s.rv.x*.016;
-      s.mesh.rotation.y+=s.rv.y*.016;
-      s.mesh.rotation.z+=s.rv.z*.016;
-      s.mesh.position.z=s.bz+sf*22;
-      // mouse depth parallax
-      const d=Math.abs(s.bz);
-      s.mesh.position.x=s.bx+mx*(d*.014);
-    });
-
-    planets.forEach(p=>{p.mesh.rotation.y+=p.rs*.016;});
-    pl1.intensity=1.4+Math.sin(t*.4)*.45;
-    pl2.intensity=1.1+Math.cos(t*.35)*.32;
-    pl3.intensity=.6+Math.sin(t*.28)*.22;
-    renderer.render(scene,cam);
-  })();
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  masterScene.add(new THREE.Points(g, new THREE.PointsMaterial({
+    size: .12, vertexColors: true, transparent: true, opacity: .9, sizeAttenuation: true
+  })));
 })();
 
-/* ══════════════════════════════════════
-   MARQUEE BUILD
-══════════════════════════════════════ */
-(function(){
-  const items=[
-    {t:'Eagle Flight',s:'🦅'},{t:'Void Interceptor',s:'🚀'},
-    {t:'Neon Drift Racer',s:'🚗'},{t:'X/O Bot Duel',s:'❌'},
-    {t:'Yuvraj Soni Arcade',s:'◆'},{t:'No Account Required',s:'◆'},
-    {t:'Local Save · Zero Setup',s:'◆'},{t:'Full 3D · Browser-Native',s:'◆'},
-  ];
-  const track=document.getElementById('mtrack');
-  // duplicate for seamless loop
-  [...items,...items].forEach(item=>{
-    const el=document.createElement('div');
-    el.className='marquee-item';
-    el.innerHTML=`<span>${item.s}</span>${item.t}`;
-    track.appendChild(el);
-  });
-})();
-
-/* ══════════════════════════════════════
-   CUSTOM CURSOR + TRAIL
-══════════════════════════════════════ */
-(function(){
-  const dot=document.getElementById('cursor-dot');
-  const ring=document.getElementById('cursor-ring');
-  let cx=0,cy=0,rx=0,ry=0;
-  const trailColors=['#00e5ff','#7c4dff','#ff2d78','#ffc93c'];
-  let tIdx=0;
-
-  document.addEventListener('mousemove',e=>{
-    cx=e.clientX;cy=e.clientY;
-    dot.style.left=cx+'px';dot.style.top=cy+'px';
-    // trail particle
-    tIdx=(tIdx+1)%4;
-    if(tIdx===0){
-      const p=document.createElement('div');
-      p.className='trail-particle';
-      p.style.cssText=`left:${cx}px;top:${cy}px;background:${trailColors[Math.floor(Math.random()*4)]}`;
-      document.body.appendChild(p);
-      setTimeout(()=>p.remove(),800);
-    }
-  });
-
-  (function animRing(){
-    requestAnimationFrame(animRing);
-    rx+=(cx-rx)*.12;ry+=(cy-ry)*.12;
-    ring.style.left=rx+'px';ring.style.top=ry+'px';
-  })();
-})();
-
-/* ══════════════════════════════════════
-   SCROLL REVEAL + NAV
-══════════════════════════════════════ */
-const nav=document.getElementById('nav');
-window.addEventListener('scroll',()=>{
-  nav.classList.toggle('solid',window.scrollY>60);
-},{passive:true});
-
-const io=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
-},{threshold:.12});
-document.querySelectorAll('.rv').forEach(el=>io.observe(el));
-
-/* ══════════════════════════════════════
-   COUNTER ANIMATION
-══════════════════════════════════════ */
-const cio=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(!e.isIntersecting)return;
-    e.target.querySelectorAll('[data-count]').forEach(el=>{
-      const target=+el.dataset.count,suf=el.dataset.suf||'';
-      let start=0;const dur=1400;const t0=performance.now();
-      (function step(now){
-        const p=Math.min((now-t0)/dur,1);
-        const ease=1-Math.pow(1-p,3);
-        el.textContent=Math.round(ease*target)+suf;
-        if(p<1)requestAnimationFrame(step);
-      })(performance.now());
-    });
-    cio.unobserve(e.target);
-  });
-},{threshold:.5});
-document.querySelectorAll('.stats').forEach(el=>cio.observe(el));
-
-/* ══════════════════════════════════════
-   GAME CARD 3D TILT + MAGNETIC HOVER
-══════════════════════════════════════ */
-document.querySelectorAll('.gcard').forEach(card=>{
-  card.addEventListener('mousemove',e=>{
-    const r=card.getBoundingClientRect();
-    const x=e.clientX-r.left,y=e.clientY-r.top;
-    const cx=r.width/2,cy=r.height/2;
-    card.style.transform=`perspective(900px) rotateX(${((y-cy)/cy)*-6}deg) rotateY(${((x-cx)/cx)*6}deg) translateZ(6px)`;
-    card.style.setProperty('--mx',(x/r.width*100)+'%');
-    card.style.setProperty('--my',(y/r.height*100)+'%');
-  });
-  card.addEventListener('mouseleave',()=>{
-    card.style.transform='perspective(900px) rotateX(0) rotateY(0) translateZ(0)';
-  });
+/* ── Nebula backdrop ── */
+[{c:0x001428,x:-40,y:14,z:-100,r:32},{c:0x18082a,x:45,y:-10,z:-130,r:26},{c:0x020a1e,x:8,y:28,z:-85,r:20}].forEach(d=>{
+  const m = new THREE.Mesh(new THREE.SphereGeometry(d.r,14,14),
+    new THREE.MeshBasicMaterial({color:d.c,transparent:true,opacity:.65,depthWrite:false,side:THREE.BackSide}));
+  m.position.set(d.x,d.y,d.z); masterScene.add(m);
 });
 
-/* ══════════════════════════════════════
-   PLAYER SYSTEM
-══════════════════════════════════════ */
+/* ── Distant planets ── */
+const planets = [];
+[{r:10,c:0x0c1e3c,ec:0x003688,x:-55,y:20,z:-170,ring:true},{r:5,c:0x28100a,ec:0x5a2200,x:64,y:-24,z:-140}].forEach(d=>{
+  const mat = new THREE.MeshStandardMaterial({color:d.c,emissive:d.ec,emissiveIntensity:.13,roughness:.9,metalness:.05});
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(d.r,28,28),mat);
+  mesh.position.set(d.x,d.y,d.z);
+  if(d.ring){
+    const rm = new THREE.Mesh(new THREE.TorusGeometry(d.r*1.6,d.r*.2,4,60),
+      new THREE.MeshBasicMaterial({color:0x1a3a5c,transparent:true,opacity:.38}));
+    rm.rotation.x = Math.PI*.38; mesh.add(rm);
+  }
+  masterScene.add(mesh); planets.push(mesh);
+});
+
+/* ════════════════════════════════════════════════
+   SECTION 3D OBJECTS
+   Each section (0-5) has its own 3D group.
+   When that section is active, the group flies in
+   from off-screen with scroll progress animation.
+════════════════════════════════════════════════ */
+
+const sectionGroups = [];
+for(let i = 0; i < SECTIONS; i++) {
+  const g = new THREE.Group();
+  g.visible = false;
+  masterScene.add(g);
+  sectionGroups.push(g);
+}
+
+/* ── Helper: make asteroid geometry ── */
+function mkAsteroid(r) {
+  const g = new THREE.IcosahedronGeometry(r, 1);
+  const p = g.attributes.position;
+  for(let i=0;i<p.count;i++) p.setXYZ(i,p.getX(i)*(.72+Math.random()*.52),p.getY(i)*(.72+Math.random()*.52),p.getZ(i)*(.72+Math.random()*.52));
+  g.computeVertexNormals(); return g;
+}
+
+/* ── Helper: floating shard ── */
+function mkShard(size, color) {
+  const g = new THREE.OctahedronGeometry(size,0);
+  const p = g.attributes.position;
+  for(let i=0;i<p.count;i++) p.setXYZ(i,p.getX(i)*(.6+Math.random()*.8),p.getY(i)*(.6+Math.random()*.8),p.getZ(i)*(.6+Math.random()*.8));
+  g.computeVertexNormals();
+  return new THREE.Mesh(g, new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.55,metalness:.7,roughness:.18,transparent:true,opacity:.55}));
+}
+
+/* ── SECTION 0: HERO — Crystal shard galaxy + planets ── */
+{
+  const g = sectionGroups[0];
+  // Central spinning dodecahedron
+  const core = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(1.4,0),
+    new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.35,metalness:.8,roughness:.1,wireframe:false,transparent:true,opacity:.7})
+  );
+  core.position.set(5.5,-1,0); g.add(core);
+  // wireframe overlay
+  const wire = new THREE.Mesh(new THREE.DodecahedronGeometry(1.42,0),
+    new THREE.MeshBasicMaterial({color:0x00e5ff,wireframe:true,transparent:true,opacity:.25}));
+  core.add(wire);
+  // Orbiting shards
+  const COLORS = [0x00e5ff,0x7c4dff,0xff2d78,0xffc93c];
+  for(let i=0;i<18;i++){
+    const s = mkShard(.08+Math.random()*.22, COLORS[i%4]);
+    const ang = (i/18)*Math.PI*2, r = 2.2+Math.random()*4;
+    s.position.set(Math.cos(ang)*r+5.5,Math.sin(ang)*r*0.7-1,(Math.random()-.5)*3);
+    s.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
+    g.add(s);
+  }
+  g.userData = {type:'hero', core};
+}
+
+/* ── SECTION 1: EAGLE FLIGHT — Swooping crystal bird / wings ── */
+{
+  const g = sectionGroups[1];
+  const mat = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.45,metalness:.75,roughness:.2});
+  const darkMat = new THREE.MeshStandardMaterial({color:0x0a0a18,metalness:.8,roughness:.3});
+  // Body
+  const body = new THREE.Mesh(new THREE.ConeGeometry(.18,.9,8), mat);
+  body.rotation.z = -Math.PI/2; g.add(body);
+  // Wings
+  const WG = new THREE.Shape();
+  WG.moveTo(0,0); WG.lineTo(-1.8,.4); WG.lineTo(-2.2,0); WG.lineTo(-1.5,-.6); WG.lineTo(0,-.2); WG.closePath();
+  const wGeom = new THREE.ShapeGeometry(WG);
+  const wL = new THREE.Mesh(wGeom, mat); wL.position.set(.1,.05,0); g.add(wL);
+  const wR = wL.clone(); wR.scale.x=-1; g.add(wR);
+  // Tail feathers
+  for(let i=0;i<5;i++){
+    const tf = new THREE.Mesh(new THREE.ConeGeometry(.04,.35,4),mat);
+    tf.position.set(-.55,(i-2)*.08,0); tf.rotation.z=Math.PI/2; g.add(tf);
+  }
+  // Surrounding crystal shards
+  for(let i=0;i<12;i++){
+    const s = mkShard(.05+Math.random()*.14, 0x00e5ff);
+    s.position.set((Math.random()-.5)*4,(Math.random()-.5)*3,(Math.random()-.5)*2);
+    g.add(s);
+  }
+  g.position.set(4.5, 0, 0);
+  g.userData = {type:'eagle'};
+}
+
+/* ── SECTION 2: VOID INTERCEPTOR — Full 3D spaceship ── */
+{
+  const g = sectionGroups[2];
+  const steel = new THREE.MeshStandardMaterial({color:0x1c1c28,metalness:.85,roughness:.25});
+  const acc = new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.55,metalness:.4,roughness:.3});
+  const cockpitM = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.5,metalness:.2,roughness:.1,transparent:true,opacity:.88});
+  // Fuselage
+  const fuse = new THREE.Mesh(new THREE.CylinderGeometry(.14,.28,1.7,10), steel);
+  fuse.rotation.x = Math.PI/2; g.add(fuse);
+  // Nose
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(.14,.55,10), acc);
+  nose.rotation.x = Math.PI/2; nose.position.z = -1.12; g.add(nose);
+  // Wings
+  const wing = new THREE.Mesh(new THREE.BoxGeometry(2.6,.055,.65), steel);
+  wing.position.z = -.1; g.add(wing);
+  // Wingtip accents
+  [-1.28,1.28].forEach(x=>{const t=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.65),acc);t.position.set(x,0,-.1);g.add(t);});
+  // Cockpit
+  const cpk = new THREE.Mesh(new THREE.SphereGeometry(.18,14,10), cockpitM);
+  cpk.position.set(0,.13,-.55); g.add(cpk);
+  // Engines
+  [-.46,.46].forEach(x=>{
+    const nac = new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.5,8),
+      new THREE.MeshStandardMaterial({color:0x0d0d14,metalness:.7,roughness:.4}));
+    nac.rotation.x=Math.PI/2; nac.position.set(x,0,.58); g.add(nac);
+    const glow = new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.1,8),
+      new THREE.MeshBasicMaterial({color:0x7c4dff,transparent:true,opacity:.9}));
+    glow.rotation.x=Math.PI/2; glow.position.set(x,0,.84); g.add(glow);
+  });
+  // Surrounding asteroids
+  for(let i=0;i<6;i++){
+    const ast = new THREE.Mesh(mkAsteroid(.25+Math.random()*.4),
+      new THREE.MeshStandardMaterial({color:0x2a2530,roughness:.95,emissive:0x7c4dff,emissiveIntensity:.08}));
+    const ang = (i/6)*Math.PI*2, r=2.5+Math.random()*1.5;
+    ast.position.set(Math.cos(ang)*r,Math.sin(ang)*r*0.6,(Math.random()-.5)*2);
+    ast.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
+    g.add(ast);
+  }
+  g.scale.setScalar(1.6);
+  g.position.set(4, 0, 0);
+  g.userData = {type:'ship'};
+}
+
+/* ── SECTION 3: NEON DRIFT — Car + neon road grid ── */
+{
+  const g = sectionGroups[3];
+  const bodyM = new THREE.MeshStandardMaterial({color:0x111118,metalness:.9,roughness:.15});
+  const goldM = new THREE.MeshStandardMaterial({color:0xffc93c,emissive:0xffc93c,emissiveIntensity:.65,metalness:.5,roughness:.2});
+  const glassM = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.3,transparent:true,opacity:.6});
+
+  // Car body
+  const carBody = new THREE.Mesh(new THREE.BoxGeometry(2,.5,.9), bodyM);
+  g.add(carBody);
+  // Roof
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1,.35,.88), bodyM);
+  roof.position.set(-.1,.42,0); g.add(roof);
+  // Windshield
+  const ws = new THREE.Mesh(new THREE.BoxGeometry(.85,.32,.86), glassM);
+  ws.position.set(.45,.41,0); g.add(ws);
+  // Wheels
+  [-1.25,-.45,.45,1.25].forEach(x=>{
+    [-.5,.5].forEach(z=>{
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.12,12), bodyM);
+      w.rotation.z=Math.PI/2; w.position.set(x,-.28,z); g.add(w);
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.14,6),goldM);
+      rim.rotation.z=Math.PI/2; rim.position.copy(w.position); g.add(rim);
+    });
+  });
+  // Neon strips
+  [-1,0,1].forEach(z=>{
+    const s = new THREE.Mesh(new THREE.BoxGeometry(2.02,.04,.04),goldM);
+    s.position.set(0,-.25,z*.42); g.add(s);
+  });
+  // Road grid below
+  const roadMat = new THREE.MeshBasicMaterial({color:0xffc93c,wireframe:true,transparent:true,opacity:.08});
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(12,8,12,8), roadMat);
+  road.rotation.x=-Math.PI/2; road.position.set(0,-1.5,0); g.add(road);
+  // Speed lines
+  for(let i=0;i<8;i++){
+    const sl = new THREE.Mesh(new THREE.BoxGeometry(.02,.02,1.5+Math.random()),
+      new THREE.MeshBasicMaterial({color:0xffc93c,transparent:true,opacity:.4}));
+    sl.position.set((Math.random()-.5)*4,(Math.random()-.5)*.6,-1-Math.random()); g.add(sl);
+  }
+  g.scale.setScalar(1.3);
+  g.position.set(4,-.3,0);
+  g.userData = {type:'car'};
+}
+
+/* ── SECTION 4: X/O BOT DUEL — Grid + glowing X and O ── */
+{
+  const g = sectionGroups[4];
+  const xMat = new THREE.MeshStandardMaterial({color:0xff2d78,emissive:0xff2d78,emissiveIntensity:.7,metalness:.5,roughness:.2});
+  const oMat = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.7,metalness:.5,roughness:.2});
+  const gridMat = new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.12});
+
+  // Tic-tac-toe grid lines
+  [-1.1,1.1].forEach(x=>{
+    const l = new THREE.Mesh(new THREE.BoxGeometry(.06,6.6,.06),gridMat);
+    l.position.x=x; g.add(l);
+  });
+  [-1.1,1.1].forEach(y=>{
+    const l = new THREE.Mesh(new THREE.BoxGeometry(6.6,.06,.06),gridMat);
+    l.position.y=y; g.add(l);
+  });
+
+  // X marks (2 cylinders crossed)
+  [[0,0],[-2.2,2.2],[2.2,-2.2]].forEach(([cx,cy])=>{
+    if(Math.random()<.5){
+      // X
+      const a = new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.9,8),xMat);
+      a.rotation.z=Math.PI/4; a.position.set(cx,cy,.1); g.add(a);
+      const b = a.clone(); b.rotation.z=-Math.PI/4; g.add(b);
+    } else {
+      // O
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(.38,.08,12,32),oMat);
+      ring.position.set(cx,cy,.1); g.add(ring);
+    }
+  });
+  // Some floating cubes (AI thinking visual)
+  for(let i=0;i<8;i++){
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(.12+Math.random()*.18,.12+Math.random()*.18,.12+Math.random()*.18),
+      new THREE.MeshStandardMaterial({color:i%2===0?0xff2d78:0x00e5ff,emissive:i%2===0?0xff2d78:0x00e5ff,emissiveIntensity:.55,metalness:.6,roughness:.2,transparent:true,opacity:.65}));
+    cube.position.set((Math.random()-.5)*7,(Math.random()-.5)*5,(Math.random()-.5)*2);
+    cube.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
+    g.add(cube);
+  }
+  g.scale.setScalar(1.0);
+  g.position.set(4.5,0,0);
+  g.userData = {type:'xo'};
+}
+
+/* ── SECTION 5: PROFILE — DNA helix / data visualization ── */
+{
+  const g = sectionGroups[5];
+  const cMat = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.6,metalness:.5,roughness:.2});
+  const vMat = new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.6,metalness:.5,roughness:.2});
+  // Helix
+  for(let i=0;i<32;i++){
+    const t1=i/32, t2=(i+.5)/32;
+    const s1=mkShard(.08, 0x00e5ff);
+    s1.position.set(Math.cos(t1*Math.PI*4)*1.5,i*.18-2.9,Math.sin(t1*Math.PI*4)*1.5);
+    g.add(s1);
+    const s2=mkShard(.08, 0x7c4dff);
+    s2.position.set(Math.cos(t2*Math.PI*4+Math.PI)*1.5,t2*5.4-2.7,Math.sin(t2*Math.PI*4+Math.PI)*1.5);
+    g.add(s2);
+    // Connecting bar
+    if(i%3===0){
+      const bar=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,3,4),
+        new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.12}));
+      bar.position.set(0,i*.18-2.9,0);
+      bar.rotation.z=Math.PI/2;
+      g.add(bar);
+    }
+  }
+  g.position.set(4,0,0);
+  g.userData = {type:'helix'};
+}
+
+/* ════════════════════════════════════════════════
+   SCROLL STATE & ANIMATION ENGINE
+════════════════════════════════════════════════ */
+const scroller = document.getElementById('scroller');
+const scrollContent = document.getElementById('scroll-content');
+
+let scrollY = 0, scrollTarget = 0;
+let currentSection = 0;
+
+// Each section = 1 viewport height of scroll
+scrollContent.style.height = (SECTIONS * 100) + 'vh';
+
+scroller.addEventListener('scroll', () => {
+  scrollTarget = scroller.scrollTop;
+}, { passive: true });
+
+function getSectionProgress() {
+  const vh = VH();
+  const totalScroll = scroller.scrollTop;
+  const secHeight = vh; // 1 VH per section
+  const sec = Math.floor(totalScroll / secHeight);
+  const prog = (totalScroll % secHeight) / secHeight; // 0→1 within section
+  return { sec: Math.min(sec, SECTIONS - 1), prog };
+}
+
+/* ── Update UI panels ── */
+const panels = document.querySelectorAll('.game-panel');
+function setActivePanel(idx) {
+  panels.forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+/* ── Update scroll indicator ── */
+const siDots = document.querySelectorAll('.si-dot');
+const siFills = [
+  document.getElementById('sif1'), document.getElementById('sif2'),
+  document.getElementById('sif3'), document.getElementById('sif4'), document.getElementById('sif5')
+];
+const secLabel = document.getElementById('sec-label');
+const secNames = ['Home','Eagle Flight','Void Interceptor','Neon Drift Racer','X/O Bot Duel','Profile'];
+
+function updateIndicator(sec, prog) {
+  siDots.forEach((d,i)=>d.classList.toggle('active',i===sec));
+  siFills.forEach((f,i)=>{
+    if(i<sec) f.style.height='100%';
+    else if(i===sec) f.style.height=(prog*100)+'%';
+    else f.style.height='0%';
+  });
+  secLabel.textContent=secNames[sec];
+  document.getElementById('nav').classList.toggle('solid',scroller.scrollTop>60);
+}
+
+/* ── 3D Object animations per section ── */
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function easeOut(t) { return 1 - Math.pow(1-t,3); }
+
+const clock = new THREE.Clock();
+let mouseX = 0, mouseY = 0, camX = 0, camY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / VW() - .5) * 2;
+  mouseY = (e.clientY / VH() - .5) * 2;
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  const dt = clock.getDelta ? 0.016 : 0.016;
+
+  // Smooth scroll
+  scrollY += (scrollTarget - scrollY) * 0.1;
+  const { sec, prog } = getSectionProgress();
+
+  // Update active section
+  if(sec !== currentSection) {
+    currentSection = sec;
+    setActivePanel(sec);
+  }
+  updateIndicator(sec, prog);
+
+  // Camera mouse parallax
+  camX += (mouseX * 1.8 - camX) * 0.028;
+  camY += (-mouseY * 1.0 - camY) * 0.028;
+  masterCam.position.x = camX;
+  masterCam.position.y = camY;
+
+  // Update 3D groups visibility
+  sectionGroups.forEach((grp, i) => {
+    // Show current and adjacent sections
+    const dist = Math.abs(i - sec);
+    grp.visible = dist <= 1;
+
+    if (!grp.visible) return;
+
+    // ── Calculate entrance progress ──
+    // When we're scrolling INTO section i (from sec i-1):
+    //   entranceT = 0 → 1 as section scrolls in
+    // When scrolling OUT (to section i+1):
+    //   exitT = 0 → 1 as section scrolls out
+
+    let enterT = 1.0, exitT = 0.0;
+    if (i === sec) {
+      enterT = 1.0; // fully in
+      exitT = 0.0;
+    } else if (i === sec - 1) {
+      // previous section: exiting upward
+      exitT = 1.0;
+      enterT = 0.0;
+    } else if (i === sec + 1) {
+      // next section: entering from below
+      enterT = 0.0;
+    }
+
+    // Override for transition region
+    if (i === sec) {
+      enterT = easeOut(Math.min(1, prog * 4)); // enters quickly
+      exitT = easeInOut(Math.max(0, (prog - 0.7) / 0.3)); // exits in last 30%
+    }
+
+    const el = easeOut(enterT);
+    const ex = easeOut(exitT);
+
+    // ── Position: fly in from right (enter) / fly out left (exit) ──
+    const baseX = grp.userData.baseX !== undefined ? grp.userData.baseX : 4.5;
+
+    if (i === 0) {
+      // Hero section: objects appear and spin
+      grp.position.x = lerp(18, baseX, el) - ex * 20;
+      grp.position.y = lerp(-3, 0, el) + ex * 3;
+      grp.rotation.y = lerp(-1.2, t * 0.18, el);
+      // Core spins
+      if (grp.userData.core) {
+        grp.userData.core.rotation.x = t * 0.28;
+        grp.userData.core.rotation.y = t * 0.40;
+        // Pulse scale
+        const pulse = 1 + Math.sin(t * 1.8) * 0.04;
+        grp.userData.core.scale.setScalar(pulse);
+      }
+      // Shards bob
+      grp.children.forEach((c, ci) => {
+        if (ci > 1) {
+          c.position.y += Math.sin(t * (.8 + ci * .12) + ci) * .003;
+          c.rotation.x += .008; c.rotation.y += .006;
+        }
+      });
+    } else if (i === 1) {
+      // Eagle: swoops in from top-right
+      grp.position.x = lerp(22, baseX, el) - ex * 18;
+      grp.position.y = lerp(10, 0, el) + ex * 8;
+      grp.rotation.z = lerp(.6, -.1 + Math.sin(t*.6)*.08, el) + ex * .4;
+      grp.rotation.y = -lerp(1,0,el)*0.8 + t*0.05;
+      grp.children.forEach((c,ci)=>{if(ci>5){c.rotation.x+=.01;c.rotation.y+=.007;}});
+    } else if (i === 2) {
+      // Ship: flies in from bottom, tilts into position
+      grp.position.x = lerp(24, baseX, el) - ex * 20;
+      grp.position.y = lerp(-8, 0, el) + ex * 6 + Math.sin(t*.7)*.15;
+      grp.rotation.y = lerp(1.5, .3 + Math.sin(t*.4)*.05, el);
+      grp.rotation.z = lerp(-.5, Math.sin(t*.5)*.04, el);
+      grp.rotation.x = lerp(.3, Math.sin(t*.35)*.03, el);
+    } else if (i === 3) {
+      // Car: drives in from right
+      grp.position.x = lerp(26, baseX, el) - ex * 22;
+      grp.position.y = lerp(-1.5, -.3, el) + ex * 1.5;
+      grp.rotation.y = lerp(-1.2, -.15, el) + ex * 1.0;
+      grp.rotation.z = lerp(0, Math.sin(t*.6)*.02, el);
+    } else if (i === 4) {
+      // XO: flips in from left
+      grp.position.x = lerp(-20, baseX, el) - ex * 18;
+      grp.position.y = lerp(6, 0, el) + ex * 5;
+      grp.rotation.y = lerp(-2, Math.sin(t*.3)*.08, el);
+      grp.rotation.z = lerp(.8, 0, el);
+      // Cubes float
+      grp.children.slice(-8).forEach((c,ci)=>{
+        c.position.y += Math.sin(t*(.6+ci*.15)+ci)*.005;
+        c.rotation.x+=.01;c.rotation.y+=.008;
+      });
+    } else if (i === 5) {
+      // Helix: rises from below
+      grp.position.x = lerp(20, baseX, el) - ex * 16;
+      grp.position.y = lerp(-12, 0, el) + ex * 8;
+      grp.rotation.y = t * 0.22;
+    }
+
+    // Universal: scale in on entrance
+    const sc = lerp(i===sec ? 0.6 : 1, 1, el) * (1 - ex * .3);
+    grp.scale.setScalar(Math.max(0.01, sc));
+  });
+
+  // Store base positions
+  [4.5, 4.5, 4, 4, 4.5, 4].forEach((bx, i) => { sectionGroups[i].userData.baseX = bx; });
+
+  // Planets rotate slowly
+  planets.forEach((p, i) => { p.rotation.y += .0015 * (i + 1); });
+
+  // Lights breathe
+  fillLight.intensity = 1.2 + Math.sin(t * .45) * .3;
+  rimLight.intensity = 0.9 + Math.cos(t * .38) * .25;
+
+  renderer.render(masterScene, masterCam);
+}
+
+/* ── Resize ── */
+window.addEventListener('resize', () => {
+  masterCam.aspect = VW() / VH();
+  masterCam.updateProjectionMatrix();
+  renderer.setSize(VW(), VH());
+});
+
+/* ── Jump to section ── */
+function jumpTo(idx) {
+  scroller.scrollTo({ top: idx * VH(), behavior: 'smooth' });
+}
+
+/* ── Custom cursor ── */
+(function() {
+  const dot = document.getElementById('cur-dot');
+  const ring = document.getElementById('cur-ring');
+  let cx=0,cy=0,rx=0,ry=0;
+  document.addEventListener('mousemove', e => { cx=e.clientX; cy=e.clientY; dot.style.left=cx+'px'; dot.style.top=cy+'px'; });
+  (function loop(){requestAnimationFrame(loop);rx+=(cx-rx)*.1;ry+=(cy-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';})();
+  document.querySelectorAll('.bp,.bg2,.gp-play,.ncta,.pb,.si-dot').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{ring.style.width='58px';ring.style.height='58px';ring.style.opacity='.4';});
+    el.addEventListener('mouseleave',()=>{ring.style.width='36px';ring.style.height='36px';ring.style.opacity='1';});
+  });
+})();
+
+/* ── Player data ── */
 const LS='yuvraj_player_data_v1';
 let pd={name:'',coins:0,xp:0,level:1};
 function loadPD(){try{const s=localStorage.getItem(LS);if(s)pd=JSON.parse(s);}catch(e){}}
@@ -1150,18 +852,37 @@ function updateUI(){
   document.getElementById('xpFill').style.width=(pd.xp%100)+'%';
 }
 function changeName(){const n=prompt('Enter new name:');if(n&&n.trim()){pd.name=n.trim();savePD();updateUI();}}
-function goTo(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});}
 loadPD();if(!pd.name){pd.name='Yuvraj Soni';savePD();}updateUI();
 
-/* ══════════════════════════════════════
-   BACKGROUND MUSIC
-══════════════════════════════════════ */
-const bgm=new Audio('bgm.mp3');
-bgm.loop=true;bgm.volume=0.3;
+/* ── Music ── */
+const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=.3;
 let ms=false;
-function startM(){if(ms)return;ms=true;bgm.play().catch(()=>{});}
-document.addEventListener('click',startM);
-document.addEventListener('touchstart',startM);
+document.addEventListener('click',()=>{if(!ms){ms=true;bgm.play().catch(()=>{});}});
+
+/* ── Loader ── */
+(function(){
+  const lp=document.getElementById('ldp'),lt=document.getElementById('ldt'),ldr=document.getElementById('loader');
+  const msgs=['Initialising…','Loading 3D…','Building world…','Ready!'];
+  let p=0;
+  const iv=setInterval(()=>{
+    p+=Math.random()*13+5;if(p>100)p=100;
+    lp.style.width=p+'%';
+    lt.textContent=msgs[Math.min(3,Math.floor(p/26))]+' '+Math.floor(p)+'%';
+    if(p>=100){
+      clearInterval(iv);
+      setTimeout(()=>{
+        ldr.classList.add('hide');
+        // Hero entrance
+        document.getElementById('heye').classList.add('in');
+        setTimeout(()=>document.querySelectorAll('.hli').forEach(e=>e.classList.add('in')),150);
+        setTimeout(()=>document.getElementById('hsub').classList.add('in'),420);
+        setTimeout(()=>document.getElementById('hbtns').classList.add('in'),620);
+      },350);
+    }
+  },60);
+})();
+
+animate();
 </script>
 </body>
 </html>
