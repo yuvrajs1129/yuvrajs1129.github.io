@@ -1,599 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Yuvraj Soni Arcade</title>
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #000000;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --accent: #00ffcc;
-    --border: rgba(255, 255, 255, 0.08);
-  }
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import Scene3D from "./components/Scene3D";
+import Cursor from "./components/Cursor";
+import Loader from "./components/Loader";
+import Navbar from "./components/Navbar";
+import Hero from "./components/Hero";
+import Marquee from "./components/Marquee";
+import Stats from "./components/Stats";
+import Games from "./components/Games";
+import About from "./components/About";
+import HowItWorks from "./components/HowItWorks";
+import Profile from "./components/Profile";
+import Footer from "./components/Footer";
+import GameModal from "./components/GameModal";
+import { usePlayer } from "./hooks/usePlayer";
+import { games, type Game } from "./data";
 
-  body, html {
-    background-color: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
-    margin: 0;
-    padding: 0;
-  }
+export default function App() {
+  const [ready, setReady] = useState(false);
+  const [activeGame, setActiveGame] = useState<Game | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const { player, setName, addReward } = usePlayer();
 
-  /* Typography */
-  h1, h2, h3, .mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
+  const reward = (coins: number, xp: number) => {
+    addReward(coins, xp);
+    setToast(`+${coins} coins · +${xp} XP earned!`);
+    setTimeout(() => setToast(null), 2600);
+  };
 
-  /* 3D Canvas Background */
-  #webgl-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 0;
-    pointer-events: none;
-  }
+  return (
+    <>
+      <Cursor />
+      <Loader onDone={() => setReady(true)} />
+      <Scene3D />
 
-  /* UI Overlay */
-  .ui-layer {
-    position: relative;
-    z-index: 10;
-  }
-
-  /* Noise Overlay */
-  .noise {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.04;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  }
-
-  /* Custom Styles */
-  .glass-panel {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-  }
-
-  .terminal-btn {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 0.75rem 1.5rem;
-    border: 1px solid var(--border);
-    background: rgba(0, 0, 0, 0.5);
-    color: var(--text);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .terminal-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0, 255, 204, 0.05);
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.15);
-  }
-
-  .terminal-btn.primary {
-    background: var(--accent);
-    color: #000;
-    border-color: var(--accent);
-  }
-  
-  .terminal-btn.primary:hover {
-    background: transparent;
-    color: var(--accent);
-  }
-
-  /* Grid lines */
-  .grid-bg {
-    background-image: 
-      linear-gradient(to right, var(--border) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
-    background-size: 4rem 4rem;
-    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
-  }
-
-  .reveal {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .reveal.active {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .scanner-line {
-    position: fixed;
-    top: -100px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--accent);
-    box-shadow: 0 0 20px 2px var(--accent);
-    opacity: 0.5;
-    z-index: 5;
-    pointer-events: none;
-    animation: scan 8s infinite linear;
-  }
-
-  @keyframes scan {
-    0% { top: -100px; opacity: 0; }
-    10% { opacity: 0.5; }
-    90% { opacity: 0.5; }
-    100% { top: 100vh; opacity: 0; }
-  }
-</style>
-</head>
-<body>
-
-  <!-- WebGL Background -->
-  <canvas id="webgl-canvas"></canvas>
-  <div class="noise"></div>
-  <div class="scanner-line"></div>
-
-  <!-- UI Layer -->
-  <div class="ui-layer">
-    <!-- Navbar -->
-    <nav class="fixed top-0 left-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="mono text-sm tracking-widest uppercase font-bold flex items-center gap-3">
-          <div class="w-2 h-2 bg-[#00ffcc] rounded-full animate-pulse"></div>
-          Yuvraj Soni Arcade
-        </div>
-        <div class="hidden md:flex gap-8 mono text-xs tracking-widest uppercase text-slate-400">
-          <a href="#home" class="hover:text-[#00ffcc] transition-colors">Home</a>
-          <a href="#games" class="hover:text-[#00ffcc] transition-colors">Games</a>
-          <a href="#profile" class="hover:text-[#00ffcc] transition-colors">Profile</a>
-        </div>
-        <button onclick="document.getElementById('games').scrollIntoView()" class="terminal-btn hidden md:flex">
-          Initialize
-        </button>
+      <div className="relative z-10">
+        <Navbar />
+        <Hero ready={ready} />
+        <Marquee />
+        <Stats />
+        <Games onPlay={setActiveGame} />
+        <About />
+        <HowItWorks />
+        <Profile player={player} setName={setName} />
+        <Footer onPlayGame={() => setActiveGame(games[3])} />
       </div>
-    </nav>
 
-    <!-- Content Wrapper -->
-    <main>
-      <!-- Hero Section -->
-      <section id="home" class="min-h-screen flex flex-col justify-center relative pt-20">
-        <div class="absolute inset-0 grid-bg opacity-30 z-[-1]"></div>
-        <div class="max-w-7xl mx-auto px-6 w-full">
-          <div class="reveal mono text-xs text-[#00ffcc] tracking-[0.2em] mb-6 uppercase flex items-center gap-4">
-            <span class="w-8 h-[1px] bg-[#00ffcc]"></span>
-            Independent Arcade · Est. 2026
-          </div>
-          <h1 class="reveal text-5xl md:text-7xl lg:text-[100px] font-bold tracking-tighter leading-[0.9] uppercase text-white">
-            Play in<br>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-500">Another</span><br>
-            Dimension.
-          </h1>
-          <p class="reveal mt-8 max-w-xl text-slate-400 text-base md:text-lg leading-relaxed border-l-2 border-[#00ffcc] pl-6 py-2">
-            A hand-built collection of four arcade games by Yuvraj Soni — one profile, infinite progression, zero shortcuts.
-          </p>
-          <div class="reveal mt-12 flex flex-wrap gap-4">
-            <button onclick="document.getElementById('games').scrollIntoView()" class="terminal-btn primary">
-              Enter the Arcade
-            </button>
-            <button onclick="document.getElementById('profile').scrollIntoView()" class="terminal-btn">
-              View Profile
-            </button>
-          </div>
-        </div>
-      </section>
+      <GameModal
+        game={activeGame}
+        onClose={() => setActiveGame(null)}
+        onReward={reward}
+      />
 
-      <!-- Games Section -->
-      <section id="games" class="min-h-screen py-32 border-t border-white/10 relative">
-        <div class="max-w-7xl mx-auto px-6">
-          <div class="reveal mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <div class="mono text-xs text-[#00ffcc] tracking-[0.2em] mb-4 uppercase">System Catalog</div>
-              <h2 class="text-4xl md:text-5xl font-bold uppercase tracking-tight">Active Nodes</h2>
-            </div>
-            <p class="text-slate-400 text-sm max-w-sm">Select a module to initiate connection sequence.</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Game 1 -->
-            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
-              <div class="flex justify-between items-start mb-8">
-                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">01</span>
-                <div class="flex gap-2">
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Endless</span>
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Skill</span>
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">Eagle Flight</h3>
-              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
-                Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and chain higher multipliers. Every run is different.
-              </p>
-              <button onclick="location.href='eagle.html'" class="terminal-btn w-full">Deploy Node</button>
-            </div>
-
-            <!-- Game 2 -->
-            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
-              <div class="flex justify-between items-start mb-8">
-                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">02</span>
-                <div class="flex gap-2">
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">3D Engine</span>
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Upgrades</span>
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">Void Interceptor</h3>
-              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
-                Full Three.js 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, upgrade your ship between waves, and defeat the boss.
-              </p>
-              <button onclick="location.href='space.html'" class="terminal-btn w-full">Deploy Node</button>
-            </div>
-
-            <!-- Game 3 -->
-            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
-              <div class="flex justify-between items-start mb-8">
-                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">03</span>
-                <div class="flex gap-2">
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Racing</span>
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Combos</span>
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">Neon Drift Racer</h3>
-              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
-                Race through a neon city highway in full 3D. Dodge oncoming traffic, chain near-misses for combo bonuses, and push your distance record.
-              </p>
-              <button onclick="location.href='drift.html'" class="terminal-btn w-full">Deploy Node</button>
-            </div>
-
-            <!-- Game 4 -->
-            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
-              <div class="flex justify-between items-start mb-8">
-                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">04</span>
-                <div class="flex gap-2">
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Strategy</span>
-                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">1v1 AI</span>
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">X/O Bot Duel</h3>
-              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
-                A tactical battle against an AI opponent that adapts to every move. Simple to understand, genuinely hard to master — the thinking person's game.
-              </p>
-              <button onclick="location.href='xo.html'" class="terminal-btn w-full">Deploy Node</button>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      <!-- Profile Section -->
-      <section id="profile" class="min-h-screen py-32 border-t border-white/10 relative flex flex-col justify-center">
-        <div class="max-w-7xl mx-auto px-6 w-full">
-          <div class="reveal mono text-xs text-[#00ffcc] tracking-[0.2em] mb-4 uppercase">Identity</div>
-          <h2 class="reveal text-4xl md:text-5xl font-bold uppercase tracking-tight mb-16">Operator Profile</h2>
-
-          <div class="reveal glass-panel p-8 md:p-12 max-w-2xl relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-6 opacity-10 mono text-6xl font-bold pointer-events-none">ID</div>
-            
-            <div class="flex flex-col gap-6 mono uppercase tracking-wider text-sm">
-              <div class="flex flex-col md:flex-row md:items-center justify-between py-4 border-b border-white/10">
-                <span class="text-slate-500 mb-2 md:mb-0">Operator Name</span>
-                <span id="playerName" class="text-lg text-white font-bold">Yuvraj Soni</span>
-              </div>
-              <div class="flex flex-col md:flex-row md:items-center justify-between py-4 border-b border-white/10">
-                <span class="text-slate-500 mb-2 md:mb-0">Security Level</span>
-                <span class="text-[#00ffcc] font-bold">LVL <span id="playerLevel">1</span></span>
-              </div>
-              <div class="flex flex-col md:flex-row md:items-center justify-between py-4 border-b border-white/10">
-                <span class="text-slate-500 mb-2 md:mb-0">Credits</span>
-                <span id="playerCoins" class="text-white">0</span>
-              </div>
-              <div class="flex flex-col md:flex-row md:items-center justify-between py-4">
-                <span class="text-slate-500 mb-2 md:mb-0">Experience Data</span>
-                <span id="playerXP" class="text-white">0 / 100</span>
-              </div>
-            </div>
-
-            <div class="mt-10 pt-8 border-t border-white/10 flex gap-4">
-              <button onclick="changeName()" class="terminal-btn">Update Identity</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Footer -->
-      <footer class="py-8 border-t border-white/10 text-center mono text-xs text-slate-600 uppercase tracking-widest">
-        System Operational · Yuvraj Soni Arcade © 2026
-      </footer>
-
-    </main>
-  </div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
-  
-  <script>
-    // --- UI Logic ---
-
-    // Smooth Scrolling (Lenis)
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true
-    });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-
-    // Scroll Observer for Reveal Animations
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('active');
-        }
-      });
-    }, { threshold: 0.1 });
-
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-
-    // Player Data Management
-    const LS_KEY = 'yuvraj_player_data_v1';
-    let pd = { name: 'Yuvraj Soni', coins: 0, xp: 0, level: 1 };
-    
-    function loadData() {
-      try {
-        const s = localStorage.getItem(LS_KEY);
-        if (s) pd = JSON.parse(s);
-      } catch (e) {}
-    }
-
-    function saveData() {
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify(pd));
-      } catch (e) {}
-    }
-
-    function updateUI() {
-      document.getElementById('playerName').textContent = pd.name || 'Unknown';
-      document.getElementById('playerCoins').textContent = pd.coins || 0;
-      document.getElementById('playerXP').textContent = (pd.xp || 0) + ' / 100';
-      document.getElementById('playerLevel').textContent = pd.level || 1;
-    }
-
-    function changeName() {
-      const n = prompt('Enter new Operator Name:');
-      if (n && n.trim()) {
-        pd.name = n.trim();
-        saveData();
-        updateUI();
-      }
-    }
-
-    // Initialize Data
-    loadData();
-    updateUI();
-
-
-    // --- Three.js LiDAR Point Cloud Simulation ---
-    
-    const canvas = document.getElementById('webgl-canvas');
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.015);
-
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    // Start camera high up, looking down slightly
-    camera.position.set(0, 15, 40);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000);
-
-    // Group to hold the entire city point cloud
-    const pointCloudGroup = new THREE.Group();
-    scene.add(pointCloudGroup);
-
-    // Function to generate LiDAR city data
-    function createLiDARCity() {
-      const positions = [];
-      const colors = [];
-      
-      const colorBase = new THREE.Color(0x334455);    // Dim slate
-      const colorHighlight = new THREE.Color(0x00ffcc); // Terminal Cyan
-      
-      // 1. Generate Ground Grid
-      for(let x = -80; x <= 80; x += 1.5) {
-        for(let z = -80; z <= 80; z += 1.5) {
-          if (Math.random() > 0.6) continue; // Sparse ground
-          positions.push(x, 0, z);
-          
-          // Occasional highlighted ground point
-          if (Math.random() > 0.98) {
-            colors.push(colorHighlight.r, colorHighlight.g, colorHighlight.b);
-          } else {
-            colors.push(colorBase.r, colorBase.g, colorBase.b);
-          }
-        }
-      }
-
-      // 2. Generate Abstract Server/Building Blocks
-      for (let b = 0; b < 120; b++) {
-        // Random position on the grid
-        const cx = (Math.random() - 0.5) * 120;
-        const cz = (Math.random() - 0.5) * 120;
-        
-        // Random dimensions
-        const width = 2 + Math.random() * 6;
-        const depth = 2 + Math.random() * 6;
-        const height = 2 + Math.random() * 20;
-
-        // Density of points based on size
-        const surfacePoints = Math.floor((width * depth * height) * 5);
-
-        for (let p = 0; p < surfacePoints; p++) {
-          let px = cx, py = 0, pz = cz;
-          
-          // Pick a random face (0: Front, 1: Back, 2: Left, 3: Right, 4: Top)
-          const face = Math.floor(Math.random() * 5);
-          
-          if (face === 0) {
-            px += (Math.random() - 0.5) * width;
-            pz += depth / 2;
-            py += Math.random() * height;
-          } else if (face === 1) {
-            px += (Math.random() - 0.5) * width;
-            pz -= depth / 2;
-            py += Math.random() * height;
-          } else if (face === 2) {
-            px += width / 2;
-            pz += (Math.random() - 0.5) * depth;
-            py += Math.random() * height;
-          } else if (face === 3) {
-            px -= width / 2;
-            pz += (Math.random() - 0.5) * depth;
-            py += Math.random() * height;
-          } else {
-            px += (Math.random() - 0.5) * width;
-            pz += (Math.random() - 0.5) * depth;
-            py += height;
-          }
-
-          positions.push(px, py, pz);
-
-          // Color assignment: mostly base, some highlight edges
-          const isEdge = (py > height - 0.5) || Math.random() > 0.95;
-          if (isEdge) {
-            colors.push(colorHighlight.r, colorHighlight.g, colorHighlight.b);
-          } else {
-            colors.push(colorBase.r, colorBase.g, colorBase.b);
-          }
-        }
-      }
-
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-      const material = new THREE.PointsMaterial({
-        size: 0.08,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending,
-        sizeAttenuation: true
-      });
-
-      const pointsMesh = new THREE.Points(geometry, material);
-      pointCloudGroup.add(pointsMesh);
-    }
-
-    createLiDARCity();
-
-    // Data streams (falling particles)
-    const streamGeo = new THREE.BufferGeometry();
-    const streamCount = 1000;
-    const streamPos = new Float32Array(streamCount * 3);
-    const streamSpeeds = new Float32Array(streamCount);
-    
-    for(let i=0; i<streamCount; i++) {
-      streamPos[i*3] = (Math.random() - 0.5) * 100;
-      streamPos[i*3+1] = Math.random() * 40;
-      streamPos[i*3+2] = (Math.random() - 0.5) * 100;
-      streamSpeeds[i] = 0.1 + Math.random() * 0.4;
-    }
-    streamGeo.setAttribute('position', new THREE.BufferAttribute(streamPos, 3));
-    
-    const streamMat = new THREE.PointsMaterial({
-      color: 0x00ffcc,
-      size: 0.15,
-      transparent: true,
-      opacity: 0.6,
-      blending: THREE.AdditiveBlending
-    });
-    const streams = new THREE.Points(streamGeo, streamMat);
-    scene.add(streams);
-
-    // Mouse and Scroll tracking
-    let targetX = 0;
-    let targetY = 0;
-    let scrollProgress = 0;
-
-    window.addEventListener('mousemove', (e) => {
-      // Normalize mouse to -1 to 1
-      targetX = (e.clientX / window.innerWidth) * 2 - 1;
-      targetY = -(e.clientY / window.innerHeight) * 2 + 1;
-    });
-
-    window.addEventListener('scroll', () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      scrollProgress = window.scrollY / maxScroll;
-    });
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // Animation Loop
-    const clock = new THREE.Clock();
-
-    function animate() {
-      requestAnimationFrame(animate);
-      const time = clock.getElapsedTime();
-
-      // Slow continuous rotation of the city
-      pointCloudGroup.rotation.y = time * 0.02;
-
-      // Animate falling data streams
-      const positions = streamGeo.attributes.position.array;
-      for(let i=0; i<streamCount; i++) {
-        positions[i*3+1] -= streamSpeeds[i];
-        if (positions[i*3+1] < 0) {
-          positions[i*3+1] = 40; // reset to top
-        }
-      }
-      streamGeo.attributes.position.needsUpdate = true;
-
-      // Camera parallax based on mouse
-      const camTargetX = targetX * 10;
-      const camTargetY = 15 + targetY * 5;
-      
-      // Camera moves forward into the city based on scroll
-      // Start at z=50, go deep to z=0
-      const camTargetZ = 50 - (scrollProgress * 40);
-
-      // Smooth camera interpolation
-      camera.position.x += (camTargetX - camera.position.x) * 0.05;
-      camera.position.y += (camTargetY - camera.position.y) * 0.05;
-      camera.position.z += (camTargetZ - camera.position.z) * 0.05;
-
-      // Keep camera looking at the center
-      camera.lookAt(0, 5, 0);
-
-      renderer.render(scene, camera);
-    }
-
-    animate();
-  </script>
-</body>
-</html>
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 30, x: "-50%" }}
+            className="font-mono fixed bottom-8 left-1/2 z-[7500] rounded-full border border-[rgba(0,229,255,0.4)] bg-[#070710] px-6 py-3 text-[13px] tracking-wide text-[var(--c)] shadow-[0_0_40px_rgba(0,229,255,0.25)]"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
