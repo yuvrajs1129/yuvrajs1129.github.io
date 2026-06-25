@@ -2,1489 +2,598 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yuvraj Soni Arcade — Terminal Operating System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
-<!-- Tailwind CSS for modern layout grids -->
+<title>Yuvraj Soni Arcade</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --c: #00e5ff; /* Hyper Cyan */
-  --v: #7c4dff; /* Electric Purple */
-  --m: #ff2d78; /* Neon Pink */
-  --g: #00ff88; /* Matrix Green */
-  --bg: #000000;
-  --t: #f0f4ff;
-  --td: #4a5060;
-  --tm: #8a90a8;
-}
+  :root {
+    --bg: #000000;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #00ffcc;
+    --border: rgba(255, 255, 255, 0.08);
+  }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  user-select: none;
-}
+  body, html {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+  }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: var(--bg);
-  color: var(--t);
-  font-family: 'Space Grotesk', sans-serif;
-}
+  /* Typography */
+  h1, h2, h3, .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
 
-::selection {
-  background: var(--c);
-  color: #000;
-}
+  /* 3D Canvas Background */
+  #webgl-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+  }
 
-/* CUSTOM SPRING CURSOR */
-#cdot {
-  position: fixed;
-  width: 6px;
-  height: 6px;
-  background: #fff;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%, -50%);
-  mix-blend-mode: difference;
-}
-#cring {
-  position: fixed;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9998;
-  transform: translate(-50%, -50%);
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
-  mix-blend-mode: difference;
-}
-#cring.hover {
-  width: 65px;
-  height: 65px;
-  border-color: var(--c);
-  border-width: 1px;
-}
+  /* UI Overlay */
+  .ui-layer {
+    position: relative;
+    z-index: 10;
+  }
 
-/* CUSTOM HARDWARE GRID BORDERS */
-.hud-line-h {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.05);
-  z-index: 200;
-  pointer-events: none;
-}
-.hud-line-v {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(255, 255, 255, 0.05);
-  z-index: 200;
-  pointer-events: none;
-}
+  /* Noise Overlay */
+  .noise {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
 
-/* LOADER OS STYLE */
-#ldr {
-  position: fixed;
-  inset: 0;
-  z-index: 8000;
-  background: #000000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
-}
-#ldr.out {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.ld-bracket {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 40px 60px;
-  background: rgba(3, 3, 7, 0.85);
-  backdrop-filter: blur(20px);
-  position: relative;
-  text-align: center;
-}
-.ld-bracket::before, .ld-bracket::after, .ld-bracket > .corner-tl, .ld-bracket > .corner-tr {
-  content: '';
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-color: var(--c);
-  border-style: solid;
-}
-.ld-bracket::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
-.ld-bracket::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
-.ld-bracket > .corner-tl { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
-.ld-bracket > .corner-tr { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+  /* Custom Styles */
+  .glass-panel {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+  }
 
-/* SCANNER SWEEP EFFECT */
-.scanline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--c), transparent);
-  opacity: 0.15;
-  animation: sweep 4s linear infinite;
-  pointer-events: none;
-}
-@keyframes sweep {
-  0% { top: 0%; }
-  100% { top: 100%; }
-}
+  .terminal-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--text);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-/* TERMINAL LOG PANEL */
-#term-log::-webkit-scrollbar {
-  width: 3px;
-}
-#term-log::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-}
+  .terminal-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0, 255, 204, 0.05);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.15);
+  }
 
-/* THREE CANVAS */
-#bg3d {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-}
+  .terminal-btn.primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+  
+  .terminal-btn.primary:hover {
+    background: transparent;
+    color: var(--accent);
+  }
 
-/* SECTIONS WRAPPER */
-#wrapper {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
-}
+  /* Grid lines */
+  .grid-bg {
+    background-image: 
+      linear-gradient(to right, var(--border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 4rem 4rem;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  }
 
-/* EACH FULL-SCREEN PANEL */
-.panel {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  padding: 0 8% 0 14%;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(30px) scale(0.98);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.panel.active {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0) scale(1);
-}
-.panel.exit-up {
-  opacity: 0;
-  transform: translateY(-40px) scale(0.97);
-  pointer-events: none;
-}
-.panel.exit-down {
-  opacity: 0;
-  transform: translateY(40px) scale(0.97);
-  pointer-events: none;
-}
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+  }
 
-/* TEXT ANIMATIONS */
-.typing-text {
-  font-family: 'JetBrains Mono', monospace;
-}
+  .scanner-line {
+    position: fixed;
+    top: -100px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 20px 2px var(--accent);
+    opacity: 0.5;
+    z-index: 5;
+    pointer-events: none;
+    animation: scan 8s infinite linear;
+  }
 
-/* CUSTOM NAV HOVER */
-.nav-link {
-  position: relative;
-  transition: color 0.3s;
-}
-.nav-link::after {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  width: 0;
-  height: 1px;
-  background: var(--c);
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.nav-link:hover {
-  color: #fff;
-}
-.nav-link:hover::after {
-  width: 100%;
-}
-
-/* ADVANCED CYBERNETIC PLAY BUTTONS */
-.cyber-btn {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--t);
-  position: relative;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.cyber-btn::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 2px;
-  background: var(--c);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.cyber-btn:hover {
-  background: rgba(0, 229, 255, 0.06);
-  border-color: var(--c);
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
-  transform: translateY(-2px);
-}
-.cyber-btn:hover::before {
-  width: 100%;
-  opacity: 0.05;
-}
-
-/* DOT NAV ON THE LEFT */
-.hud-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-}
-.hud-dot::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hud-dot.active {
-  background: var(--c);
-  box-shadow: 0 0 10px var(--c);
-  transform: scale(1.3);
-}
-.hud-dot.active::after {
-  border-color: var(--c);
-  transform: scale(1.2);
-}
+  @keyframes scan {
+    0% { top: -100px; opacity: 0; }
+    10% { opacity: 0.5; }
+    90% { opacity: 0.5; }
+    100% { top: 100vh; opacity: 0; }
+  }
 </style>
 </head>
-<body class="bg-black text-[#f0f4ff] font-sans antialiased overflow-hidden">
+<body>
 
-<!-- STYLIZED HUD BORDERS -->
-<div class="hud-line-h" style="top: 75px;"></div>
-<div class="hud-line-h" style="bottom: 75px;"></div>
-<div class="hud-line-v" style="left: 80px;"></div>
-<div class="hud-line-v" style="right: 80px;"></div>
+  <!-- WebGL Background -->
+  <canvas id="webgl-canvas"></canvas>
+  <div class="noise"></div>
+  <div class="scanner-line"></div>
 
-<!-- SCI-FI CORNER DECORATIONS -->
-<div class="fixed top-[67px] left-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">+ L1</div>
-<div class="fixed top-[67px] right-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">R1 +</div>
-<div class="fixed bottom-[67px] left-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">+ L2</div>
-<div class="fixed bottom-[67px] right-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">R2 +</div>
-
-<!-- CURSOR -->
-<div id="cdot"></div>
-<div id="cring"></div>
-
-<!-- LOADER -->
-<div id="ldr">
-  <div class="scanline"></div>
-  <div class="ld-bracket max-w-sm w-full mx-4">
-    <div class="corner-tl"></div>
-    <div class="corner-tr"></div>
-    <div class="font-mono text-[11px] tracking-[0.3em] text-[#00e5ff] uppercase mb-4">SYSTEM BOOT IN PROGRESS</div>
-    <div class="text-white font-semibold tracking-wider text-xl mb-6 font-mono">YUVRAJ_SONI_ARCADE</div>
-    <div class="w-full h-[1px] bg-white/10 mb-4 overflow-hidden relative">
-      <div id="lf" class="h-full w-0 bg-gradient-to-r from-[#00e5ff] to-[#7c4dff] transition-all duration-[40ms]"></div>
-    </div>
-    <div id="lt" class="font-mono text-[10px] text-white/40 tracking-widest uppercase">INITIALIZING SECTORS: 0%</div>
-  </div>
-</div>
-
-<!-- THREE.JS CANVAS -->
-<div id="bg3d"></div>
-
-<!-- ================= TOP HUD HEADER ================= -->
-<header class="fixed top-0 left-0 right-0 h-[75px] z-[300] flex items-center justify-between px-10 pointer-events-auto">
-  <!-- Brand Area -->
-  <div class="flex items-center gap-4 cursor-pointer" onclick="goTo(0)">
-    <div class="w-3 h-3 border border-[#00e5ff] rotate-45 relative animate-pulse">
-      <div class="absolute inset-[2px] bg-[#00e5ff]"></div>
-    </div>
-    <div class="font-mono text-[11px] tracking-[0.25em] text-white font-bold uppercase hover:text-[#00e5ff] transition-colors">
-      YUVRAJ SONI <span class="text-white/40 font-normal">// ARCADE OS</span>
-    </div>
-  </div>
-
-  <!-- Technical Diagnostic Center -->
-  <div class="hidden lg:flex items-center gap-12 font-mono text-[9px] text-white/40">
-    <div class="flex flex-col">
-      <span class="text-white/20">AGENTIC NODE ID</span>
-      <span class="text-[#00e5ff]" id="hud-node-id">SYS.SEC_00 // INITIAL</span>
-    </div>
-    <div class="flex flex-col">
-      <span class="text-white/20">COORDS MATRIX</span>
-      <span id="hud-coords" class="text-white/60">X: 0.000 // Y: 0.000</span>
-    </div>
-    <div class="flex flex-col">
-      <span class="text-white/20">DECISION CORE</span>
-      <span class="text-[#00ff88]">OPTIMAL [99.8% STABILITY]</span>
-    </div>
-  </div>
-
-  <!-- Quick Access Nav -->
-  <div class="flex items-center gap-8 font-mono text-[10px] tracking-widest text-white/50">
-    <nav class="hidden md:flex items-center gap-8">
-      <a class="nav-link cursor-pointer" onclick="goTo(0)">HOME</a>
-      <a class="nav-link cursor-pointer" onclick="goTo(1)">ARCADE</a>
-      <a class="nav-link cursor-pointer" onclick="goTo(5)">AGENT_PROFILE</a>
+  <!-- UI Layer -->
+  <div class="ui-layer">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="mono text-sm tracking-widest uppercase font-bold flex items-center gap-3">
+          <div class="w-2 h-2 bg-[#00ffcc] rounded-full animate-pulse"></div>
+          Yuvraj Soni Arcade
+        </div>
+        <div class="hidden md:flex gap-8 mono text-xs tracking-widest uppercase text-slate-400">
+          <a href="#home" class="hover:text-[#00ffcc] transition-colors">Home</a>
+          <a href="#games" class="hover:text-[#00ffcc] transition-colors">Games</a>
+          <a href="#profile" class="hover:text-[#00ffcc] transition-colors">Profile</a>
+        </div>
+        <button onclick="document.getElementById('games').scrollIntoView()" class="terminal-btn hidden md:flex">
+          Initialize
+        </button>
+      </div>
     </nav>
-    <button onclick="goTo(5)" class="px-5 py-2 border border-white/10 hover:border-[#00e5ff]/50 bg-white/[0.02] text-white hover:text-[#00e5ff] text-[9px] tracking-[0.18em] font-mono transition-all rounded-[2px] cursor-pointer">
-      PLAYER_SEC
-    </button>
-  </div>
-</header>
 
-<!-- ================= LEFT HUD NAV BAR ================= -->
-<aside class="fixed top-[75px] bottom-[75px] left-0 w-[80px] z-[300] flex flex-col items-center justify-between py-10 pointer-events-auto">
-  <div class="font-mono text-[9px] text-white/20 tracking-widest writing-vertical-lr select-none uppercase">
-    TERMINAL INDUSTRIES INC.
-  </div>
-  
-  <!-- Vertical Dot Navigation -->
-  <div id="dots" class="flex flex-col gap-6">
-    <div class="hud-dot active cursor-pointer" onclick="goTo(0)" title="SYS.HOME"></div>
-    <div class="hud-dot cursor-pointer" onclick="goTo(1)" title="SYS.EAGLE"></div>
-    <div class="hud-dot cursor-pointer" onclick="goTo(2)" title="SYS.VOID"></div>
-    <div class="hud-dot cursor-pointer" onclick="goTo(3)" title="SYS.NEON"></div>
-    <div class="hud-dot cursor-pointer" onclick="goTo(4)" title="SYS.XOBOT"></div>
-    <div class="hud-dot cursor-pointer" onclick="goTo(5)" title="SYS.PROFILE"></div>
-  </div>
-
-  <div class="font-mono text-[10px] text-[#00e5ff] font-bold">
-    N°<span id="hud-page-index">00</span>
-  </div>
-</aside>
-
-<!-- ================= RIGHT HUD DATA SPEC BAR ================= -->
-<aside class="fixed top-[75px] bottom-[75px] right-0 w-[80px] z-[300] flex flex-col items-center justify-between py-8 pointer-events-none">
-  <div class="font-mono text-[9px] text-white/20 tracking-widest writing-vertical-lr uppercase">
-    OPERATIONAL DATAGRAM
-  </div>
-  
-  <div class="flex flex-col gap-8 items-center font-mono text-[9px]">
-    <div class="rotate-90 origin-center text-white/30 tracking-widest w-16 text-center">HUD_STATUS</div>
-    <!-- Glowing system pulse indicator -->
-    <div class="relative w-2 h-2 rounded-poly">
-      <span class="absolute inline-flex h-full w-full rounded-full bg-[#00ff88] opacity-75 animate-ping"></span>
-      <span class="relative inline-flex rounded-full h-2 w-2 bg-[#00ff88]"></span>
-    </div>
-  </div>
-
-  <div class="font-mono text-[9px] text-white/20 tracking-widest writing-vertical-lr uppercase">
-    YUV_ARC_PRTCL_v1
-  </div>
-</aside>
-
-<!-- ================= BOTTOM HUD TERMINAL FEED ================= -->
-<footer class="fixed bottom-0 left-0 right-0 h-[75px] z-[300] flex items-center justify-between px-10 pointer-events-auto">
-  <!-- Live simulated scrolling terminal feed -->
-  <div class="flex items-center gap-6 max-w-xl w-full">
-    <div class="font-mono text-[8px] text-white/20 uppercase tracking-widest flex flex-col border-r border-white/10 pr-6 shrink-0">
-      <span>SYSTEM_FEED</span>
-      <span class="text-[#00e5ff]" id="diag-fps">FPS: 60 // PING: 12ms</span>
-    </div>
-    <div id="term-log" class="font-mono text-[8px] text-white/40 h-[45px] overflow-y-auto w-full flex flex-col gap-1 select-text scroll-smooth">
-      <div class="text-[#00ff88]">> CORE OS INITIATED SUCCESSFULLY. ALL SYSTEMS ONLINE.</div>
-      <div class="text-white/30">> CONNECTING TO WEBG_GRAPHICS_LAYER... [OK]</div>
-    </div>
-  </div>
-
-  <!-- Real time clock -->
-  <div class="hidden md:flex items-center gap-8 font-mono text-[10px] text-white/30 tracking-widest">
-    <div>
-      <span class="text-white/10">STATION_LOCAL //</span> <span id="hud-clock">12:44:02 PM</span>
-    </div>
-    <div class="w-12 h-[1px] bg-white/10"></div>
-    <div class="text-[#00e5ff]">
-      ARCADE_READY
-    </div>
-  </div>
-</footer>
-
-<!-- ================= STORYTELLING TEXT PANELS ================= -->
-<div id="wrapper">
-
-  <!-- ================= NODE 00: HOME HERO ================= -->
-  <div class="panel active" id="p0">
-    <div class="max-w-2xl text-left flex flex-col items-start">
-      <div class="font-mono text-[10px] tracking-[0.3em] text-[#00e5ff] uppercase mb-6 flex items-center gap-3">
-        <span class="w-[5px] h-[5px] rounded-full bg-[#00e5ff] animate-ping"></span>
-        OPERATING SYSTEM NODE: 00 // GLOBAL HUB
-      </div>
-      
-      <h1 class="text-6xl md:text-8xl font-extrabold tracking-[-0.04em] leading-[0.9] uppercase text-white mb-6">
-        ENGINES OF<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00e5ff] via-[#7c4dff] to-[#ff2d78] bg-[size:200%] animate-[gws_6s_ease-in-out_infinite]">ARCADE</span><br>DECISION.
-      </h1>
-      
-      <p class="text-white/50 text-[14px] md:text-[15px] leading-relaxed max-w-lg mb-10 font-sans tracking-wide">
-        Welcome to Yuvraj Soni's high-tech interactive 3D gaming ecosystem. Multi-dimensional simulations running directly on hardware compilers. Zero shortcuts, pure performance.
-      </p>
-
-      <div class="flex flex-wrap gap-4">
-        <button onclick="goTo(1)" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3">
-          <svg class="w-3 h-3 text-[#00e5ff]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          INITIATE_ARCADE
-        </button>
-        <button onclick="goTo(5)" class="px-8 py-4 bg-white/5 border border-white/10 hover:border-white/20 font-mono text-[11px] tracking-[0.2em] rounded-[2px] transition-all cursor-pointer">
-          VIEW_SYSTEM_ID
-        </button>
-      </div>
-
-      <!-- Instruction Scroll hint -->
-      <div class="mt-12 flex items-center gap-4 font-mono text-[9px] text-white/30 tracking-widest">
-        <span>ROTATE MOUSE TO AIM // SCROLL TO COMMENCE FLIGHT</span>
-        <div class="w-10 h-[1px] bg-white/10 relative overflow-hidden">
-          <div class="absolute inset-0 bg-[#00e5ff] translate-x-[-100%] animate-[hdrop_2s_ease-in-out_infinite]"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= NODE 01: EAGLE FLIGHT ================= -->
-  <div class="panel" id="p1">
-    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
-      <div class="lg:col-span-6 flex flex-col items-start justify-center">
-        <div class="font-mono text-[10px] tracking-[0.3em] text-[#00e5ff] uppercase mb-4">
-          SYSTEM NODE // 01 — SIMULATOR ENGINE
-        </div>
-        
-        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
-          EAGLE<br>FLIGHT
-        </h2>
-        
-        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
-          Glide through a dynamically morphing polygonal mountain range at breakneck speeds. Lock coordinates, capture flight markers, and maintain altitude to build your score multipliers.
-        </p>
-
-        <!-- Technical specs panel typical of Terminal Industries -->
-        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">CORE ENGINE_MODULE</span>
-            <span class="text-[#00e5ff]">3D_POLYGONAL_SIM</span>
+    <!-- Content Wrapper -->
+    <main>
+      <!-- Hero Section -->
+      <section id="home" class="min-h-screen flex flex-col justify-center relative pt-20">
+        <div class="absolute inset-0 grid-bg opacity-30 z-[-1]"></div>
+        <div class="max-w-7xl mx-auto px-6 w-full">
+          <div class="reveal mono text-xs text-[#00ffcc] tracking-[0.2em] mb-6 uppercase flex items-center gap-4">
+            <span class="w-8 h-[1px] bg-[#00ffcc]"></span>
+            Independent Arcade · Est. 2026
           </div>
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">DIFFICULTY RATING</span>
-            <span class="text-white font-semibold">ELITE [LVL_04]</span>
-          </div>
-          <div class="flex justify-between pb-1">
-            <span class="text-white/20">REFLEX COEF_SPEED</span>
-            <span class="text-white font-semibold">9.8M/S^2</span>
-          </div>
-        </div>
-
-        <button onclick="location.href='eagle.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3">
-          <svg class="w-3 h-3 text-[#00e5ff]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          EXECUTE_EAGLE_MODULE.SYS
-        </button>
-      </div>
-      
-      <!-- Big side technical tag -->
-      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
-        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
-          SYS_01
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= NODE 02: VOID INTERCEPTOR ================= -->
-  <div class="panel" id="p2">
-    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
-      <div class="lg:col-span-6 flex flex-col items-start justify-center">
-        <div class="font-mono text-[10px] tracking-[0.3em] text-[#7c4dff] uppercase mb-4">
-          SYSTEM NODE // 02 — COMBAT ENGINE
-        </div>
-        
-        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
-          VOID<br>INTERCEPTOR
-        </h2>
-        
-        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
-          Pilot through a high-density, randomized debris asteroid cluster. Mount plasma cannons, track alien vector readings, and eliminate the Sentinel Void boss blockades.
-        </p>
-
-        <!-- Technical specs panel -->
-        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">WEAPONS SYSTEM</span>
-            <span class="text-[#7c4dff]">PLASMA_CANNONS_V3</span>
-          </div>
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">TARGETING RETICLE</span>
-            <span class="text-[#00e5ff]">AUTO_LOCK_VECTOR</span>
-          </div>
-          <div class="flex justify-between pb-1">
-            <span class="text-white/20">GPU COMPILER ENGINE</span>
-            <span class="text-white font-semibold">THREE.WEBGL_SHADERS</span>
-          </div>
-        </div>
-
-        <button onclick="location.href='space.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3" style="border-left-color: var(--v);">
-          <svg class="w-3 h-3 text-[#7c4dff]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          EXECUTE_VOID_MODULE.SYS
-        </button>
-      </div>
-      
-      <!-- Big side technical tag -->
-      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
-        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
-          SYS_02
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= NODE 03: NEON DRIFT RACER ================= -->
-  <div class="panel" id="p3">
-    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
-      <div class="lg:col-span-6 flex flex-col items-start justify-center">
-        <div class="font-mono text-[10px] tracking-[0.3em] text-[#00ff88] uppercase mb-4">
-          SYSTEM NODE // 03 — DYNAMICS ENGINE
-        </div>
-        
-        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
-          NEON DRIFT<br>RACER
-        </h2>
-        
-        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
-          Propel through hyper-velocity neon traffic grids in full simulated 3D geometry. Calculate extreme drifts, trigger proximity combo metrics, and survive as long as possible.
-        </p>
-
-        <!-- Technical specs panel -->
-        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">DYNAMICS COMPILER</span>
-            <span class="text-[#00ff88]">VECTOR_PHYSICS_GRID</span>
-          </div>
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">GRID REFRESH FREQ</span>
-            <span class="text-white font-semibold">120HZ_SYNC</span>
-          </div>
-          <div class="flex justify-between pb-1">
-            <span class="text-white/20">INTELLIGENT OBSTACLES</span>
-            <span class="text-white font-semibold">AGENT_NAV_AI [LVL_07]</span>
-          </div>
-        </div>
-
-        <button onclick="location.href='drift.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3" style="border-left-color: var(--g);">
-          <svg class="w-3 h-3 text-[#00ff88]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          EXECUTE_DRIFT_MODULE.SYS
-        </button>
-      </div>
-      
-      <!-- Big side technical tag -->
-      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
-        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
-          SYS_03
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= NODE 04: XO BOT DUEL ================= -->
-  <div class="panel" id="p4">
-    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
-      <div class="lg:col-span-6 flex flex-col items-start justify-center">
-        <div class="font-mono text-[10px] tracking-[0.3em] text-[#ff2d78] uppercase mb-4">
-          SYSTEM NODE // 04 — STRATEGY MODULE
-        </div>
-        
-        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
-          X/O BOT<br>DUEL
-        </h2>
-        
-        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
-          Challenge a high-density, agentic decision tree AI in a high-fidelity volumetric Tic-Tac-Toe battle. Programmed utilizing Minimax algorithms with adaptive weight updates.
-        </p>
-
-        <!-- Technical specs panel -->
-        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">AI RESOLVER ENGINE</span>
-            <span class="text-[#ff2d78]">MINIMAX_DEEP_COMPILER</span>
-          </div>
-          <div class="flex justify-between border-b border-white/5 pb-2">
-            <span class="text-white/20">RESPONSE INTEGRITY</span>
-            <span class="text-white font-semibold">SUB-3MS LATENCY</span>
-          </div>
-          <div class="flex justify-between pb-1">
-            <span class="text-white/20">GRID DIMENSIONALITY</span>
-            <span class="text-white font-semibold">3D_VOLUMETRIC_AXIS</span>
-          </div>
-        </div>
-
-        <button onclick="location.href='xo.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3" style="border-left-color: var(--m);">
-          <svg class="w-3 h-3 text-[#ff2d78]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          EXECUTE_XO_MODULE.SYS
-        </button>
-      </div>
-      
-      <!-- Big side technical tag -->
-      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
-        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
-          SYS_04
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= NODE 05: SYSTEM PROFILE ================= -->
-  <div class="panel" id="p5">
-    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10 items-center">
-      <div class="lg:col-span-6 flex flex-col items-start justify-center">
-        <div class="font-mono text-[10px] tracking-[0.3em] text-[#00e5ff] uppercase mb-4">
-          DATABASE COMPILER // AGENT CREDENTIALS
-        </div>
-        
-        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-8">
-          AGENT CARD
-        </h2>
-
-        <!-- Rejouice styled tech form and datatable card -->
-        <div class="w-full max-w-md border border-white/10 bg-black/60 backdrop-filter blur-md p-8 relative rounded-[2px]">
-          <div class="absolute top-[-1px] left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-[#00e5ff] to-transparent"></div>
-          
-          <div class="flex justify-between items-center mb-6">
-            <span class="font-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">NODE STATS MODULE //</span>
-            <span class="font-mono text-[9px] text-[#00ff88] px-2 py-0.5 border border-[#00ff88]/30 bg-[#00ff88]/5">SECURE</span>
-          </div>
-
-          <div class="flex flex-col gap-4 font-mono text-[11px] mb-6">
-            <div class="flex justify-between border-b border-white/5 pb-2">
-              <span class="text-white/30">AGENT_IDENTIFIER</span>
-              <strong id="playerName" class="text-white tracking-widest font-semibold">—</strong>
-            </div>
-            <div class="flex justify-between border-b border-white/5 pb-2">
-              <span class="text-white/30">OPERATIONAL_LEVEL</span>
-              <strong id="playerLevel" class="text-[#00e5ff] font-bold">—</strong>
-            </div>
-            <div class="flex justify-between border-b border-white/5 pb-2">
-              <span class="text-white/30">ACQUIRED_COINAGE</span>
-              <strong id="playerCoins" class="text-[#00ff88] font-bold">—</strong>
-            </div>
-            <div class="flex justify-between border-b border-white/5 pb-2">
-              <span class="text-white/30">ACCUMULATED_XP</span>
-              <strong id="playerXP" class="text-white">—</strong>
-            </div>
-          </div>
-
-          <!-- XP progress bar custom styled -->
-          <div class="mb-8">
-            <div class="flex justify-between font-mono text-[8px] text-white/30 mb-2">
-              <span>XP COMPILATION INDEX</span>
-              <span id="xpPercent">0%</span>
-            </div>
-            <div class="w-full h-[4px] bg-white/5 rounded-full overflow-hidden p-[1px]">
-              <div id="xpFill" class="h-full w-0 bg-gradient-to-r from-[#00e5ff] to-[#7c4dff] rounded-full transition-all duration-1000"></div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <button onclick="changeName()" class="px-4 py-3 bg-white/5 border border-white/10 hover:border-[#00e5ff]/50 hover:bg-[#00e5ff]/5 hover:text-[#00e5ff] font-mono text-[10px] tracking-wider rounded-[2px] transition-all cursor-pointer">
-              REWRITE_NAME
+          <h1 class="reveal text-5xl md:text-7xl lg:text-[100px] font-bold tracking-tighter leading-[0.9] uppercase text-white">
+            Play in<br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-500">Another</span><br>
+            Dimension.
+          </h1>
+          <p class="reveal mt-8 max-w-xl text-slate-400 text-base md:text-lg leading-relaxed border-l-2 border-[#00ffcc] pl-6 py-2">
+            A hand-built collection of four arcade games by Yuvraj Soni — one profile, infinite progression, zero shortcuts.
+          </p>
+          <div class="reveal mt-12 flex flex-wrap gap-4">
+            <button onclick="document.getElementById('games').scrollIntoView()" class="terminal-btn primary">
+              Enter the Arcade
             </button>
-            <button onclick="goTo(1)" class="px-4 py-3 bg-white/5 border border-white/10 hover:border-white/30 text-white font-mono text-[10px] tracking-wider rounded-[2px] transition-all cursor-pointer">
-              SELECT_GAME
+            <button onclick="document.getElementById('profile').scrollIntoView()" class="terminal-btn">
+              View Profile
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Big side technical tag -->
-      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
-        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
-          SYS_05
+      <!-- Games Section -->
+      <section id="games" class="min-h-screen py-32 border-t border-white/10 relative">
+        <div class="max-w-7xl mx-auto px-6">
+          <div class="reveal mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <div class="mono text-xs text-[#00ffcc] tracking-[0.2em] mb-4 uppercase">System Catalog</div>
+              <h2 class="text-4xl md:text-5xl font-bold uppercase tracking-tight">Active Nodes</h2>
+            </div>
+            <p class="text-slate-400 text-sm max-w-sm">Select a module to initiate connection sequence.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Game 1 -->
+            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
+              <div class="flex justify-between items-start mb-8">
+                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">01</span>
+                <div class="flex gap-2">
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Endless</span>
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Skill</span>
+                </div>
+              </div>
+              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">Eagle Flight</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
+                Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and chain higher multipliers. Every run is different.
+              </p>
+              <button onclick="location.href='eagle.html'" class="terminal-btn w-full">Deploy Node</button>
+            </div>
+
+            <!-- Game 2 -->
+            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
+              <div class="flex justify-between items-start mb-8">
+                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">02</span>
+                <div class="flex gap-2">
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">3D Engine</span>
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Upgrades</span>
+                </div>
+              </div>
+              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">Void Interceptor</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
+                Full Three.js 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, upgrade your ship between waves, and defeat the boss.
+              </p>
+              <button onclick="location.href='space.html'" class="terminal-btn w-full">Deploy Node</button>
+            </div>
+
+            <!-- Game 3 -->
+            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
+              <div class="flex justify-between items-start mb-8">
+                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">03</span>
+                <div class="flex gap-2">
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Racing</span>
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Combos</span>
+                </div>
+              </div>
+              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">Neon Drift Racer</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
+                Race through a neon city highway in full 3D. Dodge oncoming traffic, chain near-misses for combo bonuses, and push your distance record.
+              </p>
+              <button onclick="location.href='drift.html'" class="terminal-btn w-full">Deploy Node</button>
+            </div>
+
+            <!-- Game 4 -->
+            <div class="reveal glass-panel p-8 group hover:border-[#00ffcc]/50 transition-colors">
+              <div class="flex justify-between items-start mb-8">
+                <span class="mono text-4xl font-bold text-white/10 group-hover:text-[#00ffcc]/20 transition-colors">04</span>
+                <div class="flex gap-2">
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">Strategy</span>
+                  <span class="mono text-[10px] tracking-widest uppercase px-3 py-1 bg-white/5 border border-white/10 text-slate-300">1v1 AI</span>
+                </div>
+              </div>
+              <h3 class="text-2xl font-bold uppercase tracking-tight mb-4">X/O Bot Duel</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-8 h-20">
+                A tactical battle against an AI opponent that adapts to every move. Simple to understand, genuinely hard to master — the thinking person's game.
+              </p>
+              <button onclick="location.href='xo.html'" class="terminal-btn w-full">Deploy Node</button>
+            </div>
+
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <!-- Profile Section -->
+      <section id="profile" class="min-h-screen py-32 border-t border-white/10 relative flex flex-col justify-center">
+        <div class="max-w-7xl mx-auto px-6 w-full">
+          <div class="reveal mono text-xs text-[#00ffcc] tracking-[0.2em] mb-4 uppercase">Identity</div>
+          <h2 class="reveal text-4xl md:text-5xl font-bold uppercase tracking-tight mb-16">Operator Profile</h2>
+
+          <div class="reveal glass-panel p-8 md:p-12 max-w-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-6 opacity-10 mono text-6xl font-bold pointer-events-none">ID</div>
+            
+            <div class="flex flex-col gap-6 mono uppercase tracking-wider text-sm">
+              <div class="flex flex-col md:flex-row md:items-center justify-between py-4 border-b border-white/10">
+                <span class="text-slate-500 mb-2 md:mb-0">Operator Name</span>
+                <span id="playerName" class="text-lg text-white font-bold">Yuvraj Soni</span>
+              </div>
+              <div class="flex flex-col md:flex-row md:items-center justify-between py-4 border-b border-white/10">
+                <span class="text-slate-500 mb-2 md:mb-0">Security Level</span>
+                <span class="text-[#00ffcc] font-bold">LVL <span id="playerLevel">1</span></span>
+              </div>
+              <div class="flex flex-col md:flex-row md:items-center justify-between py-4 border-b border-white/10">
+                <span class="text-slate-500 mb-2 md:mb-0">Credits</span>
+                <span id="playerCoins" class="text-white">0</span>
+              </div>
+              <div class="flex flex-col md:flex-row md:items-center justify-between py-4">
+                <span class="text-slate-500 mb-2 md:mb-0">Experience Data</span>
+                <span id="playerXP" class="text-white">0 / 100</span>
+              </div>
+            </div>
+
+            <div class="mt-10 pt-8 border-t border-white/10 flex gap-4">
+              <button onclick="changeName()" class="terminal-btn">Update Identity</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="py-8 border-t border-white/10 text-center mono text-xs text-slate-600 uppercase tracking-widest">
+        System Operational · Yuvraj Soni Arcade © 2026
+      </footer>
+
+    </main>
   </div>
 
-</div><!-- /wrapper -->
-
-<!-- Load Three.JS -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
-
-<script>
-/* ══════════════════════════════════════
-   HUD CLOCK & DYNAMICS TICKERS
-══════════════════════════════════════ */
-function updateHUDClock() {
-  const clockEl = document.getElementById('hud-clock');
-  const now = new Date();
-  clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: true });
-}
-setInterval(updateHUDClock, 1000);
-updateHUDClock();
-
-// Live ticking coordinates (looks like high-precision radar diagnostics)
-let activeX = 0, activeY = 0;
-document.addEventListener('mousemove', (e) => {
-  const xNorm = (e.clientX / window.innerWidth).toFixed(4);
-  const yNorm = (e.clientY / window.innerHeight).toFixed(4);
-  document.getElementById('hud-coords').textContent = `X: ${xNorm} // Y: ${yNorm}`;
-});
-
-// Real-time terminal operating log generator
-const terminalFeed = document.getElementById('term-log');
-const sysMsgs = [
-  'COMPILING SHADER CHANNELS FOR GL_LAYER...',
-  'BUFFER ALLOCATION FOR GEOM_MATRICES COMPLETED.',
-  'AGENTIC DECISION ENGINE [YOS] IS ONLINE.',
-  'DIAGNOSTIC LATENCY STABILIZED AT 12MS.',
-  'MONITORING DIRECT USER INPUT INTERFACES...',
-  'POLLING CORRESPONDING WEBG_CANVAS MATRIX...',
-  'COMPACTING VRAM TEXTURE HEAP ALLOCATIONS...',
-  'YUVRAJ_SONI PROTOCOL INITIALIZING PIPELINES...'
-];
-
-function printLog(msg, colorClass = 'text-white/30') {
-  const date = new Date();
-  const timeStr = date.toTimeString().split(' ')[0];
-  const div = document.createElement('div');
-  div.className = colorClass;
-  div.innerHTML = `[${timeStr}] > ${msg}`;
-  terminalFeed.appendChild(div);
-  terminalFeed.scrollTop = terminalFeed.scrollHeight;
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
   
-  // Prune old logs to prevent DOM overload
-  if(terminalFeed.children.length > 30) {
-    terminalFeed.removeChild(terminalFeed.firstChild);
-  }
-}
-
-// Loop random logs
-setInterval(() => {
-  const randomMsg = sysMsgs[Math.floor(Math.random() * sysMsgs.length)];
-  printLog(randomMsg);
-}, 4500);
-
-/* ══════════════════════════════════════
-   SECTION MANAGER
-   Smooth transition logic.
-══════════════════════════════════════ */
-const TOTAL = 6;
-const SEC_NAMES = ['Home Node // Core Hub','Eagle Flight // Simulator','Void Interceptor // Combat','Neon Drift // Dynamics','X/O Bot // Strategic','Database // Profile'];
-let current = 0;
-let isAnimating = false;
-const ANIM_TIME = 900; // Lockout window
-
-const panels = document.querySelectorAll('.panel');
-const dots   = document.querySelectorAll('#dots > .hud-dot');
-
-function goTo(idx) {
-  if(idx < 0 || idx >= TOTAL || idx === current) return;
-  if(isAnimating) return;
-  isAnimating = true;
-
-  const prev = current;
-  current = idx;
-
-  printLog(`COMPILING ROUTE CHANGE TO NODE_0${idx}: ${SEC_NAMES[idx].toUpperCase()}...`, 'text-[#00e5ff]');
-
-  const goingDown = idx > prev;
-  panels[prev].classList.remove('active');
-  panels[prev].classList.add(goingDown ? 'exit-up' : 'exit-down');
-
-  setTimeout(() => {
-    panels[prev].classList.remove('exit-up','exit-down');
-  }, 800);
-
-  panels[idx].classList.add('active');
-
-  // Update dots HUD
-  dots.forEach((d, i) => {
-    d.classList.toggle('active', i === current);
-  });
-
-  // Top header text nodes
-  document.getElementById('hud-node-id').textContent = `SYS.SEC_0${idx} // ${SEC_NAMES[idx].split(' // ')[0].toUpperCase()}`;
-  document.getElementById('hud-page-index').textContent = `0${idx}`;
-
-  // Smooth cinematic camera shift
-  setScene(current);
-
-  setTimeout(() => {
-    isAnimating = false;
-  }, ANIM_TIME);
-}
-
-// Wheel and keyboard triggers
-let wheelAcc = 0, wheelTimer = null;
-window.addEventListener('wheel', e => {
-  wheelAcc += e.deltaY;
-  clearTimeout(wheelTimer);
-  wheelTimer = setTimeout(() => {
-    if(Math.abs(wheelAcc) > 35) {
-      if(wheelAcc > 0) goTo(current + 1);
-      else goTo(current - 1);
-    }
-    wheelAcc = 0;
-  }, 60);
-}, { passive: true });
-
-window.addEventListener('keydown', e => {
-  if(e.key === 'ArrowDown' || e.key === 'PageDown') { goTo(current + 1); }
-  if(e.key === 'ArrowUp'   || e.key === 'PageUp')   { goTo(current - 1); }
-});
-
-let touchStartY = 0;
-window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
-window.addEventListener('touchend', e => {
-  const dy = touchStartY - e.changedTouches[0].clientY;
-  if(Math.abs(dy) > 50) {
-    if(dy > 0) goTo(current + 1);
-    else goTo(current - 1);
-  }
-}, { passive: true });
-
-
-/* ══════════════════════════════════════
-   THREE.JS ADVANCED SCI-FI BACKGROUND
-   Sleek grid lines, wireframes and fluid camera fly-throughs.
-══════════════════════════════════════ */
-const W = () => window.innerWidth, H = () => window.innerHeight;
-
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x000000, 0.022);
-
-const cam   = new THREE.PerspectiveCamera(55, W()/H(), 0.1, 300);
-// Camera starting coords
-cam.position.set(0, 1.5, 13);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(W(), H());
-renderer.setClearColor(0x000000, 1);
-document.getElementById('bg3d').appendChild(renderer.domElement);
-
-/* Lights */
-scene.add(new THREE.AmbientLight(0x0f0f1d, 1.2));
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-keyLight.position.set(5, 15, 10);
-scene.add(keyLight);
-
-const lightCyan = new THREE.PointLight(0x00e5ff, 2.5, 120);
-lightCyan.position.set(-15, 5, 8);
-scene.add(lightCyan);
-
-const lightPurple = new THREE.PointLight(0x7c4dff, 2.0, 100);
-lightPurple.position.set(15, -5, 8);
-scene.add(lightPurple);
-
-/* Custom Infinite Grid deforming in distance */
-const gridGeometry = new THREE.PlaneGeometry(160, 160, 45, 45);
-const gridMaterial = new THREE.MeshBasicMaterial({
-  color: 0x223344,
-  wireframe: true,
-  transparent: true,
-  opacity: 0.12
-});
-const gridFloor = new THREE.Mesh(gridGeometry, gridMaterial);
-gridFloor.rotation.x = -Math.PI / 2;
-gridFloor.position.y = -4.5;
-scene.add(gridFloor);
-
-/* Flowing data lines on grid floor */
-const lineGroup = new THREE.Group();
-scene.add(lineGroup);
-for(let i = 0; i < 15; i++) {
-  const lineGeom = new THREE.BufferGeometry();
-  const pArr = new Float32Array([
-    (Math.random() - 0.5) * 100, -4.4, (Math.random() - 0.5) * 100,
-    (Math.random() - 0.5) * 100, -4.4, (Math.random() - 0.5) * 100
-  ]);
-  lineGeom.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
-  const lineMat = new THREE.LineBasicMaterial({
-    color: Math.random() > 0.5 ? 0x00e5ff : 0x7c4dff,
-    transparent: true,
-    opacity: 0.2
-  });
-  const line = new THREE.Line(lineGeom, lineMat);
-  lineGroup.add(line);
-}
-
-/* Beautiful dense data particles (floating dust) */
-const starCount = 1800;
-const starGeom = new THREE.BufferGeometry();
-const starPos = new Float32Array(starCount * 3);
-const starColor = new Float32Array(starCount * 3);
-
-for(let i = 0; i < starCount; i++) {
-  starPos[i*3] = (Math.random() - 0.5) * 140;
-  starPos[i*3+1] = (Math.random() - 0.5) * 80;
-  starPos[i*3+2] = (Math.random() - 0.5) * 100;
-  
-  // High-purity neon color scheme
-  const rand = Math.random();
-  if(rand < 0.35) {
-    starColor[i*3] = 0.0; starColor[i*3+1] = 0.9; starColor[i*3+2] = 1.0; // Cyan
-  } else if(rand < 0.65) {
-    starColor[i*3] = 0.48; starColor[i*3+1] = 0.3; starColor[i*3+2] = 1.0; // Purple
-  } else {
-    starColor[i*3] = 0.1; starColor[i*3+1] = 0.1; starColor[i*3+2] = 0.15; // Dark White
-  }
-}
-starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-starGeom.setAttribute('color', new THREE.BufferAttribute(starColor, 3));
-const starMaterial = new THREE.PointsMaterial({
-  size: 0.15,
-  vertexColors: true,
-  transparent: true,
-  opacity: 0.65,
-  sizeAttenuation: true
-});
-const stars = new THREE.Points(starGeom, starMaterial);
-scene.add(stars);
-
-/* Sweeping Translucent Laser Scanner Plane */
-const laserGeom = new THREE.BoxGeometry(70, 0.05, 70);
-const laserMat = new THREE.MeshBasicMaterial({
-  color: 0x00e5ff,
-  transparent: true,
-  opacity: 0.03,
-  wireframe: true
-});
-const laserScanner = new THREE.Mesh(laserGeom, laserMat);
-laserScanner.position.y = -2;
-scene.add(laserScanner);
-
-/* ══════════════════════════════════════
-   6 MASTERPIECE WIREFRAME SCHEMATIC MODELS
-══════════════════════════════════════ */
-const groups = [];
-for(let i = 0; i < TOTAL; i++) {
-  const g = new THREE.Group();
-  scene.add(g);
-  groups.push(g);
-}
-
-// Helper to make highly clean wireframes
-function makeWireframeMesh(geometry, color, opacity = 0.35) {
-  const geoWire = new THREE.WireframeGeometry(geometry);
-  const lineMat = new THREE.LineBasicMaterial({
-    color: color,
-    transparent: true,
-    opacity: opacity
-  });
-  return new THREE.LineSegments(geoWire, lineMat);
-}
-
-/* --- NODE 00: CORE (HOME) --- */
-const coreGroup = groups[0];
-// Central dodecahedron glowing core
-const coreInnerGeom = new THREE.DodecahedronGeometry(1.6, 0);
-const coreInner = makeWireframeMesh(coreInnerGeom, 0x00e5ff, 0.7);
-coreGroup.add(coreInner);
-
-// Concentric orbiting structural tech rings
-const ring1 = makeWireframeMesh(new THREE.TorusGeometry(2.3, 0.06, 8, 48), 0x7c4dff, 0.35);
-ring1.rotation.x = Math.PI / 2;
-coreGroup.add(ring1);
-
-const ring2 = makeWireframeMesh(new THREE.TorusGeometry(3.0, 0.04, 8, 64), 0xff2d78, 0.25);
-ring2.rotation.y = Math.PI / 3;
-coreGroup.add(ring2);
-
-// Surrounding cluster of rotating coordinate data packets
-const packetGroup = new THREE.Group();
-coreGroup.add(packetGroup);
-for(let i = 0; i < 22; i++) {
-  const pGeom = new THREE.BoxGeometry(0.12, 0.12, 0.12);
-  const pMesh = makeWireframeMesh(pGeom, 0x00e5ff, 0.8);
-  const angle = (i / 22) * Math.PI * 2;
-  const rad = 3.6 + Math.random() * 1.5;
-  pMesh.position.set(Math.cos(angle) * rad, (Math.random() - 0.5) * 2.5, Math.sin(angle) * rad);
-  packetGroup.add(pMesh);
-}
-coreGroup.position.set(3.5, 0, 0);
-
-/* --- NODE 01: EAGLE FLIGHT --- */
-const eagleGroup = groups[1];
-// Delta-Wing Jet wireframe model
-const jetGeom = new THREE.ConeGeometry(0.5, 3.2, 4);
-const jet = makeWireframeMesh(jetGeom, 0x00e5ff, 0.6);
-jet.rotation.x = Math.PI / 2;
-jet.rotation.z = Math.PI;
-eagleGroup.add(jet);
-
-// Dual Sweep wings
-const wingLGeom = new THREE.BoxGeometry(2.8, 0.05, 0.8);
-const wingL = makeWireframeMesh(wingLGeom, 0x00e5ff, 0.5);
-wingL.position.set(-1.4, -0.1, -0.4);
-wingL.rotation.y = -Math.PI / 6;
-eagleGroup.add(wingL);
-
-const wingR = wingL.clone();
-wingR.position.x = 1.4;
-wingR.rotation.y = Math.PI / 6;
-eagleGroup.add(wingR);
-
-// Scrolling technical landscape mountains underneath
-const landGroup = new THREE.Group();
-eagleGroup.add(landGroup);
-const landGeom = new THREE.BoxGeometry(16, 2.5, 16, 12, 5, 12);
-const landMesh = makeWireframeMesh(landGeom, 0x4477aa, 0.15);
-landMesh.position.set(0, -3.8, 0);
-landGroup.add(landMesh);
-
-eagleGroup.position.set(3.8, 0.2, 0);
-
-/* --- NODE 02: VOID INTERCEPTOR --- */
-const voidGroup = groups[2];
-// Complex heavy space cruiser wireframe
-const cruiserBody = makeWireframeMesh(new THREE.CylinderGeometry(0.2, 0.6, 3.5, 6), 0x7c4dff, 0.6);
-cruiserBody.rotation.x = Math.PI / 2;
-voidGroup.add(cruiserBody);
-
-const noseCone = makeWireframeMesh(new THREE.ConeGeometry(0.2, 1.2, 6), 0x00e5ff, 0.7);
-noseCone.rotation.x = Math.PI / 2;
-noseCone.position.set(0, 0, -2.35);
-voidGroup.add(noseCone);
-
-// Side thruster pods
-const thrusterL = makeWireframeMesh(new THREE.CylinderGeometry(0.25, 0.25, 1.5, 4), 0x7c4dff, 0.45);
-thrusterL.rotation.x = Math.PI / 2;
-thrusterL.position.set(-1.1, 0, 0.5);
-voidGroup.add(thrusterL);
-
-const thrusterR = thrusterL.clone();
-thrusterR.position.x = 1.1;
-voidGroup.add(thrusterR);
-
-// Orbiting asteroid coordinates (Icosahedron wireframes)
-const astGroup = new THREE.Group();
-voidGroup.add(astGroup);
-for(let i = 0; i < 5; i++) {
-  const astMesh = makeWireframeMesh(new THREE.IcosahedronGeometry(0.5, 0), 0xff2d78, 0.35);
-  const ang = (i / 5) * Math.PI * 2;
-  astMesh.position.set(Math.cos(ang) * 3.5, (Math.random() - 0.5) * 1.5, Math.sin(ang) * 3.5);
-  astGroup.add(astMesh);
-}
-
-// Centered dynamic HUD target locking circle
-const hudLock = makeWireframeMesh(new THREE.TorusGeometry(1.4, 0.02, 4, 32), 0x00e5ff, 0.3);
-hudLock.position.set(0, 0, -1.2);
-voidGroup.add(hudLock);
-
-voidGroup.position.set(3.5, 0, 0);
-
-/* --- NODE 03: NEON DRIFT RACER --- */
-const driftGroup = groups[3];
-// Futuristic cyberpunk sports chassis wireframe
-const carChassis = makeWireframeMesh(new THREE.BoxGeometry(1.2, 0.45, 3.4), 0x00ff88, 0.6);
-driftGroup.add(carChassis);
-
-const carRoof = makeWireframeMesh(new THREE.BoxGeometry(0.9, 0.35, 1.5), 0x00e5ff, 0.4);
-carRoof.position.set(0, 0.4, -0.2);
-driftGroup.add(carRoof);
-
-// Dynamic wireframe wheels
-const wheelMat = new THREE.TorusGeometry(0.35, 0.08, 4, 16);
-const wFL = makeWireframeMesh(wheelMat, 0x00ff88, 0.5);
-wFL.rotation.y = Math.PI / 2;
-wFL.position.set(-0.7, -0.22, 1.1);
-driftGroup.add(wFL);
-
-const wFR = wFL.clone(); wFR.position.x = 0.7;
-driftGroup.add(wFR);
-
-const wBL = wFL.clone(); wBL.position.set(-0.7, -0.22, -1.1);
-driftGroup.add(wBL);
-
-const wBR = wFL.clone(); wBR.position.set(0.7, -0.22, -1.1);
-driftGroup.add(wBR);
-
-// Passing neon highway track lines underneath
-const trackGrid = makeWireframeMesh(new THREE.PlaneGeometry(8, 22, 8, 12), 0x00ff88, 0.12);
-trackGrid.rotation.x = -Math.PI / 2;
-trackGrid.position.set(0, -1.6, 0);
-driftGroup.add(trackGrid);
-
-driftGroup.position.set(3.5, -0.2, 0);
-
-/* --- NODE 04: XO BOT DUEL --- */
-const xoGroup = groups[4];
-// Volumetric coordinate grid structure
-const xoGrid = makeWireframeMesh(new THREE.BoxGeometry(4.0, 4.0, 0.15, 3, 3, 1), 0xff2d78, 0.22);
-xoGroup.add(xoGrid);
-
-// Floating wireframe X & O indicators inside coordinate fields
-const shapesGroup = new THREE.Group();
-xoGroup.add(shapesGroup);
-
-// An O (Torus wireframe)
-const oShape = makeWireframeMesh(new THREE.TorusGeometry(0.5, 0.08, 6, 24), 0x00e5ff, 0.55);
-oShape.position.set(-1.3, 1.3, 0.3);
-shapesGroup.add(oShape);
-
-const oShape2 = oShape.clone();
-oShape2.position.set(1.3, -1.3, 0.3);
-shapesGroup.add(oShape2);
-
-// An X (Intersecting cylinders)
-const cyl1 = makeWireframeMesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 4), 0xff2d78, 0.55);
-cyl1.rotation.z = Math.PI / 4;
-const cyl2 = cyl1.clone();
-cyl2.rotation.z = -Math.PI / 4;
-const xShape = new THREE.Group();
-xShape.add(cyl1, cyl2);
-xShape.position.set(1.3, 1.3, 0.3);
-shapesGroup.add(xShape);
-
-const xShape2 = xShape.clone();
-xShape2.position.set(-1.3, -1.3, 0.3);
-shapesGroup.add(xShape2);
-
-xoGroup.position.set(3.5, 0, 0);
-
-/* --- NODE 05: PROFILE HELIX --- */
-const helixGroup = groups[5];
-// Complex double helix structural rotating node
-const doubleHelix = new THREE.Group();
-helixGroup.add(doubleHelix);
-
-const helixCount = 48;
-for(let i = 0; i < helixCount; i++) {
-  const normVal = i / helixCount;
-  const angle = normVal * Math.PI * 5;
-  const posY = (normVal * 6.5) - 3.25;
-  const rad = 1.6;
-  
-  // Strand A (Cyan Sphere)
-  const sphereAGeom = new THREE.IcosahedronGeometry(0.12, 0);
-  const sphereA = makeWireframeMesh(sphereAGeom, 0x00e5ff, 0.65);
-  sphereA.position.set(Math.cos(angle) * rad, posY, Math.sin(angle) * rad);
-  doubleHelix.add(sphereA);
-  
-  // Strand B (Purple Sphere)
-  const sphereB = makeWireframeMesh(sphereAGeom, 0x7c4dff, 0.65);
-  sphereB.position.set(Math.cos(angle + Math.PI) * rad, posY, Math.sin(angle + Math.PI) * rad);
-  doubleHelix.add(sphereB);
-  
-  // Interconnecting ladder rungs
-  if(i % 2 === 0) {
-    const rungGeom = new THREE.BufferGeometry();
-    const rungPos = new Float32Array([
-      Math.cos(angle) * rad, posY, Math.sin(angle) * rad,
-      Math.cos(angle + Math.PI) * rad, posY, Math.sin(angle + Math.PI) * rad
-    ]);
-    rungGeom.setAttribute('position', new THREE.BufferAttribute(rungPos, 3));
-    const rungMat = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.12
+  <script>
+    // --- UI Logic ---
+
+    // Smooth Scrolling (Lenis)
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true
     });
-    const rungLine = new THREE.Line(rungGeom, rungMat);
-    doubleHelix.add(rungLine);
-  }
-}
-helixGroup.position.set(3.5, 0, 0);
 
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
 
-/* ══════════════════════════════════════
-   CINEMATIC CAMERA FLIGHT INTERPOLATOR
-   This creates continuous storytelling WebGL movement
-══════════════════════════════════════ */
-// Precise camera parameters and target coordinates per page
-const camPath = [
-  { pos: {x: 0, y: 1.2, z: 10.5}, target: {x: 1.6, y: 0.1, z: 0} }, // Sec 0 (Home)
-  { pos: {x: -2.8, y: 2.5, z: 9.0}, target: {x: 2.2, y: 0.3, z: 0} }, // Sec 1 (Eagle)
-  { pos: {x: 4.2, y: -2.0, z: 11.0}, target: {x: 1.8, y: 0.2, z: 0} }, // Sec 2 (Void)
-  { pos: {x: 0.0, y: 3.5, z: 10.0}, target: {x: 2.5, y: -0.4, z: 0} }, // Sec 3 (Neon)
-  { pos: {x: -3.8, y: 1.2, z: 9.0}, target: {x: 2.0, y: 0.1, z: 0} }, // Sec 4 (XO)
-  { pos: {x: 1.0, y: -2.8, z: 11.5}, target: {x: 2.3, y: 0.0, z: 0} }  // Sec 5 (Profile)
-];
+    // Scroll Observer for Reveal Animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.1 });
 
-// Active visibility mapping
-let activeIdx = 0;
-function setScene(idx) {
-  groups.forEach((grp, i) => {
-    // Only keep active or adjacent elements visible to conserve hardware performance
-    grp.visible = (i === idx || i === activeIdx);
-  });
-  activeIdx = idx;
-}
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
-// Initial state visibility
-groups.forEach((g, i) => { g.visible = (i === 0); });
+    // Player Data Management
+    const LS_KEY = 'yuvraj_player_data_v1';
+    let pd = { name: 'Yuvraj Soni', coins: 0, xp: 0, level: 1 };
+    
+    function loadData() {
+      try {
+        const s = localStorage.getItem(LS_KEY);
+        if (s) pd = JSON.parse(s);
+      } catch (e) {}
+    }
 
-/* ══════════════════════════════════════
-   ANIMATION & RENDER LOOP (lerping physics)
-══════════════════════════════════════ */
-const clock = new THREE.Clock();
-let mx = 0, my = 0;
-document.addEventListener('mousemove', e => {
-  mx = (e.clientX / window.innerWidth - 0.5) * 2;
-  my = (e.clientY / window.innerHeight - 0.5) * 2;
-});
+    function saveData() {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(pd));
+      } catch (e) {}
+    }
 
-// Lerp utility
-function lerp(start, end, amt) {
-  return (1 - amt) * start + amt * end;
-}
+    function updateUI() {
+      document.getElementById('playerName').textContent = pd.name || 'Unknown';
+      document.getElementById('playerCoins').textContent = pd.coins || 0;
+      document.getElementById('playerXP').textContent = (pd.xp || 0) + ' / 100';
+      document.getElementById('playerLevel').textContent = pd.level || 1;
+    }
 
-// Camera vectors
-const currentCamPos = new THREE.Vector3(0, 1.5, 13);
-const targetCamPos  = new THREE.Vector3(0, 1.2, 10.5);
-const currentTarget = new THREE.Vector3(1.6, 0.1, 0);
-const targetLookAt  = new THREE.Vector3(1.6, 0.1, 0);
-
-// Simple frames-per-second indicator calculation
-let lastFrameTime = performance.now();
-let framesThisSecond = 0;
-let displayedFPS = 60;
-
-function loop() {
-  requestAnimationFrame(loop);
-  const elapsed = clock.getElapsedTime();
-  const delta = clock.getDelta();
-
-  // Calculate simulated FPS
-  framesThisSecond++;
-  const now = performance.now();
-  if(now >= lastFrameTime + 1000) {
-    displayedFPS = framesThisSecond;
-    framesThisSecond = 0;
-    lastFrameTime = now;
-    document.getElementById('diag-fps').textContent = `FPS: ${displayedFPS} // PING: ${Math.floor(10 + Math.random()*5)}ms`;
-  }
-
-  // Laser scanner sweeping range
-  laserScanner.position.y = Math.sin(elapsed * 0.8) * 4.0;
-  
-  // Parallax offsets based on mouse positions
-  const parallaxX = mx * 0.8;
-  const parallaxY = -my * 0.5;
-
-  // Active Scene Camera Parameter Interpolator
-  const path = camPath[activeIdx];
-  if(path) {
-    targetCamPos.set(path.pos.x + parallaxX, path.pos.y + parallaxY, path.pos.z);
-    targetLookAt.set(path.target.x, path.target.y, path.target.z);
-  }
-
-  // Smooth lerping transitions for camera
-  currentCamPos.lerp(targetCamPos, 0.05);
-  currentTarget.lerp(targetLookAt, 0.05);
-  
-  cam.position.copy(currentCamPos);
-  cam.lookAt(currentTarget);
-
-  // Group rotation and animation ticks
-  groups.forEach((grp, i) => {
-    if(grp.visible) {
-      // Fade scales in/out dynamically
-      const targetScale = (i === activeIdx) ? 1.0 : 0.001;
-      const currentScale = grp.scale.x;
-      const s = lerp(currentScale, targetScale, 0.075);
-      grp.scale.setScalar(s);
-      
-      // Idle animation ticks per individual node
-      if(i === 0) {
-        coreInner.rotation.x = elapsed * 0.2;
-        coreInner.rotation.y = elapsed * 0.35;
-        ring1.rotation.z = elapsed * 0.4;
-        ring2.rotation.z = -elapsed * 0.3;
-        packetGroup.rotation.y = elapsed * 0.15;
-      }
-      else if(i === 1) {
-        // Eagle jet banks subtly with mouse
-        jet.rotation.y = mx * 0.5;
-        jet.rotation.z = mx * -0.4;
-        // Scroll technical ground backwards to simulate flight
-        landMesh.position.z = (elapsed * 3.5) % 8;
-      }
-      else if(i === 2) {
-        cruiserBody.rotation.y = elapsed * 0.4;
-        astGroup.rotation.y = -elapsed * 0.15;
-        hudLock.rotation.z = elapsed * 0.5;
-      }
-      else if(i === 3) {
-        // Drift steering wheel and tires bank with mouse coordinates
-        wFL.rotation.x = -elapsed * 6.0;
-        wFR.rotation.x = -elapsed * 6.0;
-        wBL.rotation.x = -elapsed * 6.0;
-        wBR.rotation.x = -elapsed * 6.0;
-        wFL.rotation.y = Math.PI / 2 + (mx * 0.3);
-        wFR.rotation.y = Math.PI / 2 + (mx * 0.3);
-        
-        driftGroup.rotation.y = mx * 0.15;
-      }
-      else if(i === 4) {
-        shapesGroup.rotation.y = elapsed * 0.5;
-        xoGrid.rotation.y = Math.sin(elapsed * 0.3) * 0.15;
-      }
-      else if(i === 5) {
-        doubleHelix.rotation.y = elapsed * 0.3;
+    function changeName() {
+      const n = prompt('Enter new Operator Name:');
+      if (n && n.trim()) {
+        pd.name = n.trim();
+        saveData();
+        updateUI();
       }
     }
-  });
 
-  // Slow particle field drift
-  stars.rotation.y = elapsed * 0.015;
-
-  renderer.render(scene, cam);
-}
-loop();
-
-window.addEventListener('resize', () => {
-  cam.aspect = W() / H();
-  cam.updateProjectionMatrix();
-  renderer.setSize(W(), H());
-});
-
-/* ══════════════════════════════════════
-   CUSTOM SPRING PHYSICAL CURSOR
-══════════════════════════════════════ */
-(function() {
-  const dot = document.getElementById('cdot'), ring = document.getElementById('cring');
-  let cx = 0, cy = 0, rx = 0, ry = 0;
-  
-  document.addEventListener('mousemove', e => {
-    cx = e.clientX;
-    cy = e.clientY;
-    dot.style.left = cx + 'px';
-    dot.style.top = cy + 'px';
-  });
-  
-  // Spring render physics
-  (function cursorLoop() {
-    requestAnimationFrame(cursorLoop);
-    rx += (cx - rx) * 0.12;
-    ry += (cy - ry) * 0.12;
-    ring.style.left = rx + 'px';
-    ring.style.top = ry + 'px';
-  })();
-  
-  // Expand cursor on hovering interactive elements
-  document.querySelectorAll('a, button, .hud-dot, .cyber-btn').forEach(el => {
-    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
-    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
-  });
-})();
-
-/* ══════════════════════════════════════
-   PLAYER ARCHIVE LOCALSTORAGE DATABANK
-══════════════════════════════════════ */
-const LS = 'yuvraj_player_data_v1';
-let pd = { name: 'Yuvraj Soni', coins: 1450, xp: 380, level: 8 };
-
-function loadPD() {
-  try {
-    const s = localStorage.getItem(LS);
-    if(s) pd = JSON.parse(s);
-  } catch(e) {
-    printLog('CORRUPTED PLAYER REPOSITORY DETECTED. AUTOREPAIR COMMENCING...', 'text-[#ff2d78]');
-  }
-}
-
-function savePD() {
-  try {
-    localStorage.setItem(LS, JSON.stringify(pd));
-  } catch(e) {}
-}
-
-function updateUI() {
-  document.getElementById('playerName').textContent = pd.name || 'GUEST_AGENT';
-  document.getElementById('playerCoins').textContent = (pd.coins || 0) + ' COINS';
-  document.getElementById('playerXP').textContent = (pd.xp || 0) + ' PTS';
-  document.getElementById('playerLevel').textContent = 'LVL_' + (pd.level || 1);
-  
-  const xpMod = (pd.xp % 100);
-  document.getElementById('xpFill').style.width = xpMod + '%';
-  document.getElementById('xpPercent').textContent = xpMod + '%';
-}
-
-function changeName() {
-  const n = prompt('REWRITE AGENT CREDENTIAL IDENTIFIER:');
-  if(n && n.trim()) {
-    pd.name = n.trim();
-    savePD();
+    // Initialize Data
+    loadData();
     updateUI();
-    printLog(`AGENT CARD RE-ISSUED. NEW IDENTIFIER: '${pd.name.toUpperCase()}'`, 'text-[#00ff88]');
-  }
-}
 
-loadPD();
-updateUI();
 
-/* ══════════════════════════════════════
-   AUDIO BACKGROUND STREAMER (Sci-Fi BGM)
-══════════════════════════════════════ */
-const bgm = new Audio('bgm.mp3');
-bgm.loop = true;
-bgm.volume = 0.25;
-let musicStreamInitiated = false;
-
-document.addEventListener('click', () => {
-  if(!musicStreamInitiated) {
-    musicStreamInitiated = true;
-    bgm.play().then(() => {
-      printLog('AUDIO MODULE INTERFACED COMPLETED. STREAMING HIGH-FIDELITY TRACK...', 'text-white/20');
-    }).catch(() => {
-      printLog('MUTED STATE PREVENTED AUTOMATIC MUSIC PLAYBACK.', 'text-white/20');
-    });
-  }
-});
-
-/* ══════════════════════════════════════
-   SYSTEM BOOTUP COMPILER (Loader Logic)
-══════════════════════════════════════ */
-(function() {
-  const lf = document.getElementById('lf'), lt = document.getElementById('lt'), ldr = document.getElementById('ldr');
-  let bootPercent = 0;
-  
-  const loaderLogs = [
-    'INITIALIZING DECISION ENGINE...',
-    'BUFFERING COMPILER SHADERS...',
-    'CALIBRATING COORDINATES GEOMETRY...',
-    'STABILIZING STATION CHANNELS...'
-  ];
-  
-  const bootTimer = setInterval(() => {
-    bootPercent += Math.random() * 12 + 4;
-    if(bootPercent > 100) bootPercent = 100;
+    // --- Three.js LiDAR Point Cloud Simulation ---
     
-    lf.style.width = bootPercent + '%';
-    const logIdx = Math.min(3, Math.floor(bootPercent / 26));
-    lt.textContent = `${loaderLogs[logIdx]} ${Math.floor(bootPercent)}%`;
-    
-    if(bootPercent >= 100) {
-      clearInterval(bootTimer);
-      setTimeout(() => {
-        ldr.classList.add('out');
-        printLog('BOOT LOADER ENGINE EXITED. CORE HUB READY FOR COMMAND.', 'text-[#00ff88]');
-      }, 500);
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.015);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // Start camera high up, looking down slightly
+    camera.position.set(0, 15, 40);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000);
+
+    // Group to hold the entire city point cloud
+    const pointCloudGroup = new THREE.Group();
+    scene.add(pointCloudGroup);
+
+    // Function to generate LiDAR city data
+    function createLiDARCity() {
+      const positions = [];
+      const colors = [];
+      
+      const colorBase = new THREE.Color(0x334455);    // Dim slate
+      const colorHighlight = new THREE.Color(0x00ffcc); // Terminal Cyan
+      
+      // 1. Generate Ground Grid
+      for(let x = -80; x <= 80; x += 1.5) {
+        for(let z = -80; z <= 80; z += 1.5) {
+          if (Math.random() > 0.6) continue; // Sparse ground
+          positions.push(x, 0, z);
+          
+          // Occasional highlighted ground point
+          if (Math.random() > 0.98) {
+            colors.push(colorHighlight.r, colorHighlight.g, colorHighlight.b);
+          } else {
+            colors.push(colorBase.r, colorBase.g, colorBase.b);
+          }
+        }
+      }
+
+      // 2. Generate Abstract Server/Building Blocks
+      for (let b = 0; b < 120; b++) {
+        // Random position on the grid
+        const cx = (Math.random() - 0.5) * 120;
+        const cz = (Math.random() - 0.5) * 120;
+        
+        // Random dimensions
+        const width = 2 + Math.random() * 6;
+        const depth = 2 + Math.random() * 6;
+        const height = 2 + Math.random() * 20;
+
+        // Density of points based on size
+        const surfacePoints = Math.floor((width * depth * height) * 5);
+
+        for (let p = 0; p < surfacePoints; p++) {
+          let px = cx, py = 0, pz = cz;
+          
+          // Pick a random face (0: Front, 1: Back, 2: Left, 3: Right, 4: Top)
+          const face = Math.floor(Math.random() * 5);
+          
+          if (face === 0) {
+            px += (Math.random() - 0.5) * width;
+            pz += depth / 2;
+            py += Math.random() * height;
+          } else if (face === 1) {
+            px += (Math.random() - 0.5) * width;
+            pz -= depth / 2;
+            py += Math.random() * height;
+          } else if (face === 2) {
+            px += width / 2;
+            pz += (Math.random() - 0.5) * depth;
+            py += Math.random() * height;
+          } else if (face === 3) {
+            px -= width / 2;
+            pz += (Math.random() - 0.5) * depth;
+            py += Math.random() * height;
+          } else {
+            px += (Math.random() - 0.5) * width;
+            pz += (Math.random() - 0.5) * depth;
+            py += height;
+          }
+
+          positions.push(px, py, pz);
+
+          // Color assignment: mostly base, some highlight edges
+          const isEdge = (py > height - 0.5) || Math.random() > 0.95;
+          if (isEdge) {
+            colors.push(colorHighlight.r, colorHighlight.g, colorHighlight.b);
+          } else {
+            colors.push(colorBase.r, colorBase.g, colorBase.b);
+          }
+        }
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+      const material = new THREE.PointsMaterial({
+        size: 0.08,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+      });
+
+      const pointsMesh = new THREE.Points(geometry, material);
+      pointCloudGroup.add(pointsMesh);
     }
-  }, 50);
-})();
-</script>
+
+    createLiDARCity();
+
+    // Data streams (falling particles)
+    const streamGeo = new THREE.BufferGeometry();
+    const streamCount = 1000;
+    const streamPos = new Float32Array(streamCount * 3);
+    const streamSpeeds = new Float32Array(streamCount);
+    
+    for(let i=0; i<streamCount; i++) {
+      streamPos[i*3] = (Math.random() - 0.5) * 100;
+      streamPos[i*3+1] = Math.random() * 40;
+      streamPos[i*3+2] = (Math.random() - 0.5) * 100;
+      streamSpeeds[i] = 0.1 + Math.random() * 0.4;
+    }
+    streamGeo.setAttribute('position', new THREE.BufferAttribute(streamPos, 3));
+    
+    const streamMat = new THREE.PointsMaterial({
+      color: 0x00ffcc,
+      size: 0.15,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending
+    });
+    const streams = new THREE.Points(streamGeo, streamMat);
+    scene.add(streams);
+
+    // Mouse and Scroll tracking
+    let targetX = 0;
+    let targetY = 0;
+    let scrollProgress = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      // Normalize mouse to -1 to 1
+      targetX = (e.clientX / window.innerWidth) * 2 - 1;
+      targetY = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    window.addEventListener('scroll', () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      scrollProgress = window.scrollY / maxScroll;
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Animation Loop
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const time = clock.getElapsedTime();
+
+      // Slow continuous rotation of the city
+      pointCloudGroup.rotation.y = time * 0.02;
+
+      // Animate falling data streams
+      const positions = streamGeo.attributes.position.array;
+      for(let i=0; i<streamCount; i++) {
+        positions[i*3+1] -= streamSpeeds[i];
+        if (positions[i*3+1] < 0) {
+          positions[i*3+1] = 40; // reset to top
+        }
+      }
+      streamGeo.attributes.position.needsUpdate = true;
+
+      // Camera parallax based on mouse
+      const camTargetX = targetX * 10;
+      const camTargetY = 15 + targetY * 5;
+      
+      // Camera moves forward into the city based on scroll
+      // Start at z=50, go deep to z=0
+      const camTargetZ = 50 - (scrollProgress * 40);
+
+      // Smooth camera interpolation
+      camera.position.x += (camTargetX - camera.position.x) * 0.05;
+      camera.position.y += (camTargetY - camera.position.y) * 0.05;
+      camera.position.z += (camTargetZ - camera.position.z) * 0.05;
+
+      // Keep camera looking at the center
+      camera.lookAt(0, 5, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
 </body>
 </html>
