@@ -6,840 +6,663 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--c:#00e5ff;--v:#7c4dff;--m:#ff2d78;--g:#ffc93c;--bg:#02020a;--t:#f0f4ff;--td:#4a5060;--tm:#7a8090}
 *{margin:0;padding:0;box-sizing:border-box}
-html{overflow:hidden;width:100%;height:100%}
-body{width:100%;height:100%;background:var(--bg);color:var(--t);font-family:'Space Grotesk',sans-serif;overflow:hidden;cursor:none}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--t);font-family:'Space Grotesk',sans-serif}
 ::selection{background:var(--c);color:#000}
 
-/* ─── CUSTOM CURSOR ─── */
-#cur-dot{position:fixed;width:7px;height:7px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:transform .1s}
-#cur-ring{position:fixed;width:36px;height:36px;border:1px solid rgba(255,255,255,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .35s,height .35s,opacity .35s;mix-blend-mode:difference}
-@media(max-width:768px){#cur-dot,#cur-ring{display:none}body{cursor:auto}}
+/* CURSOR */
+#cdot{position:fixed;width:7px;height:7px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference}
+#cring{position:fixed;width:36px;height:36px;border:1px solid rgba(255,255,255,.45);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s;mix-blend-mode:difference}
+@media(max-width:768px){#cdot,#cring{display:none}body{cursor:auto}}
 
-/* ─── LOADER ─── */
-#loader{position:fixed;inset:0;z-index:7000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;transition:opacity .8s ease,visibility .8s ease}
-#loader.hide{opacity:0;visibility:hidden;pointer-events:none}
-.ld-logo{font-size:20px;font-weight:700;letter-spacing:-.01em;background:linear-gradient(120deg,var(--c),var(--v),var(--m));background-size:300%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:lsh 2s linear infinite}
+/* LOADER */
+#ldr{position:fixed;inset:0;z-index:8000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity .7s,visibility .7s}
+#ldr.out{opacity:0;visibility:hidden;pointer-events:none}
+.ld-logo{font-size:20px;font-weight:700;background:linear-gradient(120deg,var(--c),var(--v),var(--m));background-size:300%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:lsh 2s linear infinite}
 @keyframes lsh{0%{background-position:0%}100%{background-position:200%}}
 .ld-bar{width:160px;height:1.5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
-.ld-prog{height:100%;width:0;background:linear-gradient(90deg,var(--c),var(--v));transition:width .04s linear}
-.ld-pct{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--td)}
+.ld-fill{height:100%;width:0;background:linear-gradient(90deg,var(--c),var(--v));transition:width .04s}
+.ld-pct{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--td)}
 
-/* ─── CANVAS ─── */
-#c3d{position:fixed;inset:0;z-index:0;display:block}
-
-/* ─── SCROLL DRIVER ─── */
-#scroller{position:fixed;inset:0;z-index:1;overflow-y:scroll;overflow-x:hidden}
-#scroller::-webkit-scrollbar{display:none}
-#scroll-content{height:900vh;width:100%;pointer-events:none}
-
-/* ─── NAV ─── */
-#nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:24px 56px;transition:background .5s,border-color .5s,padding .4s;border-bottom:1px solid transparent}
-#nav.solid{padding:15px 56px;background:rgba(2,2,10,.75);backdrop-filter:blur(20px);border-color:rgba(255,255,255,.07)}
+/* NAV */
+#nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:22px 52px;transition:background .4s,border-color .4s;border-bottom:1px solid transparent}
+#nav.dark{background:rgba(2,2,10,.8);backdrop-filter:blur(20px);border-color:rgba(255,255,255,.07);padding:15px 52px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
 .gem{width:10px;height:10px;border-radius:2px;background:linear-gradient(135deg,var(--c),var(--v));transform:rotate(45deg);box-shadow:0 0 14px rgba(0,229,255,.5);animation:gp 3s ease-in-out infinite}
-@keyframes gp{0%,100%{box-shadow:0 0 14px rgba(0,229,255,.4)}50%{box-shadow:0 0 28px rgba(0,229,255,.7),0 0 50px rgba(124,77,255,.3)}}
-.navl{display:flex;gap:34px}
+@keyframes gp{0%,100%{box-shadow:0 0 14px rgba(0,229,255,.4)}50%{box-shadow:0 0 30px rgba(0,229,255,.7),0 0 50px rgba(124,77,255,.3)}}
+.navl{display:flex;gap:32px}
 .navl a{font-size:13px;font-weight:500;color:var(--td);cursor:pointer;position:relative;padding-bottom:2px;transition:color .25s}
 .navl a::after{content:"";position:absolute;bottom:0;left:0;width:0;height:1px;background:var(--c);transition:width .3s}
-.navl a:hover{color:var(--t)}
-.navl a:hover::after{width:100%}
-.ncta{font-size:13px;font-weight:600;padding:10px 22px;border-radius:10px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,255,.24);transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden}
-.ncta::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transform:translateX(-100%);transition:transform .5s}
-.ncta:hover::before{transform:translateX(100%)}
+.navl a:hover{color:var(--t)}.navl a:hover::after{width:100%}
+.ncta{font-size:13px;font-weight:600;padding:10px 22px;border-radius:10px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,255,.24);transition:transform .25s,box-shadow .25s}
 .ncta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,.42)}
-@media(max-width:768px){#nav,#nav.solid{padding:14px 20px}.navl{display:none}}
+@media(max-width:768px){#nav,#nav.dark{padding:14px 20px}.navl{display:none}}
 
-/* ─── UI OVERLAYS (all position:fixed so they float above WebGL) ─── */
-#ui{position:fixed;inset:0;z-index:10;pointer-events:none}
+/* SCROLL DOTS */
+#dots{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:400;display:flex;flex-direction:column;gap:10px}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);cursor:pointer;transition:all .35s}
+.dot.on{background:var(--c);box-shadow:0 0 10px var(--c);transform:scale(1.5)}
+#sec-name{position:fixed;right:48px;top:50%;transform:translateY(-50%);z-index:400;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--td);writing-mode:vertical-rl;margin-top:-40px}
 
-/* Hero text */
-#hero-ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;transition:opacity .5s}
-.h-eye{display:inline-flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--c);margin-bottom:32px;opacity:0;transform:translateY(14px)}
-.h-eye.in{animation:fup .8s .1s cubic-bezier(.16,1,.3,1) forwards}
+/* THREE CANVAS */
+#bg3d{position:fixed;inset:0;z-index:0}
+
+/* SECTIONS WRAPPER — THIS IS THE KEY */
+#wrapper{
+  position:fixed;inset:0;z-index:10;
+  /* overflow:hidden — panels swap inside this */
+}
+
+/* EACH FULL-SCREEN PANEL */
+.panel{
+  position:absolute;inset:0;
+  display:flex;align-items:center;
+  padding:0 7%;
+  /* Hidden by default */
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(60px);
+  transition:opacity .65s cubic-bezier(.16,1,.3,1), transform .65s cubic-bezier(.16,1,.3,1);
+}
+.panel.active{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+}
+.panel.exit-up{
+  opacity:0;
+  transform:translateY(-60px);
+  pointer-events:none;
+}
+
+/* HERO PANEL */
+#p0{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px}
+.h-eye{display:inline-flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--c);margin-bottom:32px}
 .edot{width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);animation:blink 2s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
-@keyframes fup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.h1{font-size:clamp(60px,9.5vw,115px);font-weight:800;letter-spacing:-.045em;line-height:.9}
-.hl{display:block;overflow:hidden}
-.hli{display:block;transform:translateY(110%);transition:transform .9s cubic-bezier(.16,1,.3,1)}
-.hli.in{transform:none}
-.hl:nth-child(2) .hli{transition-delay:.12s}
-.hl:nth-child(3) .hli{transition-delay:.24s}
+.h1{font-size:clamp(58px,9vw,112px);font-weight:800;letter-spacing:-.045em;line-height:.9;overflow:hidden}
 .gw{background:linear-gradient(120deg,var(--c),var(--v) 50%,var(--m));background-size:200%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gws 6s ease-in-out infinite}
 @keyframes gws{0%,100%{background-position:0%}50%{background-position:100%}}
-.h-sub{max-width:480px;font-size:clamp(15px,1.7vw,17px);line-height:1.82;color:var(--tm);margin:30px auto 0;opacity:0;transform:translateY(14px)}
-.h-sub.in{animation:fup .8s .5s cubic-bezier(.16,1,.3,1) forwards}
-.h-btns{margin-top:48px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;opacity:0;transform:translateY(14px)}
-.h-btns.in{animation:fup .8s .7s cubic-bezier(.16,1,.3,1) forwards}
-.bp{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;padding:17px 40px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--c),var(--v));color:#000;cursor:pointer;box-shadow:0 8px 30px rgba(0,229,255,.28);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;position:relative;overflow:hidden;pointer-events:auto}
+.h-sub{max-width:480px;font-size:clamp(15px,1.7vw,17px);line-height:1.82;color:var(--tm);margin:28px auto 0}
+.h-btns{margin-top:46px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.bp{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;padding:17px 40px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--c),var(--v));color:#000;cursor:pointer;box-shadow:0 8px 30px rgba(0,229,255,.28);transition:transform .3s,box-shadow .3s;position:relative;overflow:hidden}
 .bp::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:translateX(-100%);transition:transform .5s}
 .bp:hover::before{transform:translateX(100%)}
 .bp:hover{transform:translateY(-3px);box-shadow:0 18px 48px rgba(0,229,255,.44)}
-.bg2{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:500;padding:17px 40px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;backdrop-filter:blur(10px);transition:border-color .3s,background .3s,transform .3s;pointer-events:auto}
+.bg2{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:500;padding:17px 40px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;backdrop-filter:blur(10px);transition:border-color .3s,background .3s,transform .3s}
 .bg2:hover{border-color:var(--c);background:rgba(0,229,255,.09);transform:translateY(-3px)}
-.scroll-cue{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--td);opacity:0;animation:fadeIn 1s 1.5s forwards}
-@keyframes fadeIn{to{opacity:1}}
+.scroll-hint{margin-top:60px;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--td)}
 .scl{width:1px;height:40px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
 .scl::after{content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;background:linear-gradient(180deg,transparent,var(--c));animation:sdrop 2s ease-in-out infinite}
 @keyframes sdrop{0%{top:-100%}65%{top:100%}100%{top:100%}}
 
-/* ─── GAME PANELS (scroll-driven, like terminal-industries) ─── */
-.game-panel{
-  position:absolute;inset:0;
-  display:flex;align-items:center;
-  padding:0 8%;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .7s cubic-bezier(.16,1,.3,1);
-}
-.game-panel.active{opacity:1;pointer-events:auto}
-.gp-content{max-width:520px}
-.gp-eye{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--c);margin-bottom:16px;display:flex;align-items:center;gap:10px}
-.gp-num{font-family:'JetBrains Mono',monospace;font-size:80px;font-weight:700;line-height:1;letter-spacing:-.05em;background:linear-gradient(120deg,var(--c),var(--v));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;opacity:.18;position:absolute;top:60px;right:8%;user-select:none}
-.gp-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:99px;background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.3);color:var(--c);margin-bottom:12px}
-.gp-title{font-size:clamp(36px,5vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:20px}
-.gp-desc{font-size:15.5px;line-height:1.82;color:var(--tm);margin-bottom:32px}
-.gp-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:36px}
+/* GAME PANELS */
+.gp-side{flex:0 0 auto;max-width:520px}
+.gp-num{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--td);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.gp-num-big{position:absolute;right:7%;top:50%;transform:translateY(-50%);font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:clamp(100px,18vw,220px);letter-spacing:-.06em;opacity:.04;user-select:none;pointer-events:none;line-height:1;color:var(--t)}
+.gbadge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:99px;background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.3);color:var(--c);margin-bottom:14px}
+.gtitle{font-size:clamp(38px,5.5vw,68px);font-weight:800;letter-spacing:-.04em;line-height:.95;margin-bottom:20px}
+.gdesc{font-size:15.5px;line-height:1.82;color:var(--tm);margin-bottom:28px;max-width:460px}
+.gchips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:34px}
 .chip{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--tm)}
-.gp-play{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600;padding:15px 36px;border-radius:11px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(0,229,255,.25);transition:transform .3s,box-shadow .3s;pointer-events:auto}
-.gp-play:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(0,229,255,.42)}
+.gplay{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600;padding:15px 36px;border-radius:11px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(0,229,255,.25);transition:transform .3s,box-shadow .3s}
+.gplay:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(0,229,255,.42)}
 
-/* Scroll progress indicator */
-#scroll-indicator{position:fixed;right:32px;top:50%;transform:translateY(-50%);z-index:200;display:flex;flex-direction:column;gap:10px;align-items:center}
-.si-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:background .3s,transform .3s;pointer-events:auto}
-.si-dot.active{background:var(--c);box-shadow:0 0 8px var(--c);transform:scale(1.5)}
-.si-line{width:1px;height:40px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
-.si-fill{position:absolute;top:0;left:0;width:100%;height:0%;background:linear-gradient(180deg,var(--c),var(--v));transition:height .1s linear}
-
-/* Section label (shows which section we're in) */
-#sec-label{position:fixed;left:32px;bottom:32px;z-index:200;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--td);transition:opacity .4s}
-
-/* Profile overlay */
-#profile-panel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:80px 56px;opacity:0;pointer-events:none;transition:opacity .7s}
-#profile-panel.active{opacity:1;pointer-events:auto}
-.prof-card{background:rgba(2,2,10,.7);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:48px;max-width:560px;width:100%;position:relative;overflow:hidden}
-.prof-card::before{content:"";position:absolute;top:-40%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(124,77,255,.15),transparent 70%);filter:blur(30px);pointer-events:none}
-.pl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:8px}
-.pn{font-size:32px;font-weight:700;margin-bottom:32px;letter-spacing:-.02em}
-.pr{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+/* PROFILE PANEL */
+#p5{flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.prof-card{background:rgba(2,2,10,.72);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:52px 48px;max-width:520px;width:100%;position:relative;overflow:hidden;text-align:left}
+.prof-card::before{content:"";position:absolute;top:-40%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(124,77,255,.14),transparent 70%);filter:blur(30px);pointer-events:none}
+.prof-card::after{content:"";position:absolute;bottom:-30%;left:-10%;width:220px;height:220px;background:radial-gradient(circle,rgba(0,229,255,.08),transparent 70%);filter:blur(30px);pointer-events:none}
+.pl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:8px;position:relative;z-index:1}
+.pn{font-size:32px;font-weight:700;margin-bottom:32px;letter-spacing:-.02em;position:relative;z-index:1}
+.pr{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);position:relative;z-index:1}
 .pr:last-of-type{border:none}
 .pr span:first-child{color:var(--td);font-size:13px}
 .pr strong{font-family:'JetBrains Mono',monospace;font-size:17px;color:var(--c)}
-.xpt{height:4px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:18px;overflow:hidden}
+.xpt{height:4px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:18px;overflow:hidden;position:relative;z-index:1}
 .xpf{height:100%;background:linear-gradient(90deg,var(--c),var(--v));box-shadow:0 0 8px rgba(0,229,255,.4);border-radius:99px;width:0%;transition:width 1s cubic-bezier(.16,1,.3,1)}
-.pbtns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
-.pb{font-size:13px;font-weight:500;padding:12px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;transition:border-color .3s,background .3s;pointer-events:auto}
+.p-btns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;position:relative;z-index:1}
+.pb{font-size:13px;font-weight:500;padding:12px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;transition:border-color .3s,background .3s}
 .pb:hover{border-color:var(--c);background:rgba(0,229,255,.09)}
 </style>
 </head>
 <body>
 
 <!-- CURSOR -->
-<div id="cur-dot"></div>
-<div id="cur-ring"></div>
+<div id="cdot"></div>
+<div id="cring"></div>
 
 <!-- LOADER -->
-<div id="loader">
+<div id="ldr">
   <div class="ld-logo">Yuvraj Soni Arcade</div>
-  <div class="ld-bar"><div class="ld-prog" id="ldp"></div></div>
-  <div class="ld-pct" id="ldt">0%</div>
+  <div class="ld-bar"><div class="ld-fill" id="lf"></div></div>
+  <div class="ld-pct" id="lt">0%</div>
 </div>
 
-<!-- WEBGL CANVAS (full screen, always behind) -->
-<canvas id="c3d"></canvas>
-
-<!-- SCROLL DRIVER -->
-<div id="scroller"><div id="scroll-content"></div></div>
+<!-- THREE.JS BG -->
+<div id="bg3d"></div>
 
 <!-- NAV -->
 <nav id="nav">
   <div class="logo"><span class="gem"></span>Yuvraj Soni Arcade</div>
   <div class="navl">
-    <a onclick="jumpTo(0)">Home</a>
-    <a onclick="jumpTo(1)">Games</a>
-    <a onclick="jumpTo(5)">Profile</a>
+    <a onclick="goTo(0)">Home</a>
+    <a onclick="goTo(1)">Games</a>
+    <a onclick="goTo(5)">Profile</a>
   </div>
-  <button class="ncta" onclick="jumpTo(1)">Play Now</button>
+  <button class="ncta" onclick="goTo(1)">Play Now</button>
 </nav>
 
-<!-- SCROLL INDICATOR -->
-<div id="scroll-indicator">
-  <div class="si-dot active" onclick="jumpTo(0)" title="Home"></div>
-  <div class="si-line"><div class="si-fill" id="sif1"></div></div>
-  <div class="si-dot" onclick="jumpTo(1)" title="Eagle Flight"></div>
-  <div class="si-line"><div class="si-fill" id="sif2"></div></div>
-  <div class="si-dot" onclick="jumpTo(2)" title="Void Interceptor"></div>
-  <div class="si-line"><div class="si-fill" id="sif3"></div></div>
-  <div class="si-dot" onclick="jumpTo(3)" title="Neon Drift Racer"></div>
-  <div class="si-line"><div class="si-fill" id="sif4"></div></div>
-  <div class="si-dot" onclick="jumpTo(4)" title="X/O Bot Duel"></div>
-  <div class="si-line"><div class="si-fill" id="sif5"></div></div>
-  <div class="si-dot" onclick="jumpTo(5)" title="Profile"></div>
+<!-- SCROLL DOTS -->
+<div id="dots">
+  <div class="dot on" onclick="goTo(0)" title="Home"></div>
+  <div class="dot" onclick="goTo(1)" title="Eagle Flight"></div>
+  <div class="dot" onclick="goTo(2)" title="Void Interceptor"></div>
+  <div class="dot" onclick="goTo(3)" title="Neon Drift Racer"></div>
+  <div class="dot" onclick="goTo(4)" title="X/O Bot Duel"></div>
+  <div class="dot" onclick="goTo(5)" title="Profile"></div>
 </div>
+<div id="sec-name">Home</div>
 
-<div id="sec-label">Section 0 / 5</div>
+<!-- PANELS -->
+<div id="wrapper">
 
-<!-- UI OVERLAYS -->
-<div id="ui">
-
-  <!-- SECTION 0: HERO -->
-  <div class="game-panel active" id="sec-0">
-    <div id="hero-ui" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px">
-      <div class="h-eye" id="heye"><span class="edot"></span>Independent Arcade · Est. 2026</div>
-      <h1 class="h1">
-        <span class="hl"><span class="hli">Play in</span></span>
-        <span class="hl"><span class="hli gw">another</span></span>
-        <span class="hl"><span class="hli">dimension.</span></span>
-      </h1>
-      <p class="h-sub" id="hsub">A hand-built collection of four arcade games — designed and developed end-to-end by Yuvraj Soni. One profile, infinite progression.</p>
-      <div class="h-btns" id="hbtns">
-        <button class="bp" onclick="jumpTo(1)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Enter the Arcade
-        </button>
-        <button class="bg2" onclick="jumpTo(5)">View Profile</button>
-      </div>
-      <div class="scroll-cue"><span>Scroll</span><div class="scl"></div></div>
+  <!-- 0: HERO -->
+  <div class="panel active" id="p0">
+    <div class="h-eye"><span class="edot"></span>Independent Arcade · Est. 2026</div>
+    <h1 class="h1">Play in<br><span class="gw">another</span><br>dimension.</h1>
+    <p class="h-sub">A hand-built collection of four arcade games by Yuvraj Soni — one profile, infinite progression, zero shortcuts.</p>
+    <div class="h-btns">
+      <button class="bp" onclick="goTo(1)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Enter the Arcade
+      </button>
+      <button class="bg2" onclick="goTo(5)">View Profile</button>
     </div>
+    <div class="scroll-hint"><span>Scroll or use arrow keys</span><div class="scl"></div></div>
   </div>
 
-  <!-- SECTION 1: EAGLE FLIGHT -->
-  <div class="game-panel" id="sec-1">
-    <div class="gp-num">01</div>
-    <div class="gp-content">
-      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--c);display:inline-block;box-shadow:0 0 8px var(--c)"></span>Game One</div>
-      <div class="gp-badge">Endless · Skill</div>
-      <h2 class="gp-title">Eagle<br>Flight</h2>
-      <p class="gp-desc">Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and higher multipliers. Every run is a new challenge — no two alike.</p>
-      <div class="gp-chips"><span class="chip">Reflex</span><span class="chip">Endless</span><span class="chip">High Score</span></div>
-      <button class="gp-play" onclick="location.href='eagle.html'">
+  <!-- 1: EAGLE FLIGHT -->
+  <div class="panel" id="p1">
+    <div class="gp-num-big">01</div>
+    <div class="gp-side">
+      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--c);display:inline-block;box-shadow:0 0 8px var(--c)"></span>Game One</div>
+      <div class="gbadge">Endless · Skill</div>
+      <h2 class="gtitle">Eagle<br>Flight</h2>
+      <p class="gdesc">Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and chain higher multipliers. Every run is different.</p>
+      <div class="gchips"><span class="chip">Reflex</span><span class="chip">Endless</span><span class="chip">High Score</span></div>
+      <button class="gplay" onclick="location.href='eagle.html'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
       </button>
     </div>
   </div>
 
-  <!-- SECTION 2: VOID INTERCEPTOR -->
-  <div class="game-panel" id="sec-2">
-    <div class="gp-num">02</div>
-    <div class="gp-content">
-      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--v);display:inline-block;box-shadow:0 0 8px var(--v)"></span>Game Two</div>
-      <div class="gp-badge" style="color:var(--v);border-color:rgba(124,77,255,.3);background:rgba(124,77,255,.09)">3D · Wave Shooter</div>
-      <h2 class="gp-title">Void<br>Interceptor</h2>
-      <p class="gp-desc">A full Three.js 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, upgrade your ship between waves, and defeat the Void Sentinel boss.</p>
-      <div class="gp-chips"><span class="chip">3D Engine</span><span class="chip">Boss Fights</span><span class="chip">Upgrades</span><span class="chip">Power-Ups</span></div>
-      <button class="gp-play" style="background:linear-gradient(135deg,var(--v),var(--m))" onclick="location.href='space.html'">
+  <!-- 2: VOID INTERCEPTOR -->
+  <div class="panel" id="p2">
+    <div class="gp-num-big">02</div>
+    <div class="gp-side">
+      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--v);display:inline-block;box-shadow:0 0 8px var(--v)"></span>Game Two</div>
+      <div class="gbadge" style="color:var(--v);border-color:rgba(124,77,255,.35);background:rgba(124,77,255,.09)">3D · Wave Shooter</div>
+      <h2 class="gtitle">Void<br>Interceptor</h2>
+      <p class="gdesc">Full Three.js 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, upgrade your ship between waves, and defeat the Void Sentinel boss.</p>
+      <div class="gchips"><span class="chip">3D Engine</span><span class="chip">Boss Fights</span><span class="chip">Upgrades</span></div>
+      <button class="gplay" style="background:linear-gradient(135deg,var(--v),var(--m))" onclick="location.href='space.html'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
       </button>
     </div>
   </div>
 
-  <!-- SECTION 3: NEON DRIFT RACER -->
-  <div class="game-panel" id="sec-3">
-    <div class="gp-num">03</div>
-    <div class="gp-content">
-      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--g);display:inline-block;box-shadow:0 0 8px var(--g)"></span>Game Three</div>
-      <div class="gp-badge" style="color:var(--g);border-color:rgba(255,201,60,.3);background:rgba(255,201,60,.09)">3D · Racing</div>
-      <h2 class="gp-title">Neon Drift<br>Racer</h2>
-      <p class="gp-desc">Race through a neon city highway in full 3D. Dodge oncoming traffic, chain near-misses for combo bonuses, and push your distance record as far as it will go.</p>
-      <div class="gp-chips"><span class="chip">3D Engine</span><span class="chip">Near-Miss Combos</span><span class="chip">Distance Run</span></div>
-      <button class="gp-play" style="background:linear-gradient(135deg,var(--g),#ff8c00);color:#000" onclick="location.href='drift.html'">
+  <!-- 3: NEON DRIFT RACER -->
+  <div class="panel" id="p3">
+    <div class="gp-num-big">03</div>
+    <div class="gp-side">
+      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--g);display:inline-block;box-shadow:0 0 8px var(--g)"></span>Game Three</div>
+      <div class="gbadge" style="color:var(--g);border-color:rgba(255,201,60,.35);background:rgba(255,201,60,.09)">3D · Racing</div>
+      <h2 class="gtitle">Neon Drift<br>Racer</h2>
+      <p class="gdesc">Race through a neon city highway in full 3D. Dodge oncoming traffic, chain near-misses for combo bonuses, and push your distance record as far as it'll go.</p>
+      <div class="gchips"><span class="chip">3D Engine</span><span class="chip">Combos</span><span class="chip">Distance Run</span></div>
+      <button class="gplay" style="background:linear-gradient(135deg,var(--g),#ff8c00);color:#000" onclick="location.href='drift.html'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
       </button>
     </div>
   </div>
 
-  <!-- SECTION 4: X/O BOT DUEL -->
-  <div class="game-panel" id="sec-4">
-    <div class="gp-num">04</div>
-    <div class="gp-content">
-      <div class="gp-eye"><span style="width:5px;height:5px;border-radius:50%;background:var(--m);display:inline-block;box-shadow:0 0 8px var(--m)"></span>Game Four</div>
-      <div class="gp-badge" style="color:var(--m);border-color:rgba(255,45,120,.3);background:rgba(255,45,120,.09)">Strategy · 1v1 AI</div>
-      <h2 class="gp-title">X/O Bot<br>Duel</h2>
-      <p class="gp-desc">A tactical battle against an AI opponent that adapts to every move you make. Simple to understand, genuinely hard to master — the thinking person's arcade game.</p>
-      <div class="gp-chips"><span class="chip">AI Opponent</span><span class="chip">Strategy</span><span class="chip">1v1</span></div>
-      <button class="gp-play" style="background:linear-gradient(135deg,var(--m),var(--v))" onclick="location.href='xo.html'">
+  <!-- 4: X/O BOT DUEL -->
+  <div class="panel" id="p4">
+    <div class="gp-num-big">04</div>
+    <div class="gp-side">
+      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--m);display:inline-block;box-shadow:0 0 8px var(--m)"></span>Game Four</div>
+      <div class="gbadge" style="color:var(--m);border-color:rgba(255,45,120,.35);background:rgba(255,45,120,.09)">Strategy · 1v1 AI</div>
+      <h2 class="gtitle">X/O Bot<br>Duel</h2>
+      <p class="gdesc">A tactical battle against an AI opponent that adapts to every move. Simple to understand, genuinely hard to master — the thinking person's arcade game.</p>
+      <div class="gchips"><span class="chip">AI Opponent</span><span class="chip">Strategy</span><span class="chip">1v1</span></div>
+      <button class="gplay" style="background:linear-gradient(135deg,var(--m),var(--v))" onclick="location.href='xo.html'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
       </button>
     </div>
   </div>
 
-  <!-- SECTION 5: PROFILE -->
-  <div class="game-panel" id="sec-5">
-    <div id="profile-panel" class="active" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:80px 56px">
-      <div class="prof-card">
-        <div class="pl">Your Member Card</div>
-        <div class="pn" id="playerName">—</div>
-        <div class="pr"><span>Level</span><strong id="playerLevel">—</strong></div>
-        <div class="pr"><span>Coins</span><strong id="playerCoins">—</strong></div>
-        <div class="pr"><span>Experience</span><strong id="playerXP">—</strong></div>
-        <div class="xpt"><div class="xpf" id="xpFill"></div></div>
-        <div class="pbtns">
-          <button class="pb" onclick="changeName()">Change Name</button>
-          <button class="pb" onclick="jumpTo(1)">Play a Game</button>
-        </div>
+  <!-- 5: PROFILE -->
+  <div class="panel" id="p5">
+    <div class="prof-card">
+      <div class="pl">Your Member Card</div>
+      <div class="pn" id="playerName">—</div>
+      <div class="pr"><span>Level</span><strong id="playerLevel">—</strong></div>
+      <div class="pr"><span>Coins</span><strong id="playerCoins">—</strong></div>
+      <div class="pr"><span>Experience</span><strong id="playerXP">—</strong></div>
+      <div class="xpt"><div class="xpf" id="xpFill"></div></div>
+      <div class="p-btns">
+        <button class="pb" onclick="changeName()">Change Name</button>
+        <button class="pb" onclick="goTo(1)">Play a Game</button>
       </div>
     </div>
   </div>
 
-</div><!-- /ui -->
+</div><!-- /wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
 <script>
-/* ════════════════════════════════════════════════
-   YUVRAJ SONI ARCADE — Full 3D Scroll Experience
-   Each scroll section has its own 3D scene that
-   animates in from off-screen, exactly like
-   terminal-industries.com's scroll animations.
-════════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   SECTION MANAGER
+   Simple, reliable, guaranteed to work.
+   Uses wheel + touch + keyboard events
+   directly on window — no scroll container.
+══════════════════════════════════════ */
+const TOTAL = 6;
+const SEC_NAMES = ['Home','Eagle Flight','Void Interceptor','Neon Drift Racer','X/O Bot Duel','Profile'];
+let current = 0;
+let isAnimating = false;
+const ANIM_TIME = 800; // ms lockout between switches
 
-const SECTIONS = 6; // 0=hero, 1-4=games, 5=profile
-const VH = () => window.innerHeight;
-const VW = () => window.innerWidth;
+const panels = document.querySelectorAll('.panel');
+const dots   = document.querySelectorAll('.dot');
+const secNameEl = document.getElementById('sec-name');
 
-/* ── Renderer setup ── */
-const canvas = document.getElementById('c3d');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(VW(), VH());
-renderer.setClearColor(0x02020a, 1);
-renderer.shadowMap.enabled = false;
+function goTo(idx) {
+  if(idx < 0 || idx >= TOTAL || idx === current) return;
+  if(isAnimating) return;
+  isAnimating = true;
 
-const masterScene = new THREE.Scene();
-const masterCam = new THREE.PerspectiveCamera(60, VW() / VH(), 0.1, 500);
-masterCam.position.z = 18;
+  const prev = current;
+  current = idx;
 
-/* ── Shared lights ── */
-masterScene.add(new THREE.AmbientLight(0x080818, 1.0));
-const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-keyLight.position.set(8, 12, 10);
-masterScene.add(keyLight);
-const fillLight = new THREE.PointLight(0x00e5ff, 1.4, 80);
-fillLight.position.set(-10, 5, 5);
-masterScene.add(fillLight);
-const rimLight = new THREE.PointLight(0x7c4dff, 1.0, 60);
-rimLight.position.set(10, -5, -10);
-masterScene.add(rimLight);
-const pinkLight = new THREE.PointLight(0xff2d78, 0.5, 60);
-pinkLight.position.set(0, 15, -20);
-masterScene.add(pinkLight);
+  // Exit previous panel upward if going forward, downward if going back
+  const goingDown = idx > prev;
+  panels[prev].classList.remove('active');
+  panels[prev].classList.add(goingDown ? 'exit-up' : 'exit-down');
 
-/* ── Starfield (GPU instanced, stays constant) ── */
-(function() {
-  const N = 1400;
-  const pos = new Float32Array(N * 3);
-  const col = new Float32Array(N * 3);
-  for (let i = 0; i < N; i++) {
-    pos[i*3]   = (Math.random() - .5) * 260;
-    pos[i*3+1] = (Math.random() - .5) * 160;
-    pos[i*3+2] = -20 - Math.random() * 180;
-    const t = Math.random();
-    if (t < .5)      { col[i*3]=.82; col[i*3+1]=.9;  col[i*3+2]=1; }
-    else if (t < .75){ col[i*3]=1;   col[i*3+1]=.95; col[i*3+2]=.65; }
-    else             { col[i*3]=1;   col[i*3+1]=.58; col[i*3+2]=.38; }
+  // After exit transition remove class
+  setTimeout(() => {
+    panels[prev].classList.remove('exit-up','exit-down');
+  }, 700);
+
+  // Enter new panel
+  panels[current].classList.add('active');
+
+  // Update dots
+  dots.forEach((d,i) => d.classList.toggle('on', i === current));
+  secNameEl.textContent = SEC_NAMES[current];
+
+  // Nav dark after hero
+  document.getElementById('nav').classList.toggle('dark', current > 0);
+
+  // Unlock after animation
+  setTimeout(() => { isAnimating = false; }, ANIM_TIME);
+
+  // Trigger 3D scene change
+  setScene(current);
+}
+
+// Add exit-down CSS
+const st = document.createElement('style');
+st.textContent = `.exit-down{opacity:0;transform:translateY(60px);pointer-events:none}`;
+document.head.appendChild(st);
+
+/* ── WHEEL ── */
+let wheelAcc = 0, wheelTimer = null;
+window.addEventListener('wheel', e => {
+  e.preventDefault();
+  wheelAcc += e.deltaY;
+  clearTimeout(wheelTimer);
+  wheelTimer = setTimeout(() => {
+    if(Math.abs(wheelAcc) > 30) {
+      if(wheelAcc > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+    wheelAcc = 0;
+  }, 80);
+}, { passive: false });
+
+/* ── KEYBOARD ── */
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); goTo(current + 1); }
+  if(e.key === 'ArrowUp'   || e.key === 'PageUp')   { e.preventDefault(); goTo(current - 1); }
+});
+
+/* ── TOUCH ── */
+let touchStartY = 0;
+window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+window.addEventListener('touchend', e => {
+  const dy = touchStartY - e.changedTouches[0].clientY;
+  if(Math.abs(dy) > 40) {
+    if(dy > 0) goTo(current + 1);
+    else goTo(current - 1);
   }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  masterScene.add(new THREE.Points(g, new THREE.PointsMaterial({
-    size: .12, vertexColors: true, transparent: true, opacity: .9, sizeAttenuation: true
-  })));
+}, { passive: true });
+
+/* ══════════════════════════════════════
+   THREE.JS FULL-SCREEN 3D BACKGROUND
+   One scene, objects swap per section.
+══════════════════════════════════════ */
+const W = () => window.innerWidth, H = () => window.innerHeight;
+
+const scene = new THREE.Scene();
+const cam   = new THREE.PerspectiveCamera(60, W()/H(), 0.1, 400);
+cam.position.set(0, 0, 16);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W(), H());
+renderer.setClearColor(0x02020a, 1);
+document.getElementById('bg3d').appendChild(renderer.domElement);
+
+/* Lights */
+scene.add(new THREE.AmbientLight(0x080818, 1.0));
+const key = new THREE.DirectionalLight(0xffffff, 0.9);
+key.position.set(8, 12, 10); scene.add(key);
+const fill = new THREE.PointLight(0x00e5ff, 1.4, 80);
+fill.position.set(-10, 5, 5); scene.add(fill);
+const rim  = new THREE.PointLight(0x7c4dff, 1.0, 60);
+rim.position.set(10, -5, -10); scene.add(rim);
+
+/* Stars */
+(function(){
+  const N = 1400, pos = new Float32Array(N*3), col = new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-.5)*260; pos[i*3+1]=(Math.random()-.5)*160; pos[i*3+2]=-20-Math.random()*180;
+    const t=Math.random();
+    if(t<.5){col[i*3]=.82;col[i*3+1]=.9;col[i*3+2]=1;}
+    else if(t<.75){col[i*3]=1;col[i*3+1]=.95;col[i*3+2]=.65;}
+    else{col[i*3]=1;col[i*3+1]=.55;col[i*3+2]=.38;}
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:.12,vertexColors:true,transparent:true,opacity:.9,sizeAttenuation:true})));
 })();
 
-/* ── Nebula backdrop ── */
+/* Nebula */
 [{c:0x001428,x:-40,y:14,z:-100,r:32},{c:0x18082a,x:45,y:-10,z:-130,r:26},{c:0x020a1e,x:8,y:28,z:-85,r:20}].forEach(d=>{
-  const m = new THREE.Mesh(new THREE.SphereGeometry(d.r,14,14),
-    new THREE.MeshBasicMaterial({color:d.c,transparent:true,opacity:.65,depthWrite:false,side:THREE.BackSide}));
-  m.position.set(d.x,d.y,d.z); masterScene.add(m);
+  const m=new THREE.Mesh(new THREE.SphereGeometry(d.r,12,12),
+    new THREE.MeshBasicMaterial({color:d.c,transparent:true,opacity:.6,depthWrite:false,side:THREE.BackSide}));
+  m.position.set(d.x,d.y,d.z); scene.add(m);
 });
 
-/* ── Distant planets ── */
+/* Planets */
 const planets = [];
 [{r:10,c:0x0c1e3c,ec:0x003688,x:-55,y:20,z:-170,ring:true},{r:5,c:0x28100a,ec:0x5a2200,x:64,y:-24,z:-140}].forEach(d=>{
-  const mat = new THREE.MeshStandardMaterial({color:d.c,emissive:d.ec,emissiveIntensity:.13,roughness:.9,metalness:.05});
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(d.r,28,28),mat);
+  const mat=new THREE.MeshStandardMaterial({color:d.c,emissive:d.ec,emissiveIntensity:.13,roughness:.9,metalness:.05});
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(d.r,28,28),mat);
   mesh.position.set(d.x,d.y,d.z);
   if(d.ring){
-    const rm = new THREE.Mesh(new THREE.TorusGeometry(d.r*1.6,d.r*.2,4,60),
+    const rm=new THREE.Mesh(new THREE.TorusGeometry(d.r*1.6,d.r*.2,4,60),
       new THREE.MeshBasicMaterial({color:0x1a3a5c,transparent:true,opacity:.38}));
-    rm.rotation.x = Math.PI*.38; mesh.add(rm);
+    rm.rotation.x=Math.PI*.38; mesh.add(rm);
   }
-  masterScene.add(mesh); planets.push(mesh);
+  scene.add(mesh); planets.push(mesh);
 });
 
-/* ════════════════════════════════════════════════
-   SECTION 3D OBJECTS
-   Each section (0-5) has its own 3D group.
-   When that section is active, the group flies in
-   from off-screen with scroll progress animation.
-════════════════════════════════════════════════ */
-
-const sectionGroups = [];
-for(let i = 0; i < SECTIONS; i++) {
-  const g = new THREE.Group();
-  g.visible = false;
-  masterScene.add(g);
-  sectionGroups.push(g);
-}
-
-/* ── Helper: make asteroid geometry ── */
-function mkAsteroid(r) {
-  const g = new THREE.IcosahedronGeometry(r, 1);
-  const p = g.attributes.position;
-  for(let i=0;i<p.count;i++) p.setXYZ(i,p.getX(i)*(.72+Math.random()*.52),p.getY(i)*(.72+Math.random()*.52),p.getZ(i)*(.72+Math.random()*.52));
-  g.computeVertexNormals(); return g;
-}
-
-/* ── Helper: floating shard ── */
+/* ── PER-SECTION 3D OBJECTS ── */
 function mkShard(size, color) {
-  const g = new THREE.OctahedronGeometry(size,0);
+  const g = new THREE.OctahedronGeometry(size, 0);
   const p = g.attributes.position;
-  for(let i=0;i<p.count;i++) p.setXYZ(i,p.getX(i)*(.6+Math.random()*.8),p.getY(i)*(.6+Math.random()*.8),p.getZ(i)*(.6+Math.random()*.8));
+  for(let i=0;i<p.count;i++) p.setXYZ(i, p.getX(i)*(.55+Math.random()*.9), p.getY(i)*(.55+Math.random()*.9), p.getZ(i)*(.55+Math.random()*.9));
   g.computeVertexNormals();
   return new THREE.Mesh(g, new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.55,metalness:.7,roughness:.18,transparent:true,opacity:.55}));
 }
+function mkAsteroid(r) {
+  const g = new THREE.IcosahedronGeometry(r, 1);
+  const p = g.attributes.position;
+  for(let i=0;i<p.count;i++) p.setXYZ(i, p.getX(i)*(.7+Math.random()*.5), p.getY(i)*(.7+Math.random()*.5), p.getZ(i)*(.7+Math.random()*.5));
+  g.computeVertexNormals(); return g;
+}
 
-/* ── SECTION 0: HERO — Crystal shard galaxy + planets ── */
+/* Each section has a group — we fly it in when active */
+const groups = [];
+for(let i=0;i<TOTAL;i++){
+  const g=new THREE.Group(); g.visible=false; scene.add(g); groups.push(g);
+}
+
+/* SEC 0: Hero — glowing crystal orb + shards */
 {
-  const g = sectionGroups[0];
-  // Central spinning dodecahedron
-  const core = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(1.4,0),
-    new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.35,metalness:.8,roughness:.1,wireframe:false,transparent:true,opacity:.7})
-  );
-  core.position.set(5.5,-1,0); g.add(core);
-  // wireframe overlay
-  const wire = new THREE.Mesh(new THREE.DodecahedronGeometry(1.42,0),
-    new THREE.MeshBasicMaterial({color:0x00e5ff,wireframe:true,transparent:true,opacity:.25}));
+  const g = groups[0];
+  const core = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5,0),
+    new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.35,metalness:.8,roughness:.1,transparent:true,opacity:.65}));
+  core.position.set(5.5, 0, 0); g.add(core);
+  const wire = new THREE.Mesh(new THREE.DodecahedronGeometry(1.52,0),
+    new THREE.MeshBasicMaterial({color:0x00e5ff,wireframe:true,transparent:true,opacity:.2}));
   core.add(wire);
-  // Orbiting shards
-  const COLORS = [0x00e5ff,0x7c4dff,0xff2d78,0xffc93c];
-  for(let i=0;i<18;i++){
-    const s = mkShard(.08+Math.random()*.22, COLORS[i%4]);
-    const ang = (i/18)*Math.PI*2, r = 2.2+Math.random()*4;
-    s.position.set(Math.cos(ang)*r+5.5,Math.sin(ang)*r*0.7-1,(Math.random()-.5)*3);
-    s.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    g.add(s);
+  const COLS=[0x00e5ff,0x7c4dff,0xff2d78,0xffc93c];
+  for(let i=0;i<20;i++){
+    const s=mkShard(.07+Math.random()*.22, COLS[i%4]);
+    const a=(i/20)*Math.PI*2, r=2+Math.random()*4.5;
+    s.position.set(Math.cos(a)*r+5.5, Math.sin(a)*r*.6, (Math.random()-.5)*3);
+    s.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6); g.add(s);
   }
-  g.userData = {type:'hero', core};
+  g.userData={core};
 }
 
-/* ── SECTION 1: EAGLE FLIGHT — Swooping crystal bird / wings ── */
+/* SEC 1: Eagle — wings */
 {
-  const g = sectionGroups[1];
-  const mat = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.45,metalness:.75,roughness:.2});
-  const darkMat = new THREE.MeshStandardMaterial({color:0x0a0a18,metalness:.8,roughness:.3});
-  // Body
-  const body = new THREE.Mesh(new THREE.ConeGeometry(.18,.9,8), mat);
-  body.rotation.z = -Math.PI/2; g.add(body);
-  // Wings
-  const WG = new THREE.Shape();
-  WG.moveTo(0,0); WG.lineTo(-1.8,.4); WG.lineTo(-2.2,0); WG.lineTo(-1.5,-.6); WG.lineTo(0,-.2); WG.closePath();
-  const wGeom = new THREE.ShapeGeometry(WG);
-  const wL = new THREE.Mesh(wGeom, mat); wL.position.set(.1,.05,0); g.add(wL);
-  const wR = wL.clone(); wR.scale.x=-1; g.add(wR);
-  // Tail feathers
-  for(let i=0;i<5;i++){
-    const tf = new THREE.Mesh(new THREE.ConeGeometry(.04,.35,4),mat);
-    tf.position.set(-.55,(i-2)*.08,0); tf.rotation.z=Math.PI/2; g.add(tf);
+  const g=groups[1];
+  const mat=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.45,metalness:.75,roughness:.2});
+  const body=new THREE.Mesh(new THREE.ConeGeometry(.2,1.0,8),mat);
+  body.rotation.z=-Math.PI/2; g.add(body);
+  const WGS=new THREE.Shape();
+  WGS.moveTo(0,0);WGS.lineTo(-2.0,.45);WGS.lineTo(-2.4,0);WGS.lineTo(-1.6,-.65);WGS.lineTo(0,-.22);WGS.closePath();
+  const wG=new THREE.ShapeGeometry(WGS);
+  const wL=new THREE.Mesh(wG,mat); wL.position.set(.12,.06,0); g.add(wL);
+  const wR=wL.clone(); wR.scale.x=-1; g.add(wR);
+  for(let i=0;i<6;i++){const tf=new THREE.Mesh(new THREE.ConeGeometry(.04,.35,4),mat);tf.position.set(-.6,(i-2.5)*.09,0);tf.rotation.z=Math.PI/2;g.add(tf);}
+  for(let i=0;i<10;i++){
+    const s=mkShard(.04+Math.random()*.12,0x00e5ff);
+    s.position.set((Math.random()-.5)*5,(Math.random()-.5)*3.5,(Math.random()-.5)*2);g.add(s);
   }
-  // Surrounding crystal shards
-  for(let i=0;i<12;i++){
-    const s = mkShard(.05+Math.random()*.14, 0x00e5ff);
-    s.position.set((Math.random()-.5)*4,(Math.random()-.5)*3,(Math.random()-.5)*2);
-    g.add(s);
-  }
-  g.position.set(4.5, 0, 0);
-  g.userData = {type:'eagle'};
+  g.position.set(4.5,0,0);
 }
 
-/* ── SECTION 2: VOID INTERCEPTOR — Full 3D spaceship ── */
+/* SEC 2: Ship */
 {
-  const g = sectionGroups[2];
-  const steel = new THREE.MeshStandardMaterial({color:0x1c1c28,metalness:.85,roughness:.25});
-  const acc = new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.55,metalness:.4,roughness:.3});
-  const cockpitM = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.5,metalness:.2,roughness:.1,transparent:true,opacity:.88});
-  // Fuselage
-  const fuse = new THREE.Mesh(new THREE.CylinderGeometry(.14,.28,1.7,10), steel);
-  fuse.rotation.x = Math.PI/2; g.add(fuse);
-  // Nose
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(.14,.55,10), acc);
-  nose.rotation.x = Math.PI/2; nose.position.z = -1.12; g.add(nose);
-  // Wings
-  const wing = new THREE.Mesh(new THREE.BoxGeometry(2.6,.055,.65), steel);
-  wing.position.z = -.1; g.add(wing);
-  // Wingtip accents
+  const g=groups[2];
+  const steel=new THREE.MeshStandardMaterial({color:0x1c1c28,metalness:.85,roughness:.25});
+  const acc=new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.55,metalness:.4,roughness:.3});
+  const cpkM=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.5,metalness:.2,roughness:.1,transparent:true,opacity:.88});
+  const fuse=new THREE.Mesh(new THREE.CylinderGeometry(.14,.28,1.7,10),steel);fuse.rotation.x=Math.PI/2;g.add(fuse);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(.14,.55,10),acc);nose.rotation.x=Math.PI/2;nose.position.z=-1.12;g.add(nose);
+  const wing=new THREE.Mesh(new THREE.BoxGeometry(2.6,.055,.65),steel);wing.position.z=-.1;g.add(wing);
   [-1.28,1.28].forEach(x=>{const t=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.65),acc);t.position.set(x,0,-.1);g.add(t);});
-  // Cockpit
-  const cpk = new THREE.Mesh(new THREE.SphereGeometry(.18,14,10), cockpitM);
-  cpk.position.set(0,.13,-.55); g.add(cpk);
-  // Engines
+  const cpk=new THREE.Mesh(new THREE.SphereGeometry(.18,14,10),cpkM);cpk.position.set(0,.13,-.55);g.add(cpk);
   [-.46,.46].forEach(x=>{
-    const nac = new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.5,8),
-      new THREE.MeshStandardMaterial({color:0x0d0d14,metalness:.7,roughness:.4}));
-    nac.rotation.x=Math.PI/2; nac.position.set(x,0,.58); g.add(nac);
-    const glow = new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.1,8),
-      new THREE.MeshBasicMaterial({color:0x7c4dff,transparent:true,opacity:.9}));
-    glow.rotation.x=Math.PI/2; glow.position.set(x,0,.84); g.add(glow);
+    const nac=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.5,8),new THREE.MeshStandardMaterial({color:0x0d0d14,metalness:.7,roughness:.4}));
+    nac.rotation.x=Math.PI/2;nac.position.set(x,0,.58);g.add(nac);
+    const gl=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.1,8),new THREE.MeshBasicMaterial({color:0x7c4dff,transparent:true,opacity:.9}));
+    gl.rotation.x=Math.PI/2;gl.position.set(x,0,.84);g.add(gl);
   });
-  // Surrounding asteroids
   for(let i=0;i<6;i++){
-    const ast = new THREE.Mesh(mkAsteroid(.25+Math.random()*.4),
-      new THREE.MeshStandardMaterial({color:0x2a2530,roughness:.95,emissive:0x7c4dff,emissiveIntensity:.08}));
-    const ang = (i/6)*Math.PI*2, r=2.5+Math.random()*1.5;
-    ast.position.set(Math.cos(ang)*r,Math.sin(ang)*r*0.6,(Math.random()-.5)*2);
-    ast.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    g.add(ast);
+    const ast=new THREE.Mesh(mkAsteroid(.28+Math.random()*.42),
+      new THREE.MeshStandardMaterial({color:0x2a2530,roughness:.95,emissive:0x7c4dff,emissiveIntensity:.1}));
+    const a=(i/6)*Math.PI*2,r=2.6+Math.random()*1.4;
+    ast.position.set(Math.cos(a)*r,Math.sin(a)*r*.6,(Math.random()-.5)*2);
+    ast.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);g.add(ast);
   }
-  g.scale.setScalar(1.6);
-  g.position.set(4, 0, 0);
-  g.userData = {type:'ship'};
+  g.scale.setScalar(1.6); g.position.set(5,0,0);
 }
 
-/* ── SECTION 3: NEON DRIFT — Car + neon road grid ── */
+/* SEC 3: Car */
 {
-  const g = sectionGroups[3];
-  const bodyM = new THREE.MeshStandardMaterial({color:0x111118,metalness:.9,roughness:.15});
-  const goldM = new THREE.MeshStandardMaterial({color:0xffc93c,emissive:0xffc93c,emissiveIntensity:.65,metalness:.5,roughness:.2});
-  const glassM = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.3,transparent:true,opacity:.6});
-
-  // Car body
-  const carBody = new THREE.Mesh(new THREE.BoxGeometry(2,.5,.9), bodyM);
-  g.add(carBody);
-  // Roof
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(1,.35,.88), bodyM);
-  roof.position.set(-.1,.42,0); g.add(roof);
-  // Windshield
-  const ws = new THREE.Mesh(new THREE.BoxGeometry(.85,.32,.86), glassM);
-  ws.position.set(.45,.41,0); g.add(ws);
-  // Wheels
+  const g=groups[3];
+  const bM=new THREE.MeshStandardMaterial({color:0x111118,metalness:.9,roughness:.15});
+  const gM=new THREE.MeshStandardMaterial({color:0xffc93c,emissive:0xffc93c,emissiveIntensity:.65,metalness:.5,roughness:.2});
+  const glM=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.3,transparent:true,opacity:.6});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(2,.5,.9),bM);g.add(body);
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(1,.35,.88),bM);roof.position.set(-.1,.42,0);g.add(roof);
+  const ws=new THREE.Mesh(new THREE.BoxGeometry(.85,.32,.86),glM);ws.position.set(.45,.41,0);g.add(ws);
   [-1.25,-.45,.45,1.25].forEach(x=>{
     [-.5,.5].forEach(z=>{
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.12,12), bodyM);
-      w.rotation.z=Math.PI/2; w.position.set(x,-.28,z); g.add(w);
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.14,6),goldM);
-      rim.rotation.z=Math.PI/2; rim.position.copy(w.position); g.add(rim);
+      const w=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.12,12),bM);w.rotation.z=Math.PI/2;w.position.set(x,-.28,z);g.add(w);
+      const rim=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.14,6),gM);rim.rotation.z=Math.PI/2;rim.position.copy(w.position);g.add(rim);
     });
   });
-  // Neon strips
-  [-1,0,1].forEach(z=>{
-    const s = new THREE.Mesh(new THREE.BoxGeometry(2.02,.04,.04),goldM);
-    s.position.set(0,-.25,z*.42); g.add(s);
-  });
-  // Road grid below
-  const roadMat = new THREE.MeshBasicMaterial({color:0xffc93c,wireframe:true,transparent:true,opacity:.08});
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(12,8,12,8), roadMat);
-  road.rotation.x=-Math.PI/2; road.position.set(0,-1.5,0); g.add(road);
-  // Speed lines
+  [-1,0,1].forEach(z=>{const s=new THREE.Mesh(new THREE.BoxGeometry(2.02,.04,.04),gM);s.position.set(0,-.25,z*.42);g.add(s);});
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(14,9,14,9),new THREE.MeshBasicMaterial({color:0xffc93c,wireframe:true,transparent:true,opacity:.07}));
+  road.rotation.x=-Math.PI/2;road.position.set(0,-1.6,0);g.add(road);
   for(let i=0;i<8;i++){
-    const sl = new THREE.Mesh(new THREE.BoxGeometry(.02,.02,1.5+Math.random()),
+    const sl=new THREE.Mesh(new THREE.BoxGeometry(.02,.02,1.5+Math.random()),
       new THREE.MeshBasicMaterial({color:0xffc93c,transparent:true,opacity:.4}));
-    sl.position.set((Math.random()-.5)*4,(Math.random()-.5)*.6,-1-Math.random()); g.add(sl);
+    sl.position.set((Math.random()-.5)*4,(Math.random()-.5)*.6,-1-Math.random());g.add(sl);
   }
-  g.scale.setScalar(1.3);
-  g.position.set(4,-.3,0);
-  g.userData = {type:'car'};
+  g.scale.setScalar(1.3); g.position.set(4.5,-.3,0);
 }
 
-/* ── SECTION 4: X/O BOT DUEL — Grid + glowing X and O ── */
+/* SEC 4: XO Grid */
 {
-  const g = sectionGroups[4];
-  const xMat = new THREE.MeshStandardMaterial({color:0xff2d78,emissive:0xff2d78,emissiveIntensity:.7,metalness:.5,roughness:.2});
-  const oMat = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.7,metalness:.5,roughness:.2});
-  const gridMat = new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.12});
-
-  // Tic-tac-toe grid lines
-  [-1.1,1.1].forEach(x=>{
-    const l = new THREE.Mesh(new THREE.BoxGeometry(.06,6.6,.06),gridMat);
-    l.position.x=x; g.add(l);
-  });
-  [-1.1,1.1].forEach(y=>{
-    const l = new THREE.Mesh(new THREE.BoxGeometry(6.6,.06,.06),gridMat);
-    l.position.y=y; g.add(l);
-  });
-
-  // X marks (2 cylinders crossed)
-  [[0,0],[-2.2,2.2],[2.2,-2.2]].forEach(([cx,cy])=>{
-    if(Math.random()<.5){
-      // X
-      const a = new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.9,8),xMat);
-      a.rotation.z=Math.PI/4; a.position.set(cx,cy,.1); g.add(a);
-      const b = a.clone(); b.rotation.z=-Math.PI/4; g.add(b);
+  const g=groups[4];
+  const xM=new THREE.MeshStandardMaterial({color:0xff2d78,emissive:0xff2d78,emissiveIntensity:.7,metalness:.5,roughness:.2});
+  const oM=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.7,metalness:.5,roughness:.2});
+  const grM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.1});
+  [-1.1,1.1].forEach(x=>{const l=new THREE.Mesh(new THREE.BoxGeometry(.05,6.6,.05),grM);l.position.x=x;g.add(l);});
+  [-1.1,1.1].forEach(y=>{const l=new THREE.Mesh(new THREE.BoxGeometry(6.6,.05,.05),grM);l.position.y=y;g.add(l);});
+  [[0,2.2,true],[-2.2,0,false],[2.2,0,true],[0,-2.2,false],[-2.2,2.2,false],[2.2,-2.2,true]].forEach(([x,y,isX])=>{
+    if(isX){
+      const a=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.9,8),xM);a.rotation.z=Math.PI/4;a.position.set(x,y,.1);g.add(a);
+      const b=a.clone();b.rotation.z=-Math.PI/4;g.add(b);
     } else {
-      // O
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(.38,.08,12,32),oMat);
-      ring.position.set(cx,cy,.1); g.add(ring);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.38,.08,12,32),oM);ring.position.set(x,y,.1);g.add(ring);
     }
   });
-  // Some floating cubes (AI thinking visual)
-  for(let i=0;i<8;i++){
-    const cube = new THREE.Mesh(new THREE.BoxGeometry(.12+Math.random()*.18,.12+Math.random()*.18,.12+Math.random()*.18),
-      new THREE.MeshStandardMaterial({color:i%2===0?0xff2d78:0x00e5ff,emissive:i%2===0?0xff2d78:0x00e5ff,emissiveIntensity:.55,metalness:.6,roughness:.2,transparent:true,opacity:.65}));
+  for(let i=0;i<10;i++){
+    const cube=new THREE.Mesh(new THREE.BoxGeometry(.12+Math.random()*.18,.12+Math.random()*.18,.12+Math.random()*.18),
+      new THREE.MeshStandardMaterial({color:i%2===0?0xff2d78:0x00e5ff,emissive:i%2===0?0xff2d78:0x00e5ff,emissiveIntensity:.55,transparent:true,opacity:.6}));
     cube.position.set((Math.random()-.5)*7,(Math.random()-.5)*5,(Math.random()-.5)*2);
-    cube.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);
-    g.add(cube);
+    cube.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);g.add(cube);
   }
-  g.scale.setScalar(1.0);
   g.position.set(4.5,0,0);
-  g.userData = {type:'xo'};
 }
 
-/* ── SECTION 5: PROFILE — DNA helix / data visualization ── */
+/* SEC 5: Profile — helix */
 {
-  const g = sectionGroups[5];
-  const cMat = new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.6,metalness:.5,roughness:.2});
-  const vMat = new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.6,metalness:.5,roughness:.2});
-  // Helix
+  const g=groups[5];
   for(let i=0;i<32;i++){
-    const t1=i/32, t2=(i+.5)/32;
-    const s1=mkShard(.08, 0x00e5ff);
-    s1.position.set(Math.cos(t1*Math.PI*4)*1.5,i*.18-2.9,Math.sin(t1*Math.PI*4)*1.5);
-    g.add(s1);
-    const s2=mkShard(.08, 0x7c4dff);
-    s2.position.set(Math.cos(t2*Math.PI*4+Math.PI)*1.5,t2*5.4-2.7,Math.sin(t2*Math.PI*4+Math.PI)*1.5);
-    g.add(s2);
-    // Connecting bar
-    if(i%3===0){
-      const bar=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,3,4),
-        new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.12}));
-      bar.position.set(0,i*.18-2.9,0);
-      bar.rotation.z=Math.PI/2;
-      g.add(bar);
-    }
+    const t1=i/32,t2=(i+.5)/32;
+    const s1=mkShard(.08,0x00e5ff);s1.position.set(Math.cos(t1*Math.PI*4)*1.5,i*.19-3,Math.sin(t1*Math.PI*4)*1.5);g.add(s1);
+    const s2=mkShard(.08,0x7c4dff);s2.position.set(Math.cos(t2*Math.PI*4+Math.PI)*1.5,t2*5.5-2.75,Math.sin(t2*Math.PI*4+Math.PI)*1.5);g.add(s2);
+    if(i%3===0){const bar=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,3,4),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.1}));bar.position.set(0,i*.19-3,0);bar.rotation.z=Math.PI/2;g.add(bar);}
   }
-  g.position.set(4,0,0);
-  g.userData = {type:'helix'};
+  g.position.set(5,0,0);
 }
 
-/* ════════════════════════════════════════════════
-   SCROLL STATE & ANIMATION ENGINE
-════════════════════════════════════════════════ */
-const scroller = document.getElementById('scroller');
-const scrollContent = document.getElementById('scroll-content');
+/* ── SCENE TRANSITION STATE ── */
+let activeIdx = 0;
+let targetScale = [1,0,0,0,0,0];
+let targetX     = [0,20,20,20,20,20]; // off to the right initially
+let currentX    = [0,20,20,20,20,20];
+let currentSc   = [1,0,0,0,0,0];
+let currentRot  = new Array(TOTAL).fill(0);
+const baseX = [5.5, 4.5, 5.0, 4.5, 4.5, 5.0];
 
-let scrollY = 0, scrollTarget = 0;
-let currentSection = 0;
+groups[0].visible = true;
 
-// Each section = 1 viewport height of scroll
-scrollContent.style.height = (SECTIONS * 100) + 'vh';
-
-scroller.addEventListener('scroll', () => {
-  scrollTarget = scroller.scrollTop;
-}, { passive: true });
-
-function getSectionProgress() {
-  const vh = VH();
-  const totalScroll = scroller.scrollTop;
-  const secHeight = vh; // 1 VH per section
-  const sec = Math.floor(totalScroll / secHeight);
-  const prog = (totalScroll % secHeight) / secHeight; // 0→1 within section
-  return { sec: Math.min(sec, SECTIONS - 1), prog };
+function setScene(idx) {
+  // Fly out old
+  targetX[activeIdx] = (idx > activeIdx) ? -18 : 18;
+  targetScale[activeIdx] = 0;
+  // Fly in new
+  targetX[idx] = (idx > activeIdx) ? 18 : -18; // start from opposite side
+  targetScale[idx] = 1;
+  groups[idx].visible = true;
+  activeIdx = idx;
 }
 
-/* ── Update UI panels ── */
-const panels = document.querySelectorAll('.game-panel');
-function setActivePanel(idx) {
-  panels.forEach((p, i) => p.classList.toggle('active', i === idx));
-}
+/* ── MOUSE PARALLAX ── */
+let mx=0,my=0,camX=0,camY=0;
+document.addEventListener('mousemove',e=>{mx=(e.clientX/W()-.5)*2;my=(e.clientY/H()-.5)*2;});
 
-/* ── Update scroll indicator ── */
-const siDots = document.querySelectorAll('.si-dot');
-const siFills = [
-  document.getElementById('sif1'), document.getElementById('sif2'),
-  document.getElementById('sif3'), document.getElementById('sif4'), document.getElementById('sif5')
-];
-const secLabel = document.getElementById('sec-label');
-const secNames = ['Home','Eagle Flight','Void Interceptor','Neon Drift Racer','X/O Bot Duel','Profile'];
-
-function updateIndicator(sec, prog) {
-  siDots.forEach((d,i)=>d.classList.toggle('active',i===sec));
-  siFills.forEach((f,i)=>{
-    if(i<sec) f.style.height='100%';
-    else if(i===sec) f.style.height=(prog*100)+'%';
-    else f.style.height='0%';
-  });
-  secLabel.textContent=secNames[sec];
-  document.getElementById('nav').classList.toggle('solid',scroller.scrollTop>60);
-}
-
-/* ── 3D Object animations per section ── */
-function lerp(a, b, t) { return a + (b - a) * t; }
-function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-function easeOut(t) { return 1 - Math.pow(1-t,3); }
-
+/* ── ANIMATE ── */
 const clock = new THREE.Clock();
-let mouseX = 0, mouseY = 0, camX = 0, camY = 0;
-document.addEventListener('mousemove', e => {
-  mouseX = (e.clientX / VW() - .5) * 2;
-  mouseY = (e.clientY / VH() - .5) * 2;
-});
+function lerp(a,b,t){return a+(b-a)*t}
 
-function animate() {
-  requestAnimationFrame(animate);
+(function loop(){
+  requestAnimationFrame(loop);
   const t = clock.getElapsedTime();
-  const dt = clock.getDelta ? 0.016 : 0.016;
 
-  // Smooth scroll
-  scrollY += (scrollTarget - scrollY) * 0.1;
-  const { sec, prog } = getSectionProgress();
+  // Camera
+  camX += (mx*1.6-camX)*.025;
+  camY += (-my*.9-camY)*.025;
+  cam.position.x = camX;
+  cam.position.y = camY;
 
-  // Update active section
-  if(sec !== currentSection) {
-    currentSection = sec;
-    setActivePanel(sec);
-  }
-  updateIndicator(sec, prog);
+  // Animate each group
+  groups.forEach((grp,i)=>{
+    currentX[i]  = lerp(currentX[i],  targetX[i],  .07);
+    currentSc[i] = lerp(currentSc[i], targetScale[i], .07);
 
-  // Camera mouse parallax
-  camX += (mouseX * 1.8 - camX) * 0.028;
-  camY += (-mouseY * 1.0 - camY) * 0.028;
-  masterCam.position.x = camX;
-  masterCam.position.y = camY;
+    const sc = Math.max(0.001, currentSc[i]);
+    grp.scale.setScalar(sc);
+    grp.visible = sc > 0.01;
 
-  // Update 3D groups visibility
-  sectionGroups.forEach((grp, i) => {
-    // Show current and adjacent sections
-    const dist = Math.abs(i - sec);
-    grp.visible = dist <= 1;
+    // Settle to base position
+    const bx = baseX[i] || 4.5;
+    grp.position.x = lerp(grp.position.x, currentX[i] === targetX[i] && i===activeIdx ? bx : currentX[i], .07);
 
-    if (!grp.visible) return;
-
-    // ── Calculate entrance progress ──
-    // When we're scrolling INTO section i (from sec i-1):
-    //   entranceT = 0 → 1 as section scrolls in
-    // When scrolling OUT (to section i+1):
-    //   exitT = 0 → 1 as section scrolls out
-
-    let enterT = 1.0, exitT = 0.0;
-    if (i === sec) {
-      enterT = 1.0; // fully in
-      exitT = 0.0;
-    } else if (i === sec - 1) {
-      // previous section: exiting upward
-      exitT = 1.0;
-      enterT = 0.0;
-    } else if (i === sec + 1) {
-      // next section: entering from below
-      enterT = 0.0;
-    }
-
-    // Override for transition region
-    if (i === sec) {
-      enterT = easeOut(Math.min(1, prog * 4)); // enters quickly
-      exitT = easeInOut(Math.max(0, (prog - 0.7) / 0.3)); // exits in last 30%
-    }
-
-    const el = easeOut(enterT);
-    const ex = easeOut(exitT);
-
-    // ── Position: fly in from right (enter) / fly out left (exit) ──
-    const baseX = grp.userData.baseX !== undefined ? grp.userData.baseX : 4.5;
-
-    if (i === 0) {
-      // Hero section: objects appear and spin
-      grp.position.x = lerp(18, baseX, el) - ex * 20;
-      grp.position.y = lerp(-3, 0, el) + ex * 3;
-      grp.rotation.y = lerp(-1.2, t * 0.18, el);
-      // Core spins
-      if (grp.userData.core) {
-        grp.userData.core.rotation.x = t * 0.28;
-        grp.userData.core.rotation.y = t * 0.40;
-        // Pulse scale
-        const pulse = 1 + Math.sin(t * 1.8) * 0.04;
-        grp.userData.core.scale.setScalar(pulse);
+    // Idle animations per type
+    if(i===activeIdx && sc > 0.5){
+      if(i===0){ // Hero orb
+        if(grp.userData.core){grp.userData.core.rotation.x=t*.28;grp.userData.core.rotation.y=t*.38;}
+        grp.children.slice(1).forEach((c,ci)=>{c.position.y+=Math.sin(t*(.7+ci*.1)+ci)*.003;c.rotation.x+=.008;c.rotation.y+=.006;});
+      } else if(i===1){ // Eagle bob
+        grp.rotation.z=Math.sin(t*.5)*.08;grp.position.y=Math.sin(t*.4)*.2;
+        grp.children.slice(3).forEach((c,ci)=>{c.rotation.x+=.01;c.rotation.y+=.007;});
+      } else if(i===2){ // Ship hover
+        grp.position.y=Math.sin(t*.6)*.18;grp.rotation.y=Math.sin(t*.35)*.08;
+        grp.children.slice(-6).forEach((c,ci)=>{c.rotation.x+=.008;c.rotation.y+=.006;});
+      } else if(i===3){ // Car
+        grp.rotation.z=Math.sin(t*.4)*.02;
+      } else if(i===4){ // XO cubes
+        grp.children.slice(-10).forEach((c,ci)=>{c.position.y+=Math.sin(t*(.5+ci*.12)+ci)*.004;c.rotation.x+=.01;c.rotation.y+=.009;});
+      } else if(i===5){ // Helix spin
+        grp.rotation.y=t*.22;
       }
-      // Shards bob
-      grp.children.forEach((c, ci) => {
-        if (ci > 1) {
-          c.position.y += Math.sin(t * (.8 + ci * .12) + ci) * .003;
-          c.rotation.x += .008; c.rotation.y += .006;
-        }
-      });
-    } else if (i === 1) {
-      // Eagle: swoops in from top-right
-      grp.position.x = lerp(22, baseX, el) - ex * 18;
-      grp.position.y = lerp(10, 0, el) + ex * 8;
-      grp.rotation.z = lerp(.6, -.1 + Math.sin(t*.6)*.08, el) + ex * .4;
-      grp.rotation.y = -lerp(1,0,el)*0.8 + t*0.05;
-      grp.children.forEach((c,ci)=>{if(ci>5){c.rotation.x+=.01;c.rotation.y+=.007;}});
-    } else if (i === 2) {
-      // Ship: flies in from bottom, tilts into position
-      grp.position.x = lerp(24, baseX, el) - ex * 20;
-      grp.position.y = lerp(-8, 0, el) + ex * 6 + Math.sin(t*.7)*.15;
-      grp.rotation.y = lerp(1.5, .3 + Math.sin(t*.4)*.05, el);
-      grp.rotation.z = lerp(-.5, Math.sin(t*.5)*.04, el);
-      grp.rotation.x = lerp(.3, Math.sin(t*.35)*.03, el);
-    } else if (i === 3) {
-      // Car: drives in from right
-      grp.position.x = lerp(26, baseX, el) - ex * 22;
-      grp.position.y = lerp(-1.5, -.3, el) + ex * 1.5;
-      grp.rotation.y = lerp(-1.2, -.15, el) + ex * 1.0;
-      grp.rotation.z = lerp(0, Math.sin(t*.6)*.02, el);
-    } else if (i === 4) {
-      // XO: flips in from left
-      grp.position.x = lerp(-20, baseX, el) - ex * 18;
-      grp.position.y = lerp(6, 0, el) + ex * 5;
-      grp.rotation.y = lerp(-2, Math.sin(t*.3)*.08, el);
-      grp.rotation.z = lerp(.8, 0, el);
-      // Cubes float
-      grp.children.slice(-8).forEach((c,ci)=>{
-        c.position.y += Math.sin(t*(.6+ci*.15)+ci)*.005;
-        c.rotation.x+=.01;c.rotation.y+=.008;
-      });
-    } else if (i === 5) {
-      // Helix: rises from below
-      grp.position.x = lerp(20, baseX, el) - ex * 16;
-      grp.position.y = lerp(-12, 0, el) + ex * 8;
-      grp.rotation.y = t * 0.22;
     }
-
-    // Universal: scale in on entrance
-    const sc = lerp(i===sec ? 0.6 : 1, 1, el) * (1 - ex * .3);
-    grp.scale.setScalar(Math.max(0.01, sc));
   });
 
-  // Store base positions
-  [4.5, 4.5, 4, 4, 4.5, 4].forEach((bx, i) => { sectionGroups[i].userData.baseX = bx; });
+  planets.forEach((p,i)=>{p.rotation.y+=.0015*(i+1);});
+  fill.intensity=1.2+Math.sin(t*.45)*.3;
+  rim.intensity=.9+Math.cos(t*.38)*.25;
 
-  // Planets rotate slowly
-  planets.forEach((p, i) => { p.rotation.y += .0015 * (i + 1); });
+  renderer.render(scene,cam);
+})();
 
-  // Lights breathe
-  fillLight.intensity = 1.2 + Math.sin(t * .45) * .3;
-  rimLight.intensity = 0.9 + Math.cos(t * .38) * .25;
-
-  renderer.render(masterScene, masterCam);
-}
-
-/* ── Resize ── */
-window.addEventListener('resize', () => {
-  masterCam.aspect = VW() / VH();
-  masterCam.updateProjectionMatrix();
-  renderer.setSize(VW(), VH());
+window.addEventListener('resize',()=>{
+  cam.aspect=W()/H(); cam.updateProjectionMatrix();
+  renderer.setSize(W(),H());
 });
 
-/* ── Jump to section ── */
-function jumpTo(idx) {
-  scroller.scrollTo({ top: idx * VH(), behavior: 'smooth' });
-}
-
-/* ── Custom cursor ── */
-(function() {
-  const dot = document.getElementById('cur-dot');
-  const ring = document.getElementById('cur-ring');
+/* ── CURSOR ── */
+(function(){
+  const dot=document.getElementById('cdot'),ring=document.getElementById('cring');
   let cx=0,cy=0,rx=0,ry=0;
-  document.addEventListener('mousemove', e => { cx=e.clientX; cy=e.clientY; dot.style.left=cx+'px'; dot.style.top=cy+'px'; });
+  document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;dot.style.left=cx+'px';dot.style.top=cy+'px';});
   (function loop(){requestAnimationFrame(loop);rx+=(cx-rx)*.1;ry+=(cy-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';})();
-  document.querySelectorAll('.bp,.bg2,.gp-play,.ncta,.pb,.si-dot').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{ring.style.width='58px';ring.style.height='58px';ring.style.opacity='.4';});
-    el.addEventListener('mouseleave',()=>{ring.style.width='36px';ring.style.height='36px';ring.style.opacity='1';});
+  document.querySelectorAll('.bp,.bg2,.gplay,.ncta,.pb,.dot,.pb').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{ring.style.width='58px';ring.style.height='58px';});
+    el.addEventListener('mouseleave',()=>{ring.style.width='36px';ring.style.height='36px';});
   });
 })();
 
-/* ── Player data ── */
+/* ── PLAYER ── */
 const LS='yuvraj_player_data_v1';
 let pd={name:'',coins:0,xp:0,level:1};
 function loadPD(){try{const s=localStorage.getItem(LS);if(s)pd=JSON.parse(s);}catch(e){}}
@@ -854,35 +677,29 @@ function updateUI(){
 function changeName(){const n=prompt('Enter new name:');if(n&&n.trim()){pd.name=n.trim();savePD();updateUI();}}
 loadPD();if(!pd.name){pd.name='Yuvraj Soni';savePD();}updateUI();
 
-/* ── Music ── */
+/* ── MUSIC ── */
 const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=.3;
-let ms=false;
-document.addEventListener('click',()=>{if(!ms){ms=true;bgm.play().catch(()=>{});}});
+let ms=false;document.addEventListener('click',()=>{if(!ms){ms=true;bgm.play().catch(()=>{});}});
 
-/* ── Loader ── */
+/* ── LOADER ── */
 (function(){
-  const lp=document.getElementById('ldp'),lt=document.getElementById('ldt'),ldr=document.getElementById('loader');
-  const msgs=['Initialising…','Loading 3D…','Building world…','Ready!'];
+  const lf=document.getElementById('lf'),lt=document.getElementById('lt'),ldr=document.getElementById('ldr');
   let p=0;
+  const msgs=['Initialising…','Loading 3D…','Building world…','Ready!'];
   const iv=setInterval(()=>{
     p+=Math.random()*13+5;if(p>100)p=100;
-    lp.style.width=p+'%';
-    lt.textContent=msgs[Math.min(3,Math.floor(p/26))]+' '+Math.floor(p)+'%';
+    lf.style.width=p+'%';lt.textContent=msgs[Math.min(3,Math.floor(p/26))]+' '+Math.floor(p)+'%';
     if(p>=100){
       clearInterval(iv);
       setTimeout(()=>{
-        ldr.classList.add('hide');
-        // Hero entrance
-        document.getElementById('heye').classList.add('in');
-        setTimeout(()=>document.querySelectorAll('.hli').forEach(e=>e.classList.add('in')),150);
-        setTimeout(()=>document.getElementById('hsub').classList.add('in'),420);
-        setTimeout(()=>document.getElementById('hbtns').classList.add('in'),620);
+        ldr.classList.add('out');
+        document.querySelector('.h-eye').style.animation='fup .8s .1s cubic-bezier(.16,1,.3,1) forwards';
+        document.querySelector('.h-eye').style.opacity='0';
+        setTimeout(()=>{document.querySelector('.h-eye').style.opacity='1';},100);
       },350);
     }
   },60);
 })();
-
-animate();
 </script>
 </body>
 </html>
