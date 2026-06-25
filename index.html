@@ -2,134 +2,301 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yuvraj Soni Arcade</title>
+<title>Yuvraj Soni Arcade — Terminal Operating System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<!-- Tailwind CSS for modern layout grids -->
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <style>
-:root{--c:#00e5ff;--v:#7c4dff;--m:#ff2d78;--g:#ffc93c;--bg:#02020a;--t:#f0f4ff;--td:#4a5060;--tm:#7a8090}
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--t);font-family:'Space Grotesk',sans-serif}
-::selection{background:var(--c);color:#000}
+:root {
+  --c: #00e5ff; /* Hyper Cyan */
+  --v: #7c4dff; /* Electric Purple */
+  --m: #ff2d78; /* Neon Pink */
+  --g: #00ff88; /* Matrix Green */
+  --bg: #000000;
+  --t: #f0f4ff;
+  --td: #4a5060;
+  --tm: #8a90a8;
+}
 
-/* CURSOR */
-#cdot{position:fixed;width:7px;height:7px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference}
-#cring{position:fixed;width:36px;height:36px;border:1px solid rgba(255,255,255,.45);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s;mix-blend-mode:difference}
-@media(max-width:768px){#cdot,#cring{display:none}body{cursor:auto}}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
 
-/* LOADER */
-#ldr{position:fixed;inset:0;z-index:8000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity .7s,visibility .7s}
-#ldr.out{opacity:0;visibility:hidden;pointer-events:none}
-.ld-logo{font-size:20px;font-weight:700;background:linear-gradient(120deg,var(--c),var(--v),var(--m));background-size:300%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:lsh 2s linear infinite}
-@keyframes lsh{0%{background-position:0%}100%{background-position:200%}}
-.ld-bar{width:160px;height:1.5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
-.ld-fill{height:100%;width:0;background:linear-gradient(90deg,var(--c),var(--v));transition:width .04s}
-.ld-pct{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--td)}
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--t);
+  font-family: 'Space Grotesk', sans-serif;
+}
 
-/* NAV */
-#nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:22px 52px;transition:background .4s,border-color .4s;border-bottom:1px solid transparent}
-#nav.dark{background:rgba(2,2,10,.8);backdrop-filter:blur(20px);border-color:rgba(255,255,255,.07);padding:15px 52px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
-.gem{width:10px;height:10px;border-radius:2px;background:linear-gradient(135deg,var(--c),var(--v));transform:rotate(45deg);box-shadow:0 0 14px rgba(0,229,255,.5);animation:gp 3s ease-in-out infinite}
-@keyframes gp{0%,100%{box-shadow:0 0 14px rgba(0,229,255,.4)}50%{box-shadow:0 0 30px rgba(0,229,255,.7),0 0 50px rgba(124,77,255,.3)}}
-.navl{display:flex;gap:32px}
-.navl a{font-size:13px;font-weight:500;color:var(--td);cursor:pointer;position:relative;padding-bottom:2px;transition:color .25s}
-.navl a::after{content:"";position:absolute;bottom:0;left:0;width:0;height:1px;background:var(--c);transition:width .3s}
-.navl a:hover{color:var(--t)}.navl a:hover::after{width:100%}
-.ncta{font-size:13px;font-weight:600;padding:10px 22px;border-radius:10px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,255,.24);transition:transform .25s,box-shadow .25s}
-.ncta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,.42)}
-@media(max-width:768px){#nav,#nav.dark{padding:14px 20px}.navl{display:none}}
+::selection {
+  background: var(--c);
+  color: #000;
+}
 
-/* SCROLL DOTS */
-#dots{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:400;display:flex;flex-direction:column;gap:10px}
-.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);cursor:pointer;transition:all .35s}
-.dot.on{background:var(--c);box-shadow:0 0 10px var(--c);transform:scale(1.5)}
-#sec-name{position:fixed;right:48px;top:50%;transform:translateY(-50%);z-index:400;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--td);writing-mode:vertical-rl;margin-top:-40px}
+/* CUSTOM SPRING CURSOR */
+#cdot {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: difference;
+}
+#cring {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
+  mix-blend-mode: difference;
+}
+#cring.hover {
+  width: 65px;
+  height: 65px;
+  border-color: var(--c);
+  border-width: 1px;
+}
+
+/* CUSTOM HARDWARE GRID BORDERS */
+.hud-line-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 200;
+  pointer-events: none;
+}
+.hud-line-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 200;
+  pointer-events: none;
+}
+
+/* LOADER OS STYLE */
+#ldr {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+}
+#ldr.out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.ld-bracket {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 40px 60px;
+  background: rgba(3, 3, 7, 0.85);
+  backdrop-filter: blur(20px);
+  position: relative;
+  text-align: center;
+}
+.ld-bracket::before, .ld-bracket::after, .ld-bracket > .corner-tl, .ld-bracket > .corner-tr {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--c);
+  border-style: solid;
+}
+.ld-bracket::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.ld-bracket::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+.ld-bracket > .corner-tl { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
+.ld-bracket > .corner-tr { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+
+/* SCANNER SWEEP EFFECT */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--c), transparent);
+  opacity: 0.15;
+  animation: sweep 4s linear infinite;
+  pointer-events: none;
+}
+@keyframes sweep {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+/* TERMINAL LOG PANEL */
+#term-log::-webkit-scrollbar {
+  width: 3px;
+}
+#term-log::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+}
 
 /* THREE CANVAS */
-#bg3d{position:fixed;inset:0;z-index:0}
+#bg3d {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
 
-/* SECTIONS WRAPPER — THIS IS THE KEY */
-#wrapper{
-  position:fixed;inset:0;z-index:10;
-  /* overflow:hidden — panels swap inside this */
+/* SECTIONS WRAPPER */
+#wrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
 }
 
 /* EACH FULL-SCREEN PANEL */
-.panel{
-  position:absolute;inset:0;
-  display:flex;align-items:center;
-  padding:0 7%;
-  /* Hidden by default */
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(60px);
-  transition:opacity .65s cubic-bezier(.16,1,.3,1), transform .65s cubic-bezier(.16,1,.3,1);
+.panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8% 0 14%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(30px) scale(0.98);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.panel.active{
-  opacity:1;
-  pointer-events:auto;
-  transform:translateY(0);
+.panel.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
 }
-.panel.exit-up{
-  opacity:0;
-  transform:translateY(-60px);
-  pointer-events:none;
+.panel.exit-up {
+  opacity: 0;
+  transform: translateY(-40px) scale(0.97);
+  pointer-events: none;
+}
+.panel.exit-down {
+  opacity: 0;
+  transform: translateY(40px) scale(0.97);
+  pointer-events: none;
 }
 
-/* HERO PANEL */
-#p0{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px}
-.h-eye{display:inline-flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--c);margin-bottom:32px}
-.edot{width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);animation:blink 2s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
-.h1{font-size:clamp(58px,9vw,112px);font-weight:800;letter-spacing:-.045em;line-height:.9;overflow:hidden}
-.gw{background:linear-gradient(120deg,var(--c),var(--v) 50%,var(--m));background-size:200%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gws 6s ease-in-out infinite}
-@keyframes gws{0%,100%{background-position:0%}50%{background-position:100%}}
-.h-sub{max-width:480px;font-size:clamp(15px,1.7vw,17px);line-height:1.82;color:var(--tm);margin:28px auto 0}
-.h-btns{margin-top:46px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-.bp{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;padding:17px 40px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--c),var(--v));color:#000;cursor:pointer;box-shadow:0 8px 30px rgba(0,229,255,.28);transition:transform .3s,box-shadow .3s;position:relative;overflow:hidden}
-.bp::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:translateX(-100%);transition:transform .5s}
-.bp:hover::before{transform:translateX(100%)}
-.bp:hover{transform:translateY(-3px);box-shadow:0 18px 48px rgba(0,229,255,.44)}
-.bg2{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:500;padding:17px 40px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;backdrop-filter:blur(10px);transition:border-color .3s,background .3s,transform .3s}
-.bg2:hover{border-color:var(--c);background:rgba(0,229,255,.09);transform:translateY(-3px)}
-.scroll-hint{margin-top:60px;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--td)}
-.scl{width:1px;height:40px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
-.scl::after{content:"";position:absolute;top:-100%;left:0;width:100%;height:100%;background:linear-gradient(180deg,transparent,var(--c));animation:sdrop 2s ease-in-out infinite}
-@keyframes sdrop{0%{top:-100%}65%{top:100%}100%{top:100%}}
+/* TEXT ANIMATIONS */
+.typing-text {
+  font-family: 'JetBrains Mono', monospace;
+}
 
-/* GAME PANELS */
-.gp-side{flex:0 0 auto;max-width:520px}
-.gp-num{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--td);margin-bottom:14px;display:flex;align-items:center;gap:10px}
-.gp-num-big{position:absolute;right:7%;top:50%;transform:translateY(-50%);font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:clamp(100px,18vw,220px);letter-spacing:-.06em;opacity:.04;user-select:none;pointer-events:none;line-height:1;color:var(--t)}
-.gbadge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:99px;background:rgba(0,229,255,.09);border:1px solid rgba(0,229,255,.3);color:var(--c);margin-bottom:14px}
-.gtitle{font-size:clamp(38px,5.5vw,68px);font-weight:800;letter-spacing:-.04em;line-height:.95;margin-bottom:20px}
-.gdesc{font-size:15.5px;line-height:1.82;color:var(--tm);margin-bottom:28px;max-width:460px}
-.gchips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:34px}
-.chip{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--tm)}
-.gplay{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600;padding:15px 36px;border-radius:11px;background:linear-gradient(135deg,var(--c),var(--v));color:#000;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(0,229,255,.25);transition:transform .3s,box-shadow .3s}
-.gplay:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(0,229,255,.42)}
+/* CUSTOM NAV HOVER */
+.nav-link {
+  position: relative;
+  transition: color 0.3s;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--c);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-link:hover {
+  color: #fff;
+}
+.nav-link:hover::after {
+  width: 100%;
+}
 
-/* PROFILE PANEL */
-#p5{flex-direction:column;align-items:center;justify-content:center;text-align:center}
-.prof-card{background:rgba(2,2,10,.72);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:52px 48px;max-width:520px;width:100%;position:relative;overflow:hidden;text-align:left}
-.prof-card::before{content:"";position:absolute;top:-40%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(124,77,255,.14),transparent 70%);filter:blur(30px);pointer-events:none}
-.prof-card::after{content:"";position:absolute;bottom:-30%;left:-10%;width:220px;height:220px;background:radial-gradient(circle,rgba(0,229,255,.08),transparent 70%);filter:blur(30px);pointer-events:none}
-.pl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:8px;position:relative;z-index:1}
-.pn{font-size:32px;font-weight:700;margin-bottom:32px;letter-spacing:-.02em;position:relative;z-index:1}
-.pr{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);position:relative;z-index:1}
-.pr:last-of-type{border:none}
-.pr span:first-child{color:var(--td);font-size:13px}
-.pr strong{font-family:'JetBrains Mono',monospace;font-size:17px;color:var(--c)}
-.xpt{height:4px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:18px;overflow:hidden;position:relative;z-index:1}
-.xpf{height:100%;background:linear-gradient(90deg,var(--c),var(--v));box-shadow:0 0 8px rgba(0,229,255,.4);border-radius:99px;width:0%;transition:width 1s cubic-bezier(.16,1,.3,1)}
-.p-btns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;position:relative;z-index:1}
-.pb{font-size:13px;font-weight:500;padding:12px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--t);cursor:pointer;transition:border-color .3s,background .3s}
-.pb:hover{border-color:var(--c);background:rgba(0,229,255,.09)}
+/* ADVANCED CYBERNETIC PLAY BUTTONS */
+.cyber-btn {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--t);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cyber-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  background: var(--c);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cyber-btn:hover {
+  background: rgba(0, 229, 255, 0.06);
+  border-color: var(--c);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+  transform: translateY(-2px);
+}
+.cyber-btn:hover::before {
+  width: 100%;
+  opacity: 0.05;
+}
+
+/* DOT NAV ON THE LEFT */
+.hud-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.hud-dot::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hud-dot.active {
+  background: var(--c);
+  box-shadow: 0 0 10px var(--c);
+  transform: scale(1.3);
+}
+.hud-dot.active::after {
+  border-color: var(--c);
+  transform: scale(1.2);
+}
 </style>
 </head>
-<body>
+<body class="bg-black text-[#f0f4ff] font-sans antialiased overflow-hidden">
+
+<!-- STYLIZED HUD BORDERS -->
+<div class="hud-line-h" style="top: 75px;"></div>
+<div class="hud-line-h" style="bottom: 75px;"></div>
+<div class="hud-line-v" style="left: 80px;"></div>
+<div class="hud-line-v" style="right: 80px;"></div>
+
+<!-- SCI-FI CORNER DECORATIONS -->
+<div class="fixed top-[67px] left-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">+ L1</div>
+<div class="fixed top-[67px] right-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">R1 +</div>
+<div class="fixed bottom-[67px] left-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">+ L2</div>
+<div class="fixed bottom-[67px] right-[72px] z-[210] pointer-events-none text-white/30 font-mono text-[10px]">R2 +</div>
 
 <!-- CURSOR -->
 <div id="cdot"></div>
@@ -137,149 +304,499 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 <!-- LOADER -->
 <div id="ldr">
-  <div class="ld-logo">Yuvraj Soni Arcade</div>
-  <div class="ld-bar"><div class="ld-fill" id="lf"></div></div>
-  <div class="ld-pct" id="lt">0%</div>
+  <div class="scanline"></div>
+  <div class="ld-bracket max-w-sm w-full mx-4">
+    <div class="corner-tl"></div>
+    <div class="corner-tr"></div>
+    <div class="font-mono text-[11px] tracking-[0.3em] text-[#00e5ff] uppercase mb-4">SYSTEM BOOT IN PROGRESS</div>
+    <div class="text-white font-semibold tracking-wider text-xl mb-6 font-mono">YUVRAJ_SONI_ARCADE</div>
+    <div class="w-full h-[1px] bg-white/10 mb-4 overflow-hidden relative">
+      <div id="lf" class="h-full w-0 bg-gradient-to-r from-[#00e5ff] to-[#7c4dff] transition-all duration-[40ms]"></div>
+    </div>
+    <div id="lt" class="font-mono text-[10px] text-white/40 tracking-widest uppercase">INITIALIZING SECTORS: 0%</div>
+  </div>
 </div>
 
-<!-- THREE.JS BG -->
+<!-- THREE.JS CANVAS -->
 <div id="bg3d"></div>
 
-<!-- NAV -->
-<nav id="nav">
-  <div class="logo"><span class="gem"></span>Yuvraj Soni Arcade</div>
-  <div class="navl">
-    <a onclick="goTo(0)">Home</a>
-    <a onclick="goTo(1)">Games</a>
-    <a onclick="goTo(5)">Profile</a>
+<!-- ================= TOP HUD HEADER ================= -->
+<header class="fixed top-0 left-0 right-0 h-[75px] z-[300] flex items-center justify-between px-10 pointer-events-auto">
+  <!-- Brand Area -->
+  <div class="flex items-center gap-4 cursor-pointer" onclick="goTo(0)">
+    <div class="w-3 h-3 border border-[#00e5ff] rotate-45 relative animate-pulse">
+      <div class="absolute inset-[2px] bg-[#00e5ff]"></div>
+    </div>
+    <div class="font-mono text-[11px] tracking-[0.25em] text-white font-bold uppercase hover:text-[#00e5ff] transition-colors">
+      YUVRAJ SONI <span class="text-white/40 font-normal">// ARCADE OS</span>
+    </div>
   </div>
-  <button class="ncta" onclick="goTo(1)">Play Now</button>
-</nav>
 
-<!-- SCROLL DOTS -->
-<div id="dots">
-  <div class="dot on" onclick="goTo(0)" title="Home"></div>
-  <div class="dot" onclick="goTo(1)" title="Eagle Flight"></div>
-  <div class="dot" onclick="goTo(2)" title="Void Interceptor"></div>
-  <div class="dot" onclick="goTo(3)" title="Neon Drift Racer"></div>
-  <div class="dot" onclick="goTo(4)" title="X/O Bot Duel"></div>
-  <div class="dot" onclick="goTo(5)" title="Profile"></div>
-</div>
-<div id="sec-name">Home</div>
+  <!-- Technical Diagnostic Center -->
+  <div class="hidden lg:flex items-center gap-12 font-mono text-[9px] text-white/40">
+    <div class="flex flex-col">
+      <span class="text-white/20">AGENTIC NODE ID</span>
+      <span class="text-[#00e5ff]" id="hud-node-id">SYS.SEC_00 // INITIAL</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-white/20">COORDS MATRIX</span>
+      <span id="hud-coords" class="text-white/60">X: 0.000 // Y: 0.000</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-white/20">DECISION CORE</span>
+      <span class="text-[#00ff88]">OPTIMAL [99.8% STABILITY]</span>
+    </div>
+  </div>
 
-<!-- PANELS -->
+  <!-- Quick Access Nav -->
+  <div class="flex items-center gap-8 font-mono text-[10px] tracking-widest text-white/50">
+    <nav class="hidden md:flex items-center gap-8">
+      <a class="nav-link cursor-pointer" onclick="goTo(0)">HOME</a>
+      <a class="nav-link cursor-pointer" onclick="goTo(1)">ARCADE</a>
+      <a class="nav-link cursor-pointer" onclick="goTo(5)">AGENT_PROFILE</a>
+    </nav>
+    <button onclick="goTo(5)" class="px-5 py-2 border border-white/10 hover:border-[#00e5ff]/50 bg-white/[0.02] text-white hover:text-[#00e5ff] text-[9px] tracking-[0.18em] font-mono transition-all rounded-[2px] cursor-pointer">
+      PLAYER_SEC
+    </button>
+  </div>
+</header>
+
+<!-- ================= LEFT HUD NAV BAR ================= -->
+<aside class="fixed top-[75px] bottom-[75px] left-0 w-[80px] z-[300] flex flex-col items-center justify-between py-10 pointer-events-auto">
+  <div class="font-mono text-[9px] text-white/20 tracking-widest writing-vertical-lr select-none uppercase">
+    TERMINAL INDUSTRIES INC.
+  </div>
+  
+  <!-- Vertical Dot Navigation -->
+  <div id="dots" class="flex flex-col gap-6">
+    <div class="hud-dot active cursor-pointer" onclick="goTo(0)" title="SYS.HOME"></div>
+    <div class="hud-dot cursor-pointer" onclick="goTo(1)" title="SYS.EAGLE"></div>
+    <div class="hud-dot cursor-pointer" onclick="goTo(2)" title="SYS.VOID"></div>
+    <div class="hud-dot cursor-pointer" onclick="goTo(3)" title="SYS.NEON"></div>
+    <div class="hud-dot cursor-pointer" onclick="goTo(4)" title="SYS.XOBOT"></div>
+    <div class="hud-dot cursor-pointer" onclick="goTo(5)" title="SYS.PROFILE"></div>
+  </div>
+
+  <div class="font-mono text-[10px] text-[#00e5ff] font-bold">
+    N°<span id="hud-page-index">00</span>
+  </div>
+</aside>
+
+<!-- ================= RIGHT HUD DATA SPEC BAR ================= -->
+<aside class="fixed top-[75px] bottom-[75px] right-0 w-[80px] z-[300] flex flex-col items-center justify-between py-8 pointer-events-none">
+  <div class="font-mono text-[9px] text-white/20 tracking-widest writing-vertical-lr uppercase">
+    OPERATIONAL DATAGRAM
+  </div>
+  
+  <div class="flex flex-col gap-8 items-center font-mono text-[9px]">
+    <div class="rotate-90 origin-center text-white/30 tracking-widest w-16 text-center">HUD_STATUS</div>
+    <!-- Glowing system pulse indicator -->
+    <div class="relative w-2 h-2 rounded-poly">
+      <span class="absolute inline-flex h-full w-full rounded-full bg-[#00ff88] opacity-75 animate-ping"></span>
+      <span class="relative inline-flex rounded-full h-2 w-2 bg-[#00ff88]"></span>
+    </div>
+  </div>
+
+  <div class="font-mono text-[9px] text-white/20 tracking-widest writing-vertical-lr uppercase">
+    YUV_ARC_PRTCL_v1
+  </div>
+</aside>
+
+<!-- ================= BOTTOM HUD TERMINAL FEED ================= -->
+<footer class="fixed bottom-0 left-0 right-0 h-[75px] z-[300] flex items-center justify-between px-10 pointer-events-auto">
+  <!-- Live simulated scrolling terminal feed -->
+  <div class="flex items-center gap-6 max-w-xl w-full">
+    <div class="font-mono text-[8px] text-white/20 uppercase tracking-widest flex flex-col border-r border-white/10 pr-6 shrink-0">
+      <span>SYSTEM_FEED</span>
+      <span class="text-[#00e5ff]" id="diag-fps">FPS: 60 // PING: 12ms</span>
+    </div>
+    <div id="term-log" class="font-mono text-[8px] text-white/40 h-[45px] overflow-y-auto w-full flex flex-col gap-1 select-text scroll-smooth">
+      <div class="text-[#00ff88]">> CORE OS INITIATED SUCCESSFULLY. ALL SYSTEMS ONLINE.</div>
+      <div class="text-white/30">> CONNECTING TO WEBG_GRAPHICS_LAYER... [OK]</div>
+    </div>
+  </div>
+
+  <!-- Real time clock -->
+  <div class="hidden md:flex items-center gap-8 font-mono text-[10px] text-white/30 tracking-widest">
+    <div>
+      <span class="text-white/10">STATION_LOCAL //</span> <span id="hud-clock">12:44:02 PM</span>
+    </div>
+    <div class="w-12 h-[1px] bg-white/10"></div>
+    <div class="text-[#00e5ff]">
+      ARCADE_READY
+    </div>
+  </div>
+</footer>
+
+<!-- ================= STORYTELLING TEXT PANELS ================= -->
 <div id="wrapper">
 
-  <!-- 0: HERO -->
+  <!-- ================= NODE 00: HOME HERO ================= -->
   <div class="panel active" id="p0">
-    <div class="h-eye"><span class="edot"></span>Independent Arcade · Est. 2026</div>
-    <h1 class="h1">Play in<br><span class="gw">another</span><br>dimension.</h1>
-    <p class="h-sub">A hand-built collection of four arcade games by Yuvraj Soni — one profile, infinite progression, zero shortcuts.</p>
-    <div class="h-btns">
-      <button class="bp" onclick="goTo(1)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Enter the Arcade
-      </button>
-      <button class="bg2" onclick="goTo(5)">View Profile</button>
+    <div class="max-w-2xl text-left flex flex-col items-start">
+      <div class="font-mono text-[10px] tracking-[0.3em] text-[#00e5ff] uppercase mb-6 flex items-center gap-3">
+        <span class="w-[5px] h-[5px] rounded-full bg-[#00e5ff] animate-ping"></span>
+        OPERATING SYSTEM NODE: 00 // GLOBAL HUB
+      </div>
+      
+      <h1 class="text-6xl md:text-8xl font-extrabold tracking-[-0.04em] leading-[0.9] uppercase text-white mb-6">
+        ENGINES OF<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00e5ff] via-[#7c4dff] to-[#ff2d78] bg-[size:200%] animate-[gws_6s_ease-in-out_infinite]">ARCADE</span><br>DECISION.
+      </h1>
+      
+      <p class="text-white/50 text-[14px] md:text-[15px] leading-relaxed max-w-lg mb-10 font-sans tracking-wide">
+        Welcome to Yuvraj Soni's high-tech interactive 3D gaming ecosystem. Multi-dimensional simulations running directly on hardware compilers. Zero shortcuts, pure performance.
+      </p>
+
+      <div class="flex flex-wrap gap-4">
+        <button onclick="goTo(1)" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3">
+          <svg class="w-3 h-3 text-[#00e5ff]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          INITIATE_ARCADE
+        </button>
+        <button onclick="goTo(5)" class="px-8 py-4 bg-white/5 border border-white/10 hover:border-white/20 font-mono text-[11px] tracking-[0.2em] rounded-[2px] transition-all cursor-pointer">
+          VIEW_SYSTEM_ID
+        </button>
+      </div>
+
+      <!-- Instruction Scroll hint -->
+      <div class="mt-12 flex items-center gap-4 font-mono text-[9px] text-white/30 tracking-widest">
+        <span>ROTATE MOUSE TO AIM // SCROLL TO COMMENCE FLIGHT</span>
+        <div class="w-10 h-[1px] bg-white/10 relative overflow-hidden">
+          <div class="absolute inset-0 bg-[#00e5ff] translate-x-[-100%] animate-[hdrop_2s_ease-in-out_infinite]"></div>
+        </div>
+      </div>
     </div>
-    <div class="scroll-hint"><span>Scroll or use arrow keys</span><div class="scl"></div></div>
   </div>
 
-  <!-- 1: EAGLE FLIGHT -->
+  <!-- ================= NODE 01: EAGLE FLIGHT ================= -->
   <div class="panel" id="p1">
-    <div class="gp-num-big">01</div>
-    <div class="gp-side">
-      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--c);display:inline-block;box-shadow:0 0 8px var(--c)"></span>Game One</div>
-      <div class="gbadge">Endless · Skill</div>
-      <h2 class="gtitle">Eagle<br>Flight</h2>
-      <p class="gdesc">Glide through a living terrain at breakneck speed. Survive longer to unlock harder skies and chain higher multipliers. Every run is different.</p>
-      <div class="gchips"><span class="chip">Reflex</span><span class="chip">Endless</span><span class="chip">High Score</span></div>
-      <button class="gplay" onclick="location.href='eagle.html'">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
-      </button>
+    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
+      <div class="lg:col-span-6 flex flex-col items-start justify-center">
+        <div class="font-mono text-[10px] tracking-[0.3em] text-[#00e5ff] uppercase mb-4">
+          SYSTEM NODE // 01 — SIMULATOR ENGINE
+        </div>
+        
+        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
+          EAGLE<br>FLIGHT
+        </h2>
+        
+        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
+          Glide through a dynamically morphing polygonal mountain range at breakneck speeds. Lock coordinates, capture flight markers, and maintain altitude to build your score multipliers.
+        </p>
+
+        <!-- Technical specs panel typical of Terminal Industries -->
+        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">CORE ENGINE_MODULE</span>
+            <span class="text-[#00e5ff]">3D_POLYGONAL_SIM</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">DIFFICULTY RATING</span>
+            <span class="text-white font-semibold">ELITE [LVL_04]</span>
+          </div>
+          <div class="flex justify-between pb-1">
+            <span class="text-white/20">REFLEX COEF_SPEED</span>
+            <span class="text-white font-semibold">9.8M/S^2</span>
+          </div>
+        </div>
+
+        <button onclick="location.href='eagle.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3">
+          <svg class="w-3 h-3 text-[#00e5ff]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          EXECUTE_EAGLE_MODULE.SYS
+        </button>
+      </div>
+      
+      <!-- Big side technical tag -->
+      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
+        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
+          SYS_01
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- 2: VOID INTERCEPTOR -->
+  <!-- ================= NODE 02: VOID INTERCEPTOR ================= -->
   <div class="panel" id="p2">
-    <div class="gp-num-big">02</div>
-    <div class="gp-side">
-      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--v);display:inline-block;box-shadow:0 0 8px var(--v)"></span>Game Two</div>
-      <div class="gbadge" style="color:var(--v);border-color:rgba(124,77,255,.35);background:rgba(124,77,255,.09)">3D · Wave Shooter</div>
-      <h2 class="gtitle">Void<br>Interceptor</h2>
-      <p class="gdesc">Full Three.js 3D deep-space shooter. Pilot through asteroid fields, collect power-ups, upgrade your ship between waves, and defeat the Void Sentinel boss.</p>
-      <div class="gchips"><span class="chip">3D Engine</span><span class="chip">Boss Fights</span><span class="chip">Upgrades</span></div>
-      <button class="gplay" style="background:linear-gradient(135deg,var(--v),var(--m))" onclick="location.href='space.html'">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
-      </button>
+    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
+      <div class="lg:col-span-6 flex flex-col items-start justify-center">
+        <div class="font-mono text-[10px] tracking-[0.3em] text-[#7c4dff] uppercase mb-4">
+          SYSTEM NODE // 02 — COMBAT ENGINE
+        </div>
+        
+        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
+          VOID<br>INTERCEPTOR
+        </h2>
+        
+        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
+          Pilot through a high-density, randomized debris asteroid cluster. Mount plasma cannons, track alien vector readings, and eliminate the Sentinel Void boss blockades.
+        </p>
+
+        <!-- Technical specs panel -->
+        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">WEAPONS SYSTEM</span>
+            <span class="text-[#7c4dff]">PLASMA_CANNONS_V3</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">TARGETING RETICLE</span>
+            <span class="text-[#00e5ff]">AUTO_LOCK_VECTOR</span>
+          </div>
+          <div class="flex justify-between pb-1">
+            <span class="text-white/20">GPU COMPILER ENGINE</span>
+            <span class="text-white font-semibold">THREE.WEBGL_SHADERS</span>
+          </div>
+        </div>
+
+        <button onclick="location.href='space.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3" style="border-left-color: var(--v);">
+          <svg class="w-3 h-3 text-[#7c4dff]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          EXECUTE_VOID_MODULE.SYS
+        </button>
+      </div>
+      
+      <!-- Big side technical tag -->
+      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
+        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
+          SYS_02
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- 3: NEON DRIFT RACER -->
+  <!-- ================= NODE 03: NEON DRIFT RACER ================= -->
   <div class="panel" id="p3">
-    <div class="gp-num-big">03</div>
-    <div class="gp-side">
-      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--g);display:inline-block;box-shadow:0 0 8px var(--g)"></span>Game Three</div>
-      <div class="gbadge" style="color:var(--g);border-color:rgba(255,201,60,.35);background:rgba(255,201,60,.09)">3D · Racing</div>
-      <h2 class="gtitle">Neon Drift<br>Racer</h2>
-      <p class="gdesc">Race through a neon city highway in full 3D. Dodge oncoming traffic, chain near-misses for combo bonuses, and push your distance record as far as it'll go.</p>
-      <div class="gchips"><span class="chip">3D Engine</span><span class="chip">Combos</span><span class="chip">Distance Run</span></div>
-      <button class="gplay" style="background:linear-gradient(135deg,var(--g),#ff8c00);color:#000" onclick="location.href='drift.html'">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
-      </button>
+    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
+      <div class="lg:col-span-6 flex flex-col items-start justify-center">
+        <div class="font-mono text-[10px] tracking-[0.3em] text-[#00ff88] uppercase mb-4">
+          SYSTEM NODE // 03 — DYNAMICS ENGINE
+        </div>
+        
+        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
+          NEON DRIFT<br>RACER
+        </h2>
+        
+        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
+          Propel through hyper-velocity neon traffic grids in full simulated 3D geometry. Calculate extreme drifts, trigger proximity combo metrics, and survive as long as possible.
+        </p>
+
+        <!-- Technical specs panel -->
+        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">DYNAMICS COMPILER</span>
+            <span class="text-[#00ff88]">VECTOR_PHYSICS_GRID</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">GRID REFRESH FREQ</span>
+            <span class="text-white font-semibold">120HZ_SYNC</span>
+          </div>
+          <div class="flex justify-between pb-1">
+            <span class="text-white/20">INTELLIGENT OBSTACLES</span>
+            <span class="text-white font-semibold">AGENT_NAV_AI [LVL_07]</span>
+          </div>
+        </div>
+
+        <button onclick="location.href='drift.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3" style="border-left-color: var(--g);">
+          <svg class="w-3 h-3 text-[#00ff88]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          EXECUTE_DRIFT_MODULE.SYS
+        </button>
+      </div>
+      
+      <!-- Big side technical tag -->
+      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
+        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
+          SYS_03
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- 4: X/O BOT DUEL -->
+  <!-- ================= NODE 04: XO BOT DUEL ================= -->
   <div class="panel" id="p4">
-    <div class="gp-num-big">04</div>
-    <div class="gp-side">
-      <div class="gp-num"><span style="width:5px;height:5px;border-radius:50%;background:var(--m);display:inline-block;box-shadow:0 0 8px var(--m)"></span>Game Four</div>
-      <div class="gbadge" style="color:var(--m);border-color:rgba(255,45,120,.35);background:rgba(255,45,120,.09)">Strategy · 1v1 AI</div>
-      <h2 class="gtitle">X/O Bot<br>Duel</h2>
-      <p class="gdesc">A tactical battle against an AI opponent that adapts to every move. Simple to understand, genuinely hard to master — the thinking person's arcade game.</p>
-      <div class="gchips"><span class="chip">AI Opponent</span><span class="chip">Strategy</span><span class="chip">1v1</span></div>
-      <button class="gplay" style="background:linear-gradient(135deg,var(--m),var(--v))" onclick="location.href='xo.html'">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play Now
-      </button>
+    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10">
+      <div class="lg:col-span-6 flex flex-col items-start justify-center">
+        <div class="font-mono text-[10px] tracking-[0.3em] text-[#ff2d78] uppercase mb-4">
+          SYSTEM NODE // 04 — STRATEGY MODULE
+        </div>
+        
+        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-6">
+          X/O BOT<br>DUEL
+        </h2>
+        
+        <p class="text-white/40 text-[14px] leading-relaxed max-w-md mb-8">
+          Challenge a high-density, agentic decision tree AI in a high-fidelity volumetric Tic-Tac-Toe battle. Programmed utilizing Minimax algorithms with adaptive weight updates.
+        </p>
+
+        <!-- Technical specs panel -->
+        <div class="border border-white/5 bg-white/[0.01] p-5 w-full max-w-md rounded-[2px] mb-8 font-mono text-[10px] text-white/50 flex flex-col gap-3">
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">AI RESOLVER ENGINE</span>
+            <span class="text-[#ff2d78]">MINIMAX_DEEP_COMPILER</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-white/20">RESPONSE INTEGRITY</span>
+            <span class="text-white font-semibold">SUB-3MS LATENCY</span>
+          </div>
+          <div class="flex justify-between pb-1">
+            <span class="text-white/20">GRID DIMENSIONALITY</span>
+            <span class="text-white font-semibold">3D_VOLUMETRIC_AXIS</span>
+          </div>
+        </div>
+
+        <button onclick="location.href='xo.html'" class="cyber-btn px-8 py-4 font-mono text-[11px] tracking-[0.2em] font-bold rounded-[2px] cursor-pointer flex items-center gap-3" style="border-left-color: var(--m);">
+          <svg class="w-3 h-3 text-[#ff2d78]" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          EXECUTE_XO_MODULE.SYS
+        </button>
+      </div>
+      
+      <!-- Big side technical tag -->
+      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
+        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
+          SYS_04
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- 5: PROFILE -->
+  <!-- ================= NODE 05: SYSTEM PROFILE ================= -->
   <div class="panel" id="p5">
-    <div class="prof-card">
-      <div class="pl">Your Member Card</div>
-      <div class="pn" id="playerName">—</div>
-      <div class="pr"><span>Level</span><strong id="playerLevel">—</strong></div>
-      <div class="pr"><span>Coins</span><strong id="playerCoins">—</strong></div>
-      <div class="pr"><span>Experience</span><strong id="playerXP">—</strong></div>
-      <div class="xpt"><div class="xpf" id="xpFill"></div></div>
-      <div class="p-btns">
-        <button class="pb" onclick="changeName()">Change Name</button>
-        <button class="pb" onclick="goTo(1)">Play a Game</button>
+    <div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-10 items-center">
+      <div class="lg:col-span-6 flex flex-col items-start justify-center">
+        <div class="font-mono text-[10px] tracking-[0.3em] text-[#00e5ff] uppercase mb-4">
+          DATABASE COMPILER // AGENT CREDENTIALS
+        </div>
+        
+        <h2 class="text-5xl md:text-7xl font-bold tracking-tight uppercase leading-[0.95] text-white mb-8">
+          AGENT CARD
+        </h2>
+
+        <!-- Rejouice styled tech form and datatable card -->
+        <div class="w-full max-w-md border border-white/10 bg-black/60 backdrop-filter blur-md p-8 relative rounded-[2px]">
+          <div class="absolute top-[-1px] left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-[#00e5ff] to-transparent"></div>
+          
+          <div class="flex justify-between items-center mb-6">
+            <span class="font-mono text-[10px] text-white/30 uppercase tracking-[0.2em]">NODE STATS MODULE //</span>
+            <span class="font-mono text-[9px] text-[#00ff88] px-2 py-0.5 border border-[#00ff88]/30 bg-[#00ff88]/5">SECURE</span>
+          </div>
+
+          <div class="flex flex-col gap-4 font-mono text-[11px] mb-6">
+            <div class="flex justify-between border-b border-white/5 pb-2">
+              <span class="text-white/30">AGENT_IDENTIFIER</span>
+              <strong id="playerName" class="text-white tracking-widest font-semibold">—</strong>
+            </div>
+            <div class="flex justify-between border-b border-white/5 pb-2">
+              <span class="text-white/30">OPERATIONAL_LEVEL</span>
+              <strong id="playerLevel" class="text-[#00e5ff] font-bold">—</strong>
+            </div>
+            <div class="flex justify-between border-b border-white/5 pb-2">
+              <span class="text-white/30">ACQUIRED_COINAGE</span>
+              <strong id="playerCoins" class="text-[#00ff88] font-bold">—</strong>
+            </div>
+            <div class="flex justify-between border-b border-white/5 pb-2">
+              <span class="text-white/30">ACCUMULATED_XP</span>
+              <strong id="playerXP" class="text-white">—</strong>
+            </div>
+          </div>
+
+          <!-- XP progress bar custom styled -->
+          <div class="mb-8">
+            <div class="flex justify-between font-mono text-[8px] text-white/30 mb-2">
+              <span>XP COMPILATION INDEX</span>
+              <span id="xpPercent">0%</span>
+            </div>
+            <div class="w-full h-[4px] bg-white/5 rounded-full overflow-hidden p-[1px]">
+              <div id="xpFill" class="h-full w-0 bg-gradient-to-r from-[#00e5ff] to-[#7c4dff] rounded-full transition-all duration-1000"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="changeName()" class="px-4 py-3 bg-white/5 border border-white/10 hover:border-[#00e5ff]/50 hover:bg-[#00e5ff]/5 hover:text-[#00e5ff] font-mono text-[10px] tracking-wider rounded-[2px] transition-all cursor-pointer">
+              REWRITE_NAME
+            </button>
+            <button onclick="goTo(1)" class="px-4 py-3 bg-white/5 border border-white/10 hover:border-white/30 text-white font-mono text-[10px] tracking-wider rounded-[2px] transition-all cursor-pointer">
+              SELECT_GAME
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Big side technical tag -->
+      <div class="hidden lg:flex lg:col-span-6 items-center justify-end select-none pointer-events-none">
+        <div class="font-mono text-[14vw] font-extrabold text-white/[0.02] tracking-tighter leading-none select-none">
+          SYS_05
+        </div>
       </div>
     </div>
   </div>
 
 </div><!-- /wrapper -->
 
+<!-- Load Three.JS -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+
 <script>
 /* ══════════════════════════════════════
+   HUD CLOCK & DYNAMICS TICKERS
+══════════════════════════════════════ */
+function updateHUDClock() {
+  const clockEl = document.getElementById('hud-clock');
+  const now = new Date();
+  clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: true });
+}
+setInterval(updateHUDClock, 1000);
+updateHUDClock();
+
+// Live ticking coordinates (looks like high-precision radar diagnostics)
+let activeX = 0, activeY = 0;
+document.addEventListener('mousemove', (e) => {
+  const xNorm = (e.clientX / window.innerWidth).toFixed(4);
+  const yNorm = (e.clientY / window.innerHeight).toFixed(4);
+  document.getElementById('hud-coords').textContent = `X: ${xNorm} // Y: ${yNorm}`;
+});
+
+// Real-time terminal operating log generator
+const terminalFeed = document.getElementById('term-log');
+const sysMsgs = [
+  'COMPILING SHADER CHANNELS FOR GL_LAYER...',
+  'BUFFER ALLOCATION FOR GEOM_MATRICES COMPLETED.',
+  'AGENTIC DECISION ENGINE [YOS] IS ONLINE.',
+  'DIAGNOSTIC LATENCY STABILIZED AT 12MS.',
+  'MONITORING DIRECT USER INPUT INTERFACES...',
+  'POLLING CORRESPONDING WEBG_CANVAS MATRIX...',
+  'COMPACTING VRAM TEXTURE HEAP ALLOCATIONS...',
+  'YUVRAJ_SONI PROTOCOL INITIALIZING PIPELINES...'
+];
+
+function printLog(msg, colorClass = 'text-white/30') {
+  const date = new Date();
+  const timeStr = date.toTimeString().split(' ')[0];
+  const div = document.createElement('div');
+  div.className = colorClass;
+  div.innerHTML = `[${timeStr}] > ${msg}`;
+  terminalFeed.appendChild(div);
+  terminalFeed.scrollTop = terminalFeed.scrollHeight;
+  
+  // Prune old logs to prevent DOM overload
+  if(terminalFeed.children.length > 30) {
+    terminalFeed.removeChild(terminalFeed.firstChild);
+  }
+}
+
+// Loop random logs
+setInterval(() => {
+  const randomMsg = sysMsgs[Math.floor(Math.random() * sysMsgs.length)];
+  printLog(randomMsg);
+}, 4500);
+
+/* ══════════════════════════════════════
    SECTION MANAGER
-   Simple, reliable, guaranteed to work.
-   Uses wheel + touch + keyboard events
-   directly on window — no scroll container.
+   Smooth transition logic.
 ══════════════════════════════════════ */
 const TOTAL = 6;
-const SEC_NAMES = ['Home','Eagle Flight','Void Interceptor','Neon Drift Racer','X/O Bot Duel','Profile'];
+const SEC_NAMES = ['Home Node // Core Hub','Eagle Flight // Simulator','Void Interceptor // Combat','Neon Drift // Dynamics','X/O Bot // Strategic','Database // Profile'];
 let current = 0;
 let isAnimating = false;
-const ANIM_TIME = 800; // ms lockout between switches
+const ANIM_TIME = 900; // Lockout window
 
 const panels = document.querySelectorAll('.panel');
-const dots   = document.querySelectorAll('.dot');
-const secNameEl = document.getElementById('sec-name');
+const dots   = document.querySelectorAll('#dots > .hud-dot');
 
 function goTo(idx) {
   if(idx < 0 || idx >= TOTAL || idx === current) return;
@@ -289,416 +806,684 @@ function goTo(idx) {
   const prev = current;
   current = idx;
 
-  // Exit previous panel upward if going forward, downward if going back
+  printLog(`COMPILING ROUTE CHANGE TO NODE_0${idx}: ${SEC_NAMES[idx].toUpperCase()}...`, 'text-[#00e5ff]');
+
   const goingDown = idx > prev;
   panels[prev].classList.remove('active');
   panels[prev].classList.add(goingDown ? 'exit-up' : 'exit-down');
 
-  // After exit transition remove class
   setTimeout(() => {
     panels[prev].classList.remove('exit-up','exit-down');
-  }, 700);
+  }, 800);
 
-  // Enter new panel
-  panels[current].classList.add('active');
+  panels[idx].classList.add('active');
 
-  // Update dots
-  dots.forEach((d,i) => d.classList.toggle('on', i === current));
-  secNameEl.textContent = SEC_NAMES[current];
+  // Update dots HUD
+  dots.forEach((d, i) => {
+    d.classList.toggle('active', i === current);
+  });
 
-  // Nav dark after hero
-  document.getElementById('nav').classList.toggle('dark', current > 0);
+  // Top header text nodes
+  document.getElementById('hud-node-id').textContent = `SYS.SEC_0${idx} // ${SEC_NAMES[idx].split(' // ')[0].toUpperCase()}`;
+  document.getElementById('hud-page-index').textContent = `0${idx}`;
 
-  // Unlock after animation
-  setTimeout(() => { isAnimating = false; }, ANIM_TIME);
-
-  // Trigger 3D scene change
+  // Smooth cinematic camera shift
   setScene(current);
+
+  setTimeout(() => {
+    isAnimating = false;
+  }, ANIM_TIME);
 }
 
-// Add exit-down CSS
-const st = document.createElement('style');
-st.textContent = `.exit-down{opacity:0;transform:translateY(60px);pointer-events:none}`;
-document.head.appendChild(st);
-
-/* ── WHEEL ── */
+// Wheel and keyboard triggers
 let wheelAcc = 0, wheelTimer = null;
 window.addEventListener('wheel', e => {
-  e.preventDefault();
   wheelAcc += e.deltaY;
   clearTimeout(wheelTimer);
   wheelTimer = setTimeout(() => {
-    if(Math.abs(wheelAcc) > 30) {
+    if(Math.abs(wheelAcc) > 35) {
       if(wheelAcc > 0) goTo(current + 1);
       else goTo(current - 1);
     }
     wheelAcc = 0;
-  }, 80);
-}, { passive: false });
+  }, 60);
+}, { passive: true });
 
-/* ── KEYBOARD ── */
 window.addEventListener('keydown', e => {
-  if(e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); goTo(current + 1); }
-  if(e.key === 'ArrowUp'   || e.key === 'PageUp')   { e.preventDefault(); goTo(current - 1); }
+  if(e.key === 'ArrowDown' || e.key === 'PageDown') { goTo(current + 1); }
+  if(e.key === 'ArrowUp'   || e.key === 'PageUp')   { goTo(current - 1); }
 });
 
-/* ── TOUCH ── */
 let touchStartY = 0;
 window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
 window.addEventListener('touchend', e => {
   const dy = touchStartY - e.changedTouches[0].clientY;
-  if(Math.abs(dy) > 40) {
+  if(Math.abs(dy) > 50) {
     if(dy > 0) goTo(current + 1);
     else goTo(current - 1);
   }
 }, { passive: true });
 
+
 /* ══════════════════════════════════════
-   THREE.JS FULL-SCREEN 3D BACKGROUND
-   One scene, objects swap per section.
+   THREE.JS ADVANCED SCI-FI BACKGROUND
+   Sleek grid lines, wireframes and fluid camera fly-throughs.
 ══════════════════════════════════════ */
 const W = () => window.innerWidth, H = () => window.innerHeight;
 
 const scene = new THREE.Scene();
-const cam   = new THREE.PerspectiveCamera(60, W()/H(), 0.1, 400);
-cam.position.set(0, 0, 16);
+scene.fog = new THREE.FogExp2(0x000000, 0.022);
+
+const cam   = new THREE.PerspectiveCamera(55, W()/H(), 0.1, 300);
+// Camera starting coords
+cam.position.set(0, 1.5, 13);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(W(), H());
-renderer.setClearColor(0x02020a, 1);
+renderer.setClearColor(0x000000, 1);
 document.getElementById('bg3d').appendChild(renderer.domElement);
 
 /* Lights */
-scene.add(new THREE.AmbientLight(0x080818, 1.0));
-const key = new THREE.DirectionalLight(0xffffff, 0.9);
-key.position.set(8, 12, 10); scene.add(key);
-const fill = new THREE.PointLight(0x00e5ff, 1.4, 80);
-fill.position.set(-10, 5, 5); scene.add(fill);
-const rim  = new THREE.PointLight(0x7c4dff, 1.0, 60);
-rim.position.set(10, -5, -10); scene.add(rim);
+scene.add(new THREE.AmbientLight(0x0f0f1d, 1.2));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+keyLight.position.set(5, 15, 10);
+scene.add(keyLight);
 
-/* Stars */
-(function(){
-  const N = 1400, pos = new Float32Array(N*3), col = new Float32Array(N*3);
-  for(let i=0;i<N;i++){
-    pos[i*3]=(Math.random()-.5)*260; pos[i*3+1]=(Math.random()-.5)*160; pos[i*3+2]=-20-Math.random()*180;
-    const t=Math.random();
-    if(t<.5){col[i*3]=.82;col[i*3+1]=.9;col[i*3+2]=1;}
-    else if(t<.75){col[i*3]=1;col[i*3+1]=.95;col[i*3+2]=.65;}
-    else{col[i*3]=1;col[i*3+1]=.55;col[i*3+2]=.38;}
-  }
-  const g=new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  g.setAttribute('color',new THREE.BufferAttribute(col,3));
-  scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:.12,vertexColors:true,transparent:true,opacity:.9,sizeAttenuation:true})));
-})();
+const lightCyan = new THREE.PointLight(0x00e5ff, 2.5, 120);
+lightCyan.position.set(-15, 5, 8);
+scene.add(lightCyan);
 
-/* Nebula */
-[{c:0x001428,x:-40,y:14,z:-100,r:32},{c:0x18082a,x:45,y:-10,z:-130,r:26},{c:0x020a1e,x:8,y:28,z:-85,r:20}].forEach(d=>{
-  const m=new THREE.Mesh(new THREE.SphereGeometry(d.r,12,12),
-    new THREE.MeshBasicMaterial({color:d.c,transparent:true,opacity:.6,depthWrite:false,side:THREE.BackSide}));
-  m.position.set(d.x,d.y,d.z); scene.add(m);
+const lightPurple = new THREE.PointLight(0x7c4dff, 2.0, 100);
+lightPurple.position.set(15, -5, 8);
+scene.add(lightPurple);
+
+/* Custom Infinite Grid deforming in distance */
+const gridGeometry = new THREE.PlaneGeometry(160, 160, 45, 45);
+const gridMaterial = new THREE.MeshBasicMaterial({
+  color: 0x223344,
+  wireframe: true,
+  transparent: true,
+  opacity: 0.12
 });
+const gridFloor = new THREE.Mesh(gridGeometry, gridMaterial);
+gridFloor.rotation.x = -Math.PI / 2;
+gridFloor.position.y = -4.5;
+scene.add(gridFloor);
 
-/* Planets */
-const planets = [];
-[{r:10,c:0x0c1e3c,ec:0x003688,x:-55,y:20,z:-170,ring:true},{r:5,c:0x28100a,ec:0x5a2200,x:64,y:-24,z:-140}].forEach(d=>{
-  const mat=new THREE.MeshStandardMaterial({color:d.c,emissive:d.ec,emissiveIntensity:.13,roughness:.9,metalness:.05});
-  const mesh=new THREE.Mesh(new THREE.SphereGeometry(d.r,28,28),mat);
-  mesh.position.set(d.x,d.y,d.z);
-  if(d.ring){
-    const rm=new THREE.Mesh(new THREE.TorusGeometry(d.r*1.6,d.r*.2,4,60),
-      new THREE.MeshBasicMaterial({color:0x1a3a5c,transparent:true,opacity:.38}));
-    rm.rotation.x=Math.PI*.38; mesh.add(rm);
-  }
-  scene.add(mesh); planets.push(mesh);
-});
-
-/* ── PER-SECTION 3D OBJECTS ── */
-function mkShard(size, color) {
-  const g = new THREE.OctahedronGeometry(size, 0);
-  const p = g.attributes.position;
-  for(let i=0;i<p.count;i++) p.setXYZ(i, p.getX(i)*(.55+Math.random()*.9), p.getY(i)*(.55+Math.random()*.9), p.getZ(i)*(.55+Math.random()*.9));
-  g.computeVertexNormals();
-  return new THREE.Mesh(g, new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.55,metalness:.7,roughness:.18,transparent:true,opacity:.55}));
-}
-function mkAsteroid(r) {
-  const g = new THREE.IcosahedronGeometry(r, 1);
-  const p = g.attributes.position;
-  for(let i=0;i<p.count;i++) p.setXYZ(i, p.getX(i)*(.7+Math.random()*.5), p.getY(i)*(.7+Math.random()*.5), p.getZ(i)*(.7+Math.random()*.5));
-  g.computeVertexNormals(); return g;
+/* Flowing data lines on grid floor */
+const lineGroup = new THREE.Group();
+scene.add(lineGroup);
+for(let i = 0; i < 15; i++) {
+  const lineGeom = new THREE.BufferGeometry();
+  const pArr = new Float32Array([
+    (Math.random() - 0.5) * 100, -4.4, (Math.random() - 0.5) * 100,
+    (Math.random() - 0.5) * 100, -4.4, (Math.random() - 0.5) * 100
+  ]);
+  lineGeom.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
+  const lineMat = new THREE.LineBasicMaterial({
+    color: Math.random() > 0.5 ? 0x00e5ff : 0x7c4dff,
+    transparent: true,
+    opacity: 0.2
+  });
+  const line = new THREE.Line(lineGeom, lineMat);
+  lineGroup.add(line);
 }
 
-/* Each section has a group — we fly it in when active */
+/* Beautiful dense data particles (floating dust) */
+const starCount = 1800;
+const starGeom = new THREE.BufferGeometry();
+const starPos = new Float32Array(starCount * 3);
+const starColor = new Float32Array(starCount * 3);
+
+for(let i = 0; i < starCount; i++) {
+  starPos[i*3] = (Math.random() - 0.5) * 140;
+  starPos[i*3+1] = (Math.random() - 0.5) * 80;
+  starPos[i*3+2] = (Math.random() - 0.5) * 100;
+  
+  // High-purity neon color scheme
+  const rand = Math.random();
+  if(rand < 0.35) {
+    starColor[i*3] = 0.0; starColor[i*3+1] = 0.9; starColor[i*3+2] = 1.0; // Cyan
+  } else if(rand < 0.65) {
+    starColor[i*3] = 0.48; starColor[i*3+1] = 0.3; starColor[i*3+2] = 1.0; // Purple
+  } else {
+    starColor[i*3] = 0.1; starColor[i*3+1] = 0.1; starColor[i*3+2] = 0.15; // Dark White
+  }
+}
+starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+starGeom.setAttribute('color', new THREE.BufferAttribute(starColor, 3));
+const starMaterial = new THREE.PointsMaterial({
+  size: 0.15,
+  vertexColors: true,
+  transparent: true,
+  opacity: 0.65,
+  sizeAttenuation: true
+});
+const stars = new THREE.Points(starGeom, starMaterial);
+scene.add(stars);
+
+/* Sweeping Translucent Laser Scanner Plane */
+const laserGeom = new THREE.BoxGeometry(70, 0.05, 70);
+const laserMat = new THREE.MeshBasicMaterial({
+  color: 0x00e5ff,
+  transparent: true,
+  opacity: 0.03,
+  wireframe: true
+});
+const laserScanner = new THREE.Mesh(laserGeom, laserMat);
+laserScanner.position.y = -2;
+scene.add(laserScanner);
+
+/* ══════════════════════════════════════
+   6 MASTERPIECE WIREFRAME SCHEMATIC MODELS
+══════════════════════════════════════ */
 const groups = [];
-for(let i=0;i<TOTAL;i++){
-  const g=new THREE.Group(); g.visible=false; scene.add(g); groups.push(g);
+for(let i = 0; i < TOTAL; i++) {
+  const g = new THREE.Group();
+  scene.add(g);
+  groups.push(g);
 }
 
-/* SEC 0: Hero — glowing crystal orb + shards */
-{
-  const g = groups[0];
-  const core = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5,0),
-    new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.35,metalness:.8,roughness:.1,transparent:true,opacity:.65}));
-  core.position.set(5.5, 0, 0); g.add(core);
-  const wire = new THREE.Mesh(new THREE.DodecahedronGeometry(1.52,0),
-    new THREE.MeshBasicMaterial({color:0x00e5ff,wireframe:true,transparent:true,opacity:.2}));
-  core.add(wire);
-  const COLS=[0x00e5ff,0x7c4dff,0xff2d78,0xffc93c];
-  for(let i=0;i<20;i++){
-    const s=mkShard(.07+Math.random()*.22, COLS[i%4]);
-    const a=(i/20)*Math.PI*2, r=2+Math.random()*4.5;
-    s.position.set(Math.cos(a)*r+5.5, Math.sin(a)*r*.6, (Math.random()-.5)*3);
-    s.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6); g.add(s);
-  }
-  g.userData={core};
-}
-
-/* SEC 1: Eagle — wings */
-{
-  const g=groups[1];
-  const mat=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.45,metalness:.75,roughness:.2});
-  const body=new THREE.Mesh(new THREE.ConeGeometry(.2,1.0,8),mat);
-  body.rotation.z=-Math.PI/2; g.add(body);
-  const WGS=new THREE.Shape();
-  WGS.moveTo(0,0);WGS.lineTo(-2.0,.45);WGS.lineTo(-2.4,0);WGS.lineTo(-1.6,-.65);WGS.lineTo(0,-.22);WGS.closePath();
-  const wG=new THREE.ShapeGeometry(WGS);
-  const wL=new THREE.Mesh(wG,mat); wL.position.set(.12,.06,0); g.add(wL);
-  const wR=wL.clone(); wR.scale.x=-1; g.add(wR);
-  for(let i=0;i<6;i++){const tf=new THREE.Mesh(new THREE.ConeGeometry(.04,.35,4),mat);tf.position.set(-.6,(i-2.5)*.09,0);tf.rotation.z=Math.PI/2;g.add(tf);}
-  for(let i=0;i<10;i++){
-    const s=mkShard(.04+Math.random()*.12,0x00e5ff);
-    s.position.set((Math.random()-.5)*5,(Math.random()-.5)*3.5,(Math.random()-.5)*2);g.add(s);
-  }
-  g.position.set(4.5,0,0);
-}
-
-/* SEC 2: Ship */
-{
-  const g=groups[2];
-  const steel=new THREE.MeshStandardMaterial({color:0x1c1c28,metalness:.85,roughness:.25});
-  const acc=new THREE.MeshStandardMaterial({color:0x7c4dff,emissive:0x7c4dff,emissiveIntensity:.55,metalness:.4,roughness:.3});
-  const cpkM=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.5,metalness:.2,roughness:.1,transparent:true,opacity:.88});
-  const fuse=new THREE.Mesh(new THREE.CylinderGeometry(.14,.28,1.7,10),steel);fuse.rotation.x=Math.PI/2;g.add(fuse);
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(.14,.55,10),acc);nose.rotation.x=Math.PI/2;nose.position.z=-1.12;g.add(nose);
-  const wing=new THREE.Mesh(new THREE.BoxGeometry(2.6,.055,.65),steel);wing.position.z=-.1;g.add(wing);
-  [-1.28,1.28].forEach(x=>{const t=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.65),acc);t.position.set(x,0,-.1);g.add(t);});
-  const cpk=new THREE.Mesh(new THREE.SphereGeometry(.18,14,10),cpkM);cpk.position.set(0,.13,-.55);g.add(cpk);
-  [-.46,.46].forEach(x=>{
-    const nac=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.5,8),new THREE.MeshStandardMaterial({color:0x0d0d14,metalness:.7,roughness:.4}));
-    nac.rotation.x=Math.PI/2;nac.position.set(x,0,.58);g.add(nac);
-    const gl=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.1,8),new THREE.MeshBasicMaterial({color:0x7c4dff,transparent:true,opacity:.9}));
-    gl.rotation.x=Math.PI/2;gl.position.set(x,0,.84);g.add(gl);
+// Helper to make highly clean wireframes
+function makeWireframeMesh(geometry, color, opacity = 0.35) {
+  const geoWire = new THREE.WireframeGeometry(geometry);
+  const lineMat = new THREE.LineBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: opacity
   });
-  for(let i=0;i<6;i++){
-    const ast=new THREE.Mesh(mkAsteroid(.28+Math.random()*.42),
-      new THREE.MeshStandardMaterial({color:0x2a2530,roughness:.95,emissive:0x7c4dff,emissiveIntensity:.1}));
-    const a=(i/6)*Math.PI*2,r=2.6+Math.random()*1.4;
-    ast.position.set(Math.cos(a)*r,Math.sin(a)*r*.6,(Math.random()-.5)*2);
-    ast.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);g.add(ast);
-  }
-  g.scale.setScalar(1.6); g.position.set(5,0,0);
+  return new THREE.LineSegments(geoWire, lineMat);
 }
 
-/* SEC 3: Car */
-{
-  const g=groups[3];
-  const bM=new THREE.MeshStandardMaterial({color:0x111118,metalness:.9,roughness:.15});
-  const gM=new THREE.MeshStandardMaterial({color:0xffc93c,emissive:0xffc93c,emissiveIntensity:.65,metalness:.5,roughness:.2});
-  const glM=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.3,transparent:true,opacity:.6});
-  const body=new THREE.Mesh(new THREE.BoxGeometry(2,.5,.9),bM);g.add(body);
-  const roof=new THREE.Mesh(new THREE.BoxGeometry(1,.35,.88),bM);roof.position.set(-.1,.42,0);g.add(roof);
-  const ws=new THREE.Mesh(new THREE.BoxGeometry(.85,.32,.86),glM);ws.position.set(.45,.41,0);g.add(ws);
-  [-1.25,-.45,.45,1.25].forEach(x=>{
-    [-.5,.5].forEach(z=>{
-      const w=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.12,12),bM);w.rotation.z=Math.PI/2;w.position.set(x,-.28,z);g.add(w);
-      const rim=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.14,6),gM);rim.rotation.z=Math.PI/2;rim.position.copy(w.position);g.add(rim);
+/* --- NODE 00: CORE (HOME) --- */
+const coreGroup = groups[0];
+// Central dodecahedron glowing core
+const coreInnerGeom = new THREE.DodecahedronGeometry(1.6, 0);
+const coreInner = makeWireframeMesh(coreInnerGeom, 0x00e5ff, 0.7);
+coreGroup.add(coreInner);
+
+// Concentric orbiting structural tech rings
+const ring1 = makeWireframeMesh(new THREE.TorusGeometry(2.3, 0.06, 8, 48), 0x7c4dff, 0.35);
+ring1.rotation.x = Math.PI / 2;
+coreGroup.add(ring1);
+
+const ring2 = makeWireframeMesh(new THREE.TorusGeometry(3.0, 0.04, 8, 64), 0xff2d78, 0.25);
+ring2.rotation.y = Math.PI / 3;
+coreGroup.add(ring2);
+
+// Surrounding cluster of rotating coordinate data packets
+const packetGroup = new THREE.Group();
+coreGroup.add(packetGroup);
+for(let i = 0; i < 22; i++) {
+  const pGeom = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+  const pMesh = makeWireframeMesh(pGeom, 0x00e5ff, 0.8);
+  const angle = (i / 22) * Math.PI * 2;
+  const rad = 3.6 + Math.random() * 1.5;
+  pMesh.position.set(Math.cos(angle) * rad, (Math.random() - 0.5) * 2.5, Math.sin(angle) * rad);
+  packetGroup.add(pMesh);
+}
+coreGroup.position.set(3.5, 0, 0);
+
+/* --- NODE 01: EAGLE FLIGHT --- */
+const eagleGroup = groups[1];
+// Delta-Wing Jet wireframe model
+const jetGeom = new THREE.ConeGeometry(0.5, 3.2, 4);
+const jet = makeWireframeMesh(jetGeom, 0x00e5ff, 0.6);
+jet.rotation.x = Math.PI / 2;
+jet.rotation.z = Math.PI;
+eagleGroup.add(jet);
+
+// Dual Sweep wings
+const wingLGeom = new THREE.BoxGeometry(2.8, 0.05, 0.8);
+const wingL = makeWireframeMesh(wingLGeom, 0x00e5ff, 0.5);
+wingL.position.set(-1.4, -0.1, -0.4);
+wingL.rotation.y = -Math.PI / 6;
+eagleGroup.add(wingL);
+
+const wingR = wingL.clone();
+wingR.position.x = 1.4;
+wingR.rotation.y = Math.PI / 6;
+eagleGroup.add(wingR);
+
+// Scrolling technical landscape mountains underneath
+const landGroup = new THREE.Group();
+eagleGroup.add(landGroup);
+const landGeom = new THREE.BoxGeometry(16, 2.5, 16, 12, 5, 12);
+const landMesh = makeWireframeMesh(landGeom, 0x4477aa, 0.15);
+landMesh.position.set(0, -3.8, 0);
+landGroup.add(landMesh);
+
+eagleGroup.position.set(3.8, 0.2, 0);
+
+/* --- NODE 02: VOID INTERCEPTOR --- */
+const voidGroup = groups[2];
+// Complex heavy space cruiser wireframe
+const cruiserBody = makeWireframeMesh(new THREE.CylinderGeometry(0.2, 0.6, 3.5, 6), 0x7c4dff, 0.6);
+cruiserBody.rotation.x = Math.PI / 2;
+voidGroup.add(cruiserBody);
+
+const noseCone = makeWireframeMesh(new THREE.ConeGeometry(0.2, 1.2, 6), 0x00e5ff, 0.7);
+noseCone.rotation.x = Math.PI / 2;
+noseCone.position.set(0, 0, -2.35);
+voidGroup.add(noseCone);
+
+// Side thruster pods
+const thrusterL = makeWireframeMesh(new THREE.CylinderGeometry(0.25, 0.25, 1.5, 4), 0x7c4dff, 0.45);
+thrusterL.rotation.x = Math.PI / 2;
+thrusterL.position.set(-1.1, 0, 0.5);
+voidGroup.add(thrusterL);
+
+const thrusterR = thrusterL.clone();
+thrusterR.position.x = 1.1;
+voidGroup.add(thrusterR);
+
+// Orbiting asteroid coordinates (Icosahedron wireframes)
+const astGroup = new THREE.Group();
+voidGroup.add(astGroup);
+for(let i = 0; i < 5; i++) {
+  const astMesh = makeWireframeMesh(new THREE.IcosahedronGeometry(0.5, 0), 0xff2d78, 0.35);
+  const ang = (i / 5) * Math.PI * 2;
+  astMesh.position.set(Math.cos(ang) * 3.5, (Math.random() - 0.5) * 1.5, Math.sin(ang) * 3.5);
+  astGroup.add(astMesh);
+}
+
+// Centered dynamic HUD target locking circle
+const hudLock = makeWireframeMesh(new THREE.TorusGeometry(1.4, 0.02, 4, 32), 0x00e5ff, 0.3);
+hudLock.position.set(0, 0, -1.2);
+voidGroup.add(hudLock);
+
+voidGroup.position.set(3.5, 0, 0);
+
+/* --- NODE 03: NEON DRIFT RACER --- */
+const driftGroup = groups[3];
+// Futuristic cyberpunk sports chassis wireframe
+const carChassis = makeWireframeMesh(new THREE.BoxGeometry(1.2, 0.45, 3.4), 0x00ff88, 0.6);
+driftGroup.add(carChassis);
+
+const carRoof = makeWireframeMesh(new THREE.BoxGeometry(0.9, 0.35, 1.5), 0x00e5ff, 0.4);
+carRoof.position.set(0, 0.4, -0.2);
+driftGroup.add(carRoof);
+
+// Dynamic wireframe wheels
+const wheelMat = new THREE.TorusGeometry(0.35, 0.08, 4, 16);
+const wFL = makeWireframeMesh(wheelMat, 0x00ff88, 0.5);
+wFL.rotation.y = Math.PI / 2;
+wFL.position.set(-0.7, -0.22, 1.1);
+driftGroup.add(wFL);
+
+const wFR = wFL.clone(); wFR.position.x = 0.7;
+driftGroup.add(wFR);
+
+const wBL = wFL.clone(); wBL.position.set(-0.7, -0.22, -1.1);
+driftGroup.add(wBL);
+
+const wBR = wFL.clone(); wBR.position.set(0.7, -0.22, -1.1);
+driftGroup.add(wBR);
+
+// Passing neon highway track lines underneath
+const trackGrid = makeWireframeMesh(new THREE.PlaneGeometry(8, 22, 8, 12), 0x00ff88, 0.12);
+trackGrid.rotation.x = -Math.PI / 2;
+trackGrid.position.set(0, -1.6, 0);
+driftGroup.add(trackGrid);
+
+driftGroup.position.set(3.5, -0.2, 0);
+
+/* --- NODE 04: XO BOT DUEL --- */
+const xoGroup = groups[4];
+// Volumetric coordinate grid structure
+const xoGrid = makeWireframeMesh(new THREE.BoxGeometry(4.0, 4.0, 0.15, 3, 3, 1), 0xff2d78, 0.22);
+xoGroup.add(xoGrid);
+
+// Floating wireframe X & O indicators inside coordinate fields
+const shapesGroup = new THREE.Group();
+xoGroup.add(shapesGroup);
+
+// An O (Torus wireframe)
+const oShape = makeWireframeMesh(new THREE.TorusGeometry(0.5, 0.08, 6, 24), 0x00e5ff, 0.55);
+oShape.position.set(-1.3, 1.3, 0.3);
+shapesGroup.add(oShape);
+
+const oShape2 = oShape.clone();
+oShape2.position.set(1.3, -1.3, 0.3);
+shapesGroup.add(oShape2);
+
+// An X (Intersecting cylinders)
+const cyl1 = makeWireframeMesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 4), 0xff2d78, 0.55);
+cyl1.rotation.z = Math.PI / 4;
+const cyl2 = cyl1.clone();
+cyl2.rotation.z = -Math.PI / 4;
+const xShape = new THREE.Group();
+xShape.add(cyl1, cyl2);
+xShape.position.set(1.3, 1.3, 0.3);
+shapesGroup.add(xShape);
+
+const xShape2 = xShape.clone();
+xShape2.position.set(-1.3, -1.3, 0.3);
+shapesGroup.add(xShape2);
+
+xoGroup.position.set(3.5, 0, 0);
+
+/* --- NODE 05: PROFILE HELIX --- */
+const helixGroup = groups[5];
+// Complex double helix structural rotating node
+const doubleHelix = new THREE.Group();
+helixGroup.add(doubleHelix);
+
+const helixCount = 48;
+for(let i = 0; i < helixCount; i++) {
+  const normVal = i / helixCount;
+  const angle = normVal * Math.PI * 5;
+  const posY = (normVal * 6.5) - 3.25;
+  const rad = 1.6;
+  
+  // Strand A (Cyan Sphere)
+  const sphereAGeom = new THREE.IcosahedronGeometry(0.12, 0);
+  const sphereA = makeWireframeMesh(sphereAGeom, 0x00e5ff, 0.65);
+  sphereA.position.set(Math.cos(angle) * rad, posY, Math.sin(angle) * rad);
+  doubleHelix.add(sphereA);
+  
+  // Strand B (Purple Sphere)
+  const sphereB = makeWireframeMesh(sphereAGeom, 0x7c4dff, 0.65);
+  sphereB.position.set(Math.cos(angle + Math.PI) * rad, posY, Math.sin(angle + Math.PI) * rad);
+  doubleHelix.add(sphereB);
+  
+  // Interconnecting ladder rungs
+  if(i % 2 === 0) {
+    const rungGeom = new THREE.BufferGeometry();
+    const rungPos = new Float32Array([
+      Math.cos(angle) * rad, posY, Math.sin(angle) * rad,
+      Math.cos(angle + Math.PI) * rad, posY, Math.sin(angle + Math.PI) * rad
+    ]);
+    rungGeom.setAttribute('position', new THREE.BufferAttribute(rungPos, 3));
+    const rungMat = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.12
     });
-  });
-  [-1,0,1].forEach(z=>{const s=new THREE.Mesh(new THREE.BoxGeometry(2.02,.04,.04),gM);s.position.set(0,-.25,z*.42);g.add(s);});
-  const road=new THREE.Mesh(new THREE.PlaneGeometry(14,9,14,9),new THREE.MeshBasicMaterial({color:0xffc93c,wireframe:true,transparent:true,opacity:.07}));
-  road.rotation.x=-Math.PI/2;road.position.set(0,-1.6,0);g.add(road);
-  for(let i=0;i<8;i++){
-    const sl=new THREE.Mesh(new THREE.BoxGeometry(.02,.02,1.5+Math.random()),
-      new THREE.MeshBasicMaterial({color:0xffc93c,transparent:true,opacity:.4}));
-    sl.position.set((Math.random()-.5)*4,(Math.random()-.5)*.6,-1-Math.random());g.add(sl);
+    const rungLine = new THREE.Line(rungGeom, rungMat);
+    doubleHelix.add(rungLine);
   }
-  g.scale.setScalar(1.3); g.position.set(4.5,-.3,0);
 }
+helixGroup.position.set(3.5, 0, 0);
 
-/* SEC 4: XO Grid */
-{
-  const g=groups[4];
-  const xM=new THREE.MeshStandardMaterial({color:0xff2d78,emissive:0xff2d78,emissiveIntensity:.7,metalness:.5,roughness:.2});
-  const oM=new THREE.MeshStandardMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.7,metalness:.5,roughness:.2});
-  const grM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.1});
-  [-1.1,1.1].forEach(x=>{const l=new THREE.Mesh(new THREE.BoxGeometry(.05,6.6,.05),grM);l.position.x=x;g.add(l);});
-  [-1.1,1.1].forEach(y=>{const l=new THREE.Mesh(new THREE.BoxGeometry(6.6,.05,.05),grM);l.position.y=y;g.add(l);});
-  [[0,2.2,true],[-2.2,0,false],[2.2,0,true],[0,-2.2,false],[-2.2,2.2,false],[2.2,-2.2,true]].forEach(([x,y,isX])=>{
-    if(isX){
-      const a=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.9,8),xM);a.rotation.z=Math.PI/4;a.position.set(x,y,.1);g.add(a);
-      const b=a.clone();b.rotation.z=-Math.PI/4;g.add(b);
-    } else {
-      const ring=new THREE.Mesh(new THREE.TorusGeometry(.38,.08,12,32),oM);ring.position.set(x,y,.1);g.add(ring);
-    }
-  });
-  for(let i=0;i<10;i++){
-    const cube=new THREE.Mesh(new THREE.BoxGeometry(.12+Math.random()*.18,.12+Math.random()*.18,.12+Math.random()*.18),
-      new THREE.MeshStandardMaterial({color:i%2===0?0xff2d78:0x00e5ff,emissive:i%2===0?0xff2d78:0x00e5ff,emissiveIntensity:.55,transparent:true,opacity:.6}));
-    cube.position.set((Math.random()-.5)*7,(Math.random()-.5)*5,(Math.random()-.5)*2);
-    cube.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);g.add(cube);
-  }
-  g.position.set(4.5,0,0);
-}
 
-/* SEC 5: Profile — helix */
-{
-  const g=groups[5];
-  for(let i=0;i<32;i++){
-    const t1=i/32,t2=(i+.5)/32;
-    const s1=mkShard(.08,0x00e5ff);s1.position.set(Math.cos(t1*Math.PI*4)*1.5,i*.19-3,Math.sin(t1*Math.PI*4)*1.5);g.add(s1);
-    const s2=mkShard(.08,0x7c4dff);s2.position.set(Math.cos(t2*Math.PI*4+Math.PI)*1.5,t2*5.5-2.75,Math.sin(t2*Math.PI*4+Math.PI)*1.5);g.add(s2);
-    if(i%3===0){const bar=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,3,4),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.1}));bar.position.set(0,i*.19-3,0);bar.rotation.z=Math.PI/2;g.add(bar);}
-  }
-  g.position.set(5,0,0);
-}
+/* ══════════════════════════════════════
+   CINEMATIC CAMERA FLIGHT INTERPOLATOR
+   This creates continuous storytelling WebGL movement
+══════════════════════════════════════ */
+// Precise camera parameters and target coordinates per page
+const camPath = [
+  { pos: {x: 0, y: 1.2, z: 10.5}, target: {x: 1.6, y: 0.1, z: 0} }, // Sec 0 (Home)
+  { pos: {x: -2.8, y: 2.5, z: 9.0}, target: {x: 2.2, y: 0.3, z: 0} }, // Sec 1 (Eagle)
+  { pos: {x: 4.2, y: -2.0, z: 11.0}, target: {x: 1.8, y: 0.2, z: 0} }, // Sec 2 (Void)
+  { pos: {x: 0.0, y: 3.5, z: 10.0}, target: {x: 2.5, y: -0.4, z: 0} }, // Sec 3 (Neon)
+  { pos: {x: -3.8, y: 1.2, z: 9.0}, target: {x: 2.0, y: 0.1, z: 0} }, // Sec 4 (XO)
+  { pos: {x: 1.0, y: -2.8, z: 11.5}, target: {x: 2.3, y: 0.0, z: 0} }  // Sec 5 (Profile)
+];
 
-/* ── SCENE TRANSITION STATE ── */
+// Active visibility mapping
 let activeIdx = 0;
-let targetScale = [1,0,0,0,0,0];
-let targetX     = [0,20,20,20,20,20]; // off to the right initially
-let currentX    = [0,20,20,20,20,20];
-let currentSc   = [1,0,0,0,0,0];
-let currentRot  = new Array(TOTAL).fill(0);
-const baseX = [5.5, 4.5, 5.0, 4.5, 4.5, 5.0];
-
-groups[0].visible = true;
-
 function setScene(idx) {
-  // Fly out old
-  targetX[activeIdx] = (idx > activeIdx) ? -18 : 18;
-  targetScale[activeIdx] = 0;
-  // Fly in new
-  targetX[idx] = (idx > activeIdx) ? 18 : -18; // start from opposite side
-  targetScale[idx] = 1;
-  groups[idx].visible = true;
+  groups.forEach((grp, i) => {
+    // Only keep active or adjacent elements visible to conserve hardware performance
+    grp.visible = (i === idx || i === activeIdx);
+  });
   activeIdx = idx;
 }
 
-/* ── MOUSE PARALLAX ── */
-let mx=0,my=0,camX=0,camY=0;
-document.addEventListener('mousemove',e=>{mx=(e.clientX/W()-.5)*2;my=(e.clientY/H()-.5)*2;});
+// Initial state visibility
+groups.forEach((g, i) => { g.visible = (i === 0); });
 
-/* ── ANIMATE ── */
+/* ══════════════════════════════════════
+   ANIMATION & RENDER LOOP (lerping physics)
+══════════════════════════════════════ */
 const clock = new THREE.Clock();
-function lerp(a,b,t){return a+(b-a)*t}
+let mx = 0, my = 0;
+document.addEventListener('mousemove', e => {
+  mx = (e.clientX / window.innerWidth - 0.5) * 2;
+  my = (e.clientY / window.innerHeight - 0.5) * 2;
+});
 
-(function loop(){
+// Lerp utility
+function lerp(start, end, amt) {
+  return (1 - amt) * start + amt * end;
+}
+
+// Camera vectors
+const currentCamPos = new THREE.Vector3(0, 1.5, 13);
+const targetCamPos  = new THREE.Vector3(0, 1.2, 10.5);
+const currentTarget = new THREE.Vector3(1.6, 0.1, 0);
+const targetLookAt  = new THREE.Vector3(1.6, 0.1, 0);
+
+// Simple frames-per-second indicator calculation
+let lastFrameTime = performance.now();
+let framesThisSecond = 0;
+let displayedFPS = 60;
+
+function loop() {
   requestAnimationFrame(loop);
-  const t = clock.getElapsedTime();
+  const elapsed = clock.getElapsedTime();
+  const delta = clock.getDelta();
 
-  // Camera
-  camX += (mx*1.6-camX)*.025;
-  camY += (-my*.9-camY)*.025;
-  cam.position.x = camX;
-  cam.position.y = camY;
+  // Calculate simulated FPS
+  framesThisSecond++;
+  const now = performance.now();
+  if(now >= lastFrameTime + 1000) {
+    displayedFPS = framesThisSecond;
+    framesThisSecond = 0;
+    lastFrameTime = now;
+    document.getElementById('diag-fps').textContent = `FPS: ${displayedFPS} // PING: ${Math.floor(10 + Math.random()*5)}ms`;
+  }
 
-  // Animate each group
-  groups.forEach((grp,i)=>{
-    currentX[i]  = lerp(currentX[i],  targetX[i],  .07);
-    currentSc[i] = lerp(currentSc[i], targetScale[i], .07);
+  // Laser scanner sweeping range
+  laserScanner.position.y = Math.sin(elapsed * 0.8) * 4.0;
+  
+  // Parallax offsets based on mouse positions
+  const parallaxX = mx * 0.8;
+  const parallaxY = -my * 0.5;
 
-    const sc = Math.max(0.001, currentSc[i]);
-    grp.scale.setScalar(sc);
-    grp.visible = sc > 0.01;
+  // Active Scene Camera Parameter Interpolator
+  const path = camPath[activeIdx];
+  if(path) {
+    targetCamPos.set(path.pos.x + parallaxX, path.pos.y + parallaxY, path.pos.z);
+    targetLookAt.set(path.target.x, path.target.y, path.target.z);
+  }
 
-    // Settle to base position
-    const bx = baseX[i] || 4.5;
-    grp.position.x = lerp(grp.position.x, currentX[i] === targetX[i] && i===activeIdx ? bx : currentX[i], .07);
+  // Smooth lerping transitions for camera
+  currentCamPos.lerp(targetCamPos, 0.05);
+  currentTarget.lerp(targetLookAt, 0.05);
+  
+  cam.position.copy(currentCamPos);
+  cam.lookAt(currentTarget);
 
-    // Idle animations per type
-    if(i===activeIdx && sc > 0.5){
-      if(i===0){ // Hero orb
-        if(grp.userData.core){grp.userData.core.rotation.x=t*.28;grp.userData.core.rotation.y=t*.38;}
-        grp.children.slice(1).forEach((c,ci)=>{c.position.y+=Math.sin(t*(.7+ci*.1)+ci)*.003;c.rotation.x+=.008;c.rotation.y+=.006;});
-      } else if(i===1){ // Eagle bob
-        grp.rotation.z=Math.sin(t*.5)*.08;grp.position.y=Math.sin(t*.4)*.2;
-        grp.children.slice(3).forEach((c,ci)=>{c.rotation.x+=.01;c.rotation.y+=.007;});
-      } else if(i===2){ // Ship hover
-        grp.position.y=Math.sin(t*.6)*.18;grp.rotation.y=Math.sin(t*.35)*.08;
-        grp.children.slice(-6).forEach((c,ci)=>{c.rotation.x+=.008;c.rotation.y+=.006;});
-      } else if(i===3){ // Car
-        grp.rotation.z=Math.sin(t*.4)*.02;
-      } else if(i===4){ // XO cubes
-        grp.children.slice(-10).forEach((c,ci)=>{c.position.y+=Math.sin(t*(.5+ci*.12)+ci)*.004;c.rotation.x+=.01;c.rotation.y+=.009;});
-      } else if(i===5){ // Helix spin
-        grp.rotation.y=t*.22;
+  // Group rotation and animation ticks
+  groups.forEach((grp, i) => {
+    if(grp.visible) {
+      // Fade scales in/out dynamically
+      const targetScale = (i === activeIdx) ? 1.0 : 0.001;
+      const currentScale = grp.scale.x;
+      const s = lerp(currentScale, targetScale, 0.075);
+      grp.scale.setScalar(s);
+      
+      // Idle animation ticks per individual node
+      if(i === 0) {
+        coreInner.rotation.x = elapsed * 0.2;
+        coreInner.rotation.y = elapsed * 0.35;
+        ring1.rotation.z = elapsed * 0.4;
+        ring2.rotation.z = -elapsed * 0.3;
+        packetGroup.rotation.y = elapsed * 0.15;
+      }
+      else if(i === 1) {
+        // Eagle jet banks subtly with mouse
+        jet.rotation.y = mx * 0.5;
+        jet.rotation.z = mx * -0.4;
+        // Scroll technical ground backwards to simulate flight
+        landMesh.position.z = (elapsed * 3.5) % 8;
+      }
+      else if(i === 2) {
+        cruiserBody.rotation.y = elapsed * 0.4;
+        astGroup.rotation.y = -elapsed * 0.15;
+        hudLock.rotation.z = elapsed * 0.5;
+      }
+      else if(i === 3) {
+        // Drift steering wheel and tires bank with mouse coordinates
+        wFL.rotation.x = -elapsed * 6.0;
+        wFR.rotation.x = -elapsed * 6.0;
+        wBL.rotation.x = -elapsed * 6.0;
+        wBR.rotation.x = -elapsed * 6.0;
+        wFL.rotation.y = Math.PI / 2 + (mx * 0.3);
+        wFR.rotation.y = Math.PI / 2 + (mx * 0.3);
+        
+        driftGroup.rotation.y = mx * 0.15;
+      }
+      else if(i === 4) {
+        shapesGroup.rotation.y = elapsed * 0.5;
+        xoGrid.rotation.y = Math.sin(elapsed * 0.3) * 0.15;
+      }
+      else if(i === 5) {
+        doubleHelix.rotation.y = elapsed * 0.3;
       }
     }
   });
 
-  planets.forEach((p,i)=>{p.rotation.y+=.0015*(i+1);});
-  fill.intensity=1.2+Math.sin(t*.45)*.3;
-  rim.intensity=.9+Math.cos(t*.38)*.25;
+  // Slow particle field drift
+  stars.rotation.y = elapsed * 0.015;
 
-  renderer.render(scene,cam);
-})();
+  renderer.render(scene, cam);
+}
+loop();
 
-window.addEventListener('resize',()=>{
-  cam.aspect=W()/H(); cam.updateProjectionMatrix();
-  renderer.setSize(W(),H());
+window.addEventListener('resize', () => {
+  cam.aspect = W() / H();
+  cam.updateProjectionMatrix();
+  renderer.setSize(W(), H());
 });
 
-/* ── CURSOR ── */
-(function(){
-  const dot=document.getElementById('cdot'),ring=document.getElementById('cring');
-  let cx=0,cy=0,rx=0,ry=0;
-  document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;dot.style.left=cx+'px';dot.style.top=cy+'px';});
-  (function loop(){requestAnimationFrame(loop);rx+=(cx-rx)*.1;ry+=(cy-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';})();
-  document.querySelectorAll('.bp,.bg2,.gplay,.ncta,.pb,.dot,.pb').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{ring.style.width='58px';ring.style.height='58px';});
-    el.addEventListener('mouseleave',()=>{ring.style.width='36px';ring.style.height='36px';});
+/* ══════════════════════════════════════
+   CUSTOM SPRING PHYSICAL CURSOR
+══════════════════════════════════════ */
+(function() {
+  const dot = document.getElementById('cdot'), ring = document.getElementById('cring');
+  let cx = 0, cy = 0, rx = 0, ry = 0;
+  
+  document.addEventListener('mousemove', e => {
+    cx = e.clientX;
+    cy = e.clientY;
+    dot.style.left = cx + 'px';
+    dot.style.top = cy + 'px';
+  });
+  
+  // Spring render physics
+  (function cursorLoop() {
+    requestAnimationFrame(cursorLoop);
+    rx += (cx - rx) * 0.12;
+    ry += (cy - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+  })();
+  
+  // Expand cursor on hovering interactive elements
+  document.querySelectorAll('a, button, .hud-dot, .cyber-btn').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
   });
 })();
 
-/* ── PLAYER ── */
-const LS='yuvraj_player_data_v1';
-let pd={name:'',coins:0,xp:0,level:1};
-function loadPD(){try{const s=localStorage.getItem(LS);if(s)pd=JSON.parse(s);}catch(e){}}
-function savePD(){try{localStorage.setItem(LS,JSON.stringify(pd));}catch(e){}}
-function updateUI(){
-  document.getElementById('playerName').textContent=pd.name||'—';
-  document.getElementById('playerCoins').textContent=pd.coins||0;
-  document.getElementById('playerXP').textContent=pd.xp||0;
-  document.getElementById('playerLevel').textContent=pd.level||1;
-  document.getElementById('xpFill').style.width=(pd.xp%100)+'%';
+/* ══════════════════════════════════════
+   PLAYER ARCHIVE LOCALSTORAGE DATABANK
+══════════════════════════════════════ */
+const LS = 'yuvraj_player_data_v1';
+let pd = { name: 'Yuvraj Soni', coins: 1450, xp: 380, level: 8 };
+
+function loadPD() {
+  try {
+    const s = localStorage.getItem(LS);
+    if(s) pd = JSON.parse(s);
+  } catch(e) {
+    printLog('CORRUPTED PLAYER REPOSITORY DETECTED. AUTOREPAIR COMMENCING...', 'text-[#ff2d78]');
+  }
 }
-function changeName(){const n=prompt('Enter new name:');if(n&&n.trim()){pd.name=n.trim();savePD();updateUI();}}
-loadPD();if(!pd.name){pd.name='Yuvraj Soni';savePD();}updateUI();
 
-/* ── MUSIC ── */
-const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=.3;
-let ms=false;document.addEventListener('click',()=>{if(!ms){ms=true;bgm.play().catch(()=>{});}});
+function savePD() {
+  try {
+    localStorage.setItem(LS, JSON.stringify(pd));
+  } catch(e) {}
+}
 
-/* ── LOADER ── */
-(function(){
-  const lf=document.getElementById('lf'),lt=document.getElementById('lt'),ldr=document.getElementById('ldr');
-  let p=0;
-  const msgs=['Initialising…','Loading 3D…','Building world…','Ready!'];
-  const iv=setInterval(()=>{
-    p+=Math.random()*13+5;if(p>100)p=100;
-    lf.style.width=p+'%';lt.textContent=msgs[Math.min(3,Math.floor(p/26))]+' '+Math.floor(p)+'%';
-    if(p>=100){
-      clearInterval(iv);
-      setTimeout(()=>{
+function updateUI() {
+  document.getElementById('playerName').textContent = pd.name || 'GUEST_AGENT';
+  document.getElementById('playerCoins').textContent = (pd.coins || 0) + ' COINS';
+  document.getElementById('playerXP').textContent = (pd.xp || 0) + ' PTS';
+  document.getElementById('playerLevel').textContent = 'LVL_' + (pd.level || 1);
+  
+  const xpMod = (pd.xp % 100);
+  document.getElementById('xpFill').style.width = xpMod + '%';
+  document.getElementById('xpPercent').textContent = xpMod + '%';
+}
+
+function changeName() {
+  const n = prompt('REWRITE AGENT CREDENTIAL IDENTIFIER:');
+  if(n && n.trim()) {
+    pd.name = n.trim();
+    savePD();
+    updateUI();
+    printLog(`AGENT CARD RE-ISSUED. NEW IDENTIFIER: '${pd.name.toUpperCase()}'`, 'text-[#00ff88]');
+  }
+}
+
+loadPD();
+updateUI();
+
+/* ══════════════════════════════════════
+   AUDIO BACKGROUND STREAMER (Sci-Fi BGM)
+══════════════════════════════════════ */
+const bgm = new Audio('bgm.mp3');
+bgm.loop = true;
+bgm.volume = 0.25;
+let musicStreamInitiated = false;
+
+document.addEventListener('click', () => {
+  if(!musicStreamInitiated) {
+    musicStreamInitiated = true;
+    bgm.play().then(() => {
+      printLog('AUDIO MODULE INTERFACED COMPLETED. STREAMING HIGH-FIDELITY TRACK...', 'text-white/20');
+    }).catch(() => {
+      printLog('MUTED STATE PREVENTED AUTOMATIC MUSIC PLAYBACK.', 'text-white/20');
+    });
+  }
+});
+
+/* ══════════════════════════════════════
+   SYSTEM BOOTUP COMPILER (Loader Logic)
+══════════════════════════════════════ */
+(function() {
+  const lf = document.getElementById('lf'), lt = document.getElementById('lt'), ldr = document.getElementById('ldr');
+  let bootPercent = 0;
+  
+  const loaderLogs = [
+    'INITIALIZING DECISION ENGINE...',
+    'BUFFERING COMPILER SHADERS...',
+    'CALIBRATING COORDINATES GEOMETRY...',
+    'STABILIZING STATION CHANNELS...'
+  ];
+  
+  const bootTimer = setInterval(() => {
+    bootPercent += Math.random() * 12 + 4;
+    if(bootPercent > 100) bootPercent = 100;
+    
+    lf.style.width = bootPercent + '%';
+    const logIdx = Math.min(3, Math.floor(bootPercent / 26));
+    lt.textContent = `${loaderLogs[logIdx]} ${Math.floor(bootPercent)}%`;
+    
+    if(bootPercent >= 100) {
+      clearInterval(bootTimer);
+      setTimeout(() => {
         ldr.classList.add('out');
-        document.querySelector('.h-eye').style.animation='fup .8s .1s cubic-bezier(.16,1,.3,1) forwards';
-        document.querySelector('.h-eye').style.opacity='0';
-        setTimeout(()=>{document.querySelector('.h-eye').style.opacity='1';},100);
-      },350);
+        printLog('BOOT LOADER ENGINE EXITED. CORE HUB READY FOR COMMAND.', 'text-[#00ff88]');
+      }, 500);
     }
-  },60);
+  }, 50);
 })();
 </script>
 </body>
